@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { BaganTujuhHari } from '@/components/Bagan'
+import type { Rentang } from '@/components/RentangTanggal'
+import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
   Baris, FotoKecil, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, Segmen, Tabel, Tombol,
 } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
+import { BULAN, formatRentang, formatTanggal } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 
 /** Penanda jenis catatan: logbook, kendala, atau slot yang belum diisi. */
@@ -21,27 +24,85 @@ function TagJenis({ jenis }: { jenis: 'Logbook' | 'Kendala' | 'Terjadwal' }) {
   )
 }
 
+/** Dua belas bulan terakhir, terbaru di atas. */
+const DAFTAR_BULAN = Array.from({ length: 12 }, (_, i) => {
+  const t = new Date()
+  t.setDate(1)
+  t.setMonth(t.getMonth() - i)
+  return `${BULAN[t.getMonth()]} ${t.getFullYear()}`
+})
+
+type Periode = 'Harian' | 'Bulanan' | 'Custom' | 'All Time'
+
 export function RekapHarian() {
-  const [periode, setPeriode] = useState('Harian')
+  const [periode, setPeriode] = useState<Periode>('Harian')
+  const [tanggal, setTanggal] = useState('2026-09-15')
+  const [bulan, setBulan] = useState(DAFTAR_BULAN[0])
+  const [rentang, setRentang] = useState<Rentang | null>(null)
+
+  // Keterangan periode aktif, dipakai ulang di subjudul kartu.
+  let labelPeriode: string
+  switch (periode) {
+    case 'Harian': {
+      const t = formatTanggal(tanggal)
+      labelPeriode = `${t.hari}, ${t.tanggal}`
+      break
+    }
+    case 'Bulanan':
+      labelPeriode = bulan
+      break
+    case 'Custom':
+      labelPeriode = rentang ? formatRentang(rentang.mulai, rentang.sampai) : 'Rentang tanggal belum dipilih'
+      break
+    default:
+      labelPeriode = 'Seluruh periode'
+  }
 
   return (
     <>
-      <div className="mb-4.5 flex flex-wrap items-center gap-2">
-        <Segmen opsi={['Harian', 'Mingguan', 'Bulanan']} nilai={periode} onPilih={setPeriode} />
-        <input
-          type="date"
-          defaultValue="2026-09-15"
-          className="rounded-[10px] border border-garis-kuat bg-white px-3 py-2.5 text-[13px] focus:border-hijau focus:outline-none"
-        />
-        <PilihRapi defaultValue="Logbook dan kendala">
-          <option>Logbook dan kendala</option>
-          <option>Logbook saja</option>
-          <option>Kendala saja</option>
-        </PilihRapi>
-        <Tombol varian="hantu" kecil className="ml-auto">
-          <Ikon.Unduh size={15} /> Unduh PDF
-        </Tombol>
-      </div>
+      <Kartu className="mb-4.5">
+        <IsiKartu className="p-4">
+          <Segmen
+            lebar
+            opsi={['Harian', 'Bulanan', 'Custom', 'All Time']}
+            nilai={periode}
+            onPilih={(v) => setPeriode(v as Periode)}
+          />
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {periode === 'Harian' && (
+              <input
+                type="date"
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                className="rounded-[10px] border border-garis-kuat bg-white px-3 py-2.5 text-[13px] focus:border-hijau focus:outline-none"
+              />
+            )}
+            {periode === 'Bulanan' && (
+              <PilihRapi value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
+                {DAFTAR_BULAN.map((b) => (
+                  <option key={b}>{b}</option>
+                ))}
+              </PilihRapi>
+            )}
+            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />}
+            {periode === 'All Time' && (
+              <span className="rounded-[10px] border border-garis bg-[#FAFCFB] px-3 py-2.5 text-[13px] text-teks-lembut">
+                Seluruh catatan tanpa batas tanggal
+              </span>
+            )}
+
+            <PilihRapi defaultValue="Logbook dan kendala" className="ml-auto">
+              <option>Logbook dan kendala</option>
+              <option>Logbook saja</option>
+              <option>Kendala saja</option>
+            </PilihRapi>
+            <Tombol varian="hantu" kecil>
+              <Ikon.Unduh size={15} /> Unduh PDF
+            </Tombol>
+          </div>
+        </IsiKartu>
+      </Kartu>
 
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard nama="Catatan hari ini" angka="2" ikon={<Ikon.Buku size={17} />} ket="Target 4 catatan per hari" />
@@ -52,7 +113,7 @@ export function RekapHarian() {
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
         <Kartu>
-          <KopKartu judul={`Rincian ${periode.toLowerCase()}`} sub="Logbook dan kendala digabung berurutan" />
+          <KopKartu judul="Rincian catatan" sub={`Logbook dan kendala digabung berurutan · ${labelPeriode}`} />
           <Tabel kepala={['Jam', 'Jenis', 'Foto', 'Keterangan', 'Status']}>
             <Baris>
               <td className="num">07.02</td>

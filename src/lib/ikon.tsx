@@ -193,6 +193,12 @@ export const Ikon = {
       <path d="M21 20v-5h-5" />
     </Dasar>
   ),
+  Kalender: (p: Props) => (
+    <Dasar {...p}>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </Dasar>
+  ),
   Chevron: (p: Props) => (
     <Dasar {...p}>
       <path d="m9 6 6 6-6 6" />
