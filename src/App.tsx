@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '@/components/AppLayout'
-import { PreviewBar } from '@/components/PreviewBar'
 import { AKAR } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
 import { Login } from '@/pages/Login'
@@ -34,73 +33,68 @@ export default function App() {
   const { peran } = useAuth()
 
   return (
-    <>
-      <Routes>
-        <Route path="/masuk" element={<Login />} />
+    <Routes>
+      <Route path="/masuk" element={<Login />} />
 
-        {/* Admin */}
-        <Route
-          path="/admin"
-          element={
-            <Penjaga izin={['admin']}>
-              <AppLayout peran="admin" />
-            </Penjaga>
-          }
-        >
-          <Route index element={<DashboardAdmin peran="admin" />} />
-          <Route path="data-user" element={<DataUser peran="admin" />} />
-          <Route path="log-aktivitas" element={<LogAktivitas />} />
-          <Route path="rekapitulasi" element={<Rekapitulasi />} />
-          <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
-          <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
-          <Route path="profil" element={<Profil />} />
-          <Route path="sistem-desain" element={<SistemDesain />} />
-        </Route>
+      {/* Admin */}
+      <Route
+        path="/admin"
+        element={
+          <Penjaga izin={['admin']}>
+            <AppLayout peran="admin" />
+          </Penjaga>
+        }
+      >
+        <Route index element={<DashboardAdmin peran="admin" />} />
+        <Route path="data-user" element={<DataUser peran="admin" />} />
+        <Route path="log-aktivitas" element={<LogAktivitas />} />
+        <Route path="rekapitulasi" element={<Rekapitulasi />} />
+        <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
+        <Route path="profil" element={<Profil />} />
+        <Route path="sistem-desain" element={<SistemDesain />} />
+      </Route>
 
-        {/* Super admin: seluruh halaman admin + kendali sistem */}
-        <Route
-          path="/super-admin"
-          element={
-            <Penjaga izin={['superadmin']}>
-              <AppLayout peran="superadmin" />
-            </Penjaga>
-          }
-        >
-          <Route index element={<DashboardAdmin peran="superadmin" />} />
-          <Route path="data-user" element={<DataUser peran="superadmin" />} />
-          <Route path="log-aktivitas" element={<LogAktivitas />} />
-          <Route path="rekapitulasi" element={<Rekapitulasi />} />
-          <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
-          <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
-          <Route path="kelola-akun" element={<KelolaAkun />} />
-          <Route path="hapus-data-foto" element={<HapusDataFoto />} />
-          <Route path="profil" element={<Profil />} />
-          <Route path="sistem-desain" element={<SistemDesain />} />
-        </Route>
+      {/* Super admin: seluruh halaman admin + kendali sistem */}
+      <Route
+        path="/super-admin"
+        element={
+          <Penjaga izin={['superadmin']}>
+            <AppLayout peran="superadmin" />
+          </Penjaga>
+        }
+      >
+        <Route index element={<DashboardAdmin peran="superadmin" />} />
+        <Route path="data-user" element={<DataUser peran="superadmin" />} />
+        <Route path="log-aktivitas" element={<LogAktivitas />} />
+        <Route path="rekapitulasi" element={<Rekapitulasi />} />
+        <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
+        <Route path="kelola-akun" element={<KelolaAkun />} />
+        <Route path="hapus-data-foto" element={<HapusDataFoto />} />
+        <Route path="profil" element={<Profil />} />
+        <Route path="sistem-desain" element={<SistemDesain />} />
+      </Route>
 
-        {/* Petugas */}
-        <Route
-          path="/petugas"
-          element={
-            <Penjaga izin={['user']}>
-              <AppLayout peran="user" />
-            </Penjaga>
-          }
-        >
-          <Route index element={<DashboardUser />} />
-          <Route path="logbook" element={<LogbookUser />} />
-          <Route path="rekap-harian" element={<RekapHarian />} />
-          <Route path="laporan-kendala" element={<LaporanKendalaUser />} />
-          <Route path="lembur" element={<LemburUser />} />
-          <Route path="profil" element={<Profil />} />
-          <Route path="sistem-desain" element={<SistemDesain />} />
-        </Route>
+      {/* Petugas */}
+      <Route
+        path="/petugas"
+        element={
+          <Penjaga izin={['user']}>
+            <AppLayout peran="user" />
+          </Penjaga>
+        }
+      >
+        <Route index element={<DashboardUser />} />
+        <Route path="logbook" element={<LogbookUser />} />
+        <Route path="rekap-harian" element={<RekapHarian />} />
+        <Route path="laporan-kendala" element={<LaporanKendalaUser />} />
+        <Route path="lembur" element={<LemburUser />} />
+        <Route path="profil" element={<Profil />} />
+        <Route path="sistem-desain" element={<SistemDesain />} />
+      </Route>
 
-        <Route path="*" element={<Navigate to={peran ? AKAR[peran] : '/masuk'} replace />} />
-      </Routes>
-
-      {/* Bar pratinjau — hapus baris ini saat aplikasi dipakai sungguhan. */}
-      <PreviewBar />
-    </>
+      <Route path="*" element={<Navigate to={peran ? AKAR[peran] : '/masuk'} replace />} />
+    </Routes>
   )
 }
