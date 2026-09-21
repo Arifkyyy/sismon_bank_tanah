@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply m-0 overflow-x-hidden bg-kertas p-0 text-teks;
+  }
+  body {
+    font-family: '"Plus Jakarta Sans"', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    @apply rounded outline outline-2 outline-offset-2 outline-hijau-terang;
+  }
+  /* Angka pada tabel selalu selebar sama supaya kolomnya lurus ke bawah */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+}
+
+@layer components {
+  /**
+   * Sudut cekung penanda menu aktif.
+   * Tailwind tidak punya "inverted border radius", jadi lengkungannya
+   * digambar pakai radial-gradient: bagian dalam lingkaran dibiarkan
+   * tembus pandang supaya gradasi hijau sidebar tetap terlihat, bagian
+   * luarnya diisi warna latar halaman.
+   */
+  .penanda-menu::before,
+  .penanda-menu::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    width: 18px;
+    height: 18px;
+  }
+  .penanda-menu::before {
+    top: -18px;
+    background: radial-gradient(
+      circle 18px at 0 0,
+      rgba(241, 245, 242, 0) 0 95%,
+      #f1f5f2 100%
+    );
+  }
+  .penanda-menu::after {
+    bottom: -18px;
+    background: radial-gradient(
+      circle 18px at 0 100%,
+      rgba(241, 245, 242, 0) 0 95%,
+      #f1f5f2 100%
+    );
+  }
+
+  /* Tekstur petak lahan & garis kontur untuk area gelap (kop profil, hero) */
+  .tekstur-kontur {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.10' stroke-width='1'%3E%3Cpath d='M-20 120C60 60 140 170 210 120S360 40 440 100'/%3E%3Cpath d='M-20 200C60 140 140 250 210 200S360 120 440 180'/%3E%3Cpath d='M-20 246C60 186 140 296 210 246S360 166 440 226'/%3E%3Cpath d='M-20 300C60 240 140 350 210 300S360 220 440 280'/%3E%3Cpath d='M-20 360C60 300 140 410 210 360S360 280 440 340'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 420px 420px;
+  }
+  .tekstur-petak {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 52px 52px;
+    -webkit-mask-image: radial-gradient(120% 90% at 20% 0%, #000 10%, transparent 72%);
+    mask-image: radial-gradient(120% 90% at 20% 0%, #000 10%, transparent 72%);
+  }
+
+  /* Input tanggal & jam bawaan browser */
+  input[type='date'],
+  input[type='time'] {
+    @apply appearance-none;
+  }
+}
+
+@layer utilities {
+  .scrollbar-tipis::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-tipis::-webkit-scrollbar-thumb {
+    @apply rounded bg-white/20;
+  }
+
+  /* Scrollbar tipis untuk daftar di atas latar terang (mis. daftar draf) */
+  .scrollbar-lembut::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-lembut::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-garis-kuat;
+  }
+  .scrollbar-lembut::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Kartu draf muncul satu per satu, bukan melompat sekaligus */
+  .masuk-halus {
+    animation: masuk-halus 0.34s cubic-bezier(0.34, 1.18, 0.42, 1) both;
+  }
+}
+
+@keyframes masuk-halus {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
