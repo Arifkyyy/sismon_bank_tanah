@@ -68,6 +68,15 @@ export function dariIso(iso: string): Date {
   return new Date(y, (m || 1) - 1, d || 1)
 }
 
+/** '15 Sep 2026' → '2026-09-15' — kebalikan `formatTanggal`, untuk data contoh
+ * yang hanya menyimpan tanggal siap tampil. Bentuk asing dikembalikan kosong. */
+export function isoDariTampilan(tanggal: string): string {
+  const [d, b, y] = tanggal.split(' ')
+  const bulan = BULAN_PENDEK.indexOf(b)
+  if (!d || !y || bulan < 0) return ''
+  return `${y}-${String(bulan + 1).padStart(2, '0')}-${d.padStart(2, '0')}`
+}
+
 /** Jumlah hari pada bulan tertentu; bulan dihitung 0–11. */
 export function jumlahHari(tahun: number, bulan: number): number {
   return new Date(tahun, bulan + 1, 0).getDate()

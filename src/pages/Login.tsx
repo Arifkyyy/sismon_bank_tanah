@@ -63,18 +63,6 @@ export function Login() {
               Logbook harian, laporan kendala, dan lembur petugas Security, Office Boy, dan Customer
               Service dalam satu tempat.
             </p>
-            <div className="mt-7 hidden gap-6 border-t border-white/20 pt-5 lg:flex">
-              {[
-                ['248', 'Petugas aktif'],
-                ['3', 'Jabatan'],
-                ['24/7', 'Pemantauan'],
-              ].map(([angka, ket]) => (
-                <div key={ket} className="text-white">
-                  <b className="num block text-[19px] font-bold">{angka}</b>
-                  <span className="text-[11.5px] text-white/60">{ket}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import {
-  AksiBaris, Baris, KakiTabel, Kartu, KopKartu, Pil, PilihRapi, SelOrang,
+  AksiBaris, Baris, Kartu, KopKartu, Pil, PilihRapi, SelOrang,
   Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { AKAR } from '@/config/menu'
@@ -72,7 +72,6 @@ export function DataUser({ peran }: { peran: Peran }) {
           </Baris>
         ))}
       </Tabel>
-      <KakiTabel dari={1} ke={8} total={48} />
     </Kartu>
   )
 }

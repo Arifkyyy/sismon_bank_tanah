@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { BaganTujuhHari } from '@/components/Bagan'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
