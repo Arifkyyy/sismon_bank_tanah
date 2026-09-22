@@ -30,7 +30,7 @@ export function DashboardUser() {
               Selamat pagi, Bagas.
             </h2>
             <p className="m-0 max-w-[52ch] text-[13.5px] text-white/75">
-              Anda sudah mengisi 2 catatan hari ini. Catatan berikutnya dijadwalkan pukul 11.00.
+              Anda sudah mengisi 2 catatan hari ini. Catatan berikutnya dijadwalkan.
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">
