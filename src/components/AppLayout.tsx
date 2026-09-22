@@ -94,12 +94,13 @@ export function AppLayout({ peran }: Props) {
       <main
         className={cn(
           // pt menyisakan ruang untuk topbar yang dipasang fixed
-          'flex min-h-screen flex-col pt-[69px] transition-[margin] duration-200',
+          'flex min-h-screen flex-col pt-[var(--tinggi-topbar)] transition-[margin] duration-200',
           ciut ? 'lg:ml-[84px]' : 'lg:ml-[270px]',
         )}
       >
-        {/* Topbar dipasang fixed — body memakai overflow-x-hidden sehingga
-            position: sticky tidak menempel saat halaman digulir. */}
+        {/* Topbar dipasang fixed supaya lebarnya bisa mengikuti sidebar yang
+            menciut. Tingginya diumumkan lewat --tinggi-topbar agar elemen
+            sticky lain tahu harus berhenti di bawahnya. */}
         <header
           className={cn(
             'fixed inset-x-0 top-0 z-30 flex items-center gap-2.5 border-b border-garis bg-white px-4 py-3 transition-[left] duration-200 lg:gap-5 lg:px-8',

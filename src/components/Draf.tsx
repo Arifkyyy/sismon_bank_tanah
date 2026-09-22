@@ -101,7 +101,7 @@ export function KartuDataPending({
               </span>
             </div>
 
-            <div className="scrollbar-lembut -mx-1 flex max-h-[560px] flex-col gap-3 overflow-y-auto px-1 py-1">
+            <div className="scrollbar-lembut -mx-1 flex flex-col gap-3 px-1 py-1 lg:max-h-[560px] lg:overflow-y-auto lg:overscroll-contain">
               {daftar.map((d, i) => {
                 const sedangDiedit = editId === d.id
                 const kurang = kekuranganDraf(d)

@@ -168,7 +168,7 @@ export function LemburUser() {
 
       <h3 className="mb-3.5 mt-6.5 text-[15px] font-bold text-ink">Riwayat penugasan</h3>
       {/* Riwayat terus bertambah tiap penugasan, jadi digulir di tempat */}
-      <div className="scrollbar-lembut -mx-1 grid max-h-[460px] grid-cols-1 gap-4.5 overflow-y-auto overscroll-contain px-1 py-1 xl:grid-cols-2">
+      <div className="scrollbar-lembut -mx-1 grid grid-cols-1 gap-4.5 px-1 py-1 lg:max-h-[460px] lg:overflow-y-auto lg:overscroll-contain xl:grid-cols-2">
         {riwayat.map((l) => (
           <KartuLembur key={l.id} lembur={l} />
         ))}

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, CSSProperties, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Ikon } from '@/lib/ikon'
 import { cn, inisial, warnaAvatar, WARNA_FOTO, WARNA_JABATAN, WARNA_STATUS } from '@/lib/util'
 import type { Jabatan, Status } from '@/types'
@@ -188,14 +188,20 @@ export function Tabel({
   children,
 }: {
   kepala: string[]
-  /** batas tinggi area gulir dalam px; kirim 0 untuk tabel tanpa gulir */
+  /** batas tinggi area gulir (px) mulai layar lebar; 0 = tanpa gulir tegak */
   maksTinggi?: number
   children: ReactNode
 }) {
   return (
+    // Gulir menyamping tetap ada di semua ukuran — tabel lebar memang perlu.
+    // Gulir tegak di dalam kartu hanya mulai layar lebar, supaya di ponsel
+    // tabel memanjangkan halaman dan tidak jadi kotak gulir di dalam gulir.
     <div
-      className="scrollbar-lembut overflow-auto overscroll-contain"
-      style={maksTinggi ? { maxHeight: maksTinggi } : undefined}
+      className={cn(
+        'scrollbar-lembut overflow-x-auto overscroll-x-contain',
+        maksTinggi > 0 && 'lg:max-h-[var(--maks-tinggi)] lg:overflow-y-auto lg:overscroll-contain',
+      )}
+      style={maksTinggi ? ({ '--maks-tinggi': `${maksTinggi}px` } as CSSProperties) : undefined}
     >
       <table className="w-full border-separate border-spacing-0">
         <thead>

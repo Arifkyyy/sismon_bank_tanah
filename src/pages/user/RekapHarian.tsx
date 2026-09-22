@@ -106,7 +106,7 @@ export function RekapHarian() {
         <StatCard gaya="pekat" nama="Jam lembur" angka="0" satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Belum ada lembur hari ini" />
       </div>
 
-      <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
+      <div className="mt-4.5 grid grid-cols-1 gap-4.5 ">
         <Kartu>
           <KopKartu judul="Rincian catatan" sub={`Aktivitas dan kendala digabung berurutan · ${labelPeriode}`} />
           <Tabel kepala={['Jam', 'Jenis', 'Foto', 'Keterangan', 'Status']}>
@@ -156,12 +156,7 @@ export function RekapHarian() {
           </Tabel>
         </Kartu>
 
-        <Kartu>
-          <KopKartu judul="Tujuh hari terakhir" sub="Jumlah catatan per hari" />
-          <IsiKartu>
-            <BaganTujuhHari labelCatatan="Aktivitas masuk" />
-          </IsiKartu>
-        </Kartu>
+        
       </div>
     </>
   )

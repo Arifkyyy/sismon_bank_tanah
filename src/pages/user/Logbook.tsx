@@ -1,18 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { LinimasaRiwayat, type PosRiwayat } from '@/components/Riwayat'
 import {
-  AreaTeks, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Pilihan, Tombol,
+  AreaTeks, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Pilihan, Segmen, Tombol,
 } from '@/components/ui'
 import { LOGBOOK, PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
 import { formatJam, formatTanggal } from '@/lib/tanggal'
+import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
 import type { Jabatan } from '@/types'
 
 const FORM_KOSONG = {
+  jabatan: 'Security' as Jabatan,
   nama: '',
-  jabatan: '' as Jabatan | '',
   tanggal: '2026-09-15',
   jam: '',
   keterangan: '',
@@ -44,9 +45,21 @@ export function LogbookUser() {
       ),
   }))
 
-  function pilihNama(nama: string) {
-    const jabatan = PETUGAS.find((p) => p.nama === nama)?.jabatan ?? ''
-    setForm((f) => ({ ...f, nama, jabatan }))
+  /**
+   * Nama yang muncul hanya dari jabatan yang sedang dipilih — daftarnya jadi
+   * pendek dan petugas tidak perlu mencari namanya di antara semua jabatan.
+   * Petugas nonaktif disembunyikan, kecuali ia memang nama pada draf yang
+   * sedang dikoreksi, supaya pilihan tidak berubah diam-diam saat draf dibuka.
+   */
+  const kandidat = useMemo(() => {
+    const cocok = PETUGAS.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
+    const terpilih = PETUGAS.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
+    return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
+  }, [form.jabatan, form.nama])
+
+  /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
+  function gantiJabatan(label: string) {
+    setForm((f) => ({ ...f, jabatan: jabatanDariLabel(label), nama: '' }))
   }
 
   function tambahFoto(foto: string) {
@@ -71,8 +84,8 @@ export function LogbookUser() {
   function editDraf(p: Draf) {
     setEditId(p.id)
     setForm({
+      jabatan: p.jabatan || 'Security',
       nama: p.nama,
-      jabatan: p.jabatan,
       tanggal: p.tanggal,
       jam: p.jam,
       keterangan: p.keterangan,
@@ -127,22 +140,34 @@ export function LogbookUser() {
           />
           <IsiKartu>
             <div className="flex flex-col gap-4">
-              <Kolom label="Nama" wajib>
-                <Pilihan value={form.nama} onChange={(e) => pilihNama(e.target.value)}>
-                  <option value="">Pilih Nama</option>
-                  {PETUGAS.map((p) => (
+              <Kolom label="Jabatan" wajib>
+                <Segmen
+                  lebar
+                  opsi={DAFTAR_JABATAN.map((j) => JABATAN_PANJANG[j])}
+                  nilai={JABATAN_PANJANG[form.jabatan]}
+                  onPilih={gantiJabatan}
+                />
+              </Kolom>
+              <Kolom
+                label="Nama petugas"
+                wajib
+                bantu={`Hanya petugas berjabatan ${JABATAN_PANJANG[form.jabatan]} yang muncul di daftar ini.`}
+              >
+                <Pilihan
+                  value={form.nama}
+                  onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))}
+                >
+                  <option value="">Pilih nama petugas</option>
+                  {kandidat.map((p) => (
                     <option key={p.nama} value={p.nama}>
                       {p.nama}
                     </option>
                   ))}
-                </Pilihan>
-              </Kolom>
-              <Kolom label="Jabatan" wajib>
-                <Pilihan value={form.jabatan} disabled>
-                  <option value=""></option>
-                  <option value="Security">Security</option>
-                  <option value="OB">OB</option>
-                  <option value="CS">CS</option>
+                  {kandidat.length === 0 && (
+                    <option disabled value="">
+                      Tidak ada petugas {JABATAN_PANJANG[form.jabatan]} yang aktif
+                    </option>
+                  )}
                 </Pilihan>
               </Kolom>
               <Kolom label="Tanggal" wajib>

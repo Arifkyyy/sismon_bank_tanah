@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { TumpukanFoto } from '@/components/Foto'
 import { FotoKecil, Pil } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
@@ -49,9 +49,10 @@ function kelompokkan(pos: PosRiwayat[]): [string, PosRiwayat[]][] {
  * sehingga urutan kejadian langsung terbaca, dan tiap baris muat dibaca
  * di layar ponsel tanpa geser ke samping.
  *
- * Isinya digulir di dalam kartu begitu melewati `maksTinggi`, supaya riwayat
- * yang sudah menumpuk ratusan catatan tidak memanjangkan halaman. Kepala
- * tanggal menempel di atas area gulir itu, bukan di bawah topbar halaman.
+ * Mulai layar lebar isinya digulir di dalam kartu begitu melewati
+ * `maksTinggi`, supaya riwayat yang menumpuk tidak memanjangkan halaman.
+ * Di ponsel gulir dalam kartu itu dimatikan: jari jadi hanya menggulir satu
+ * bidang — halamannya — dan kepala tanggal menempel di bawah topbar.
  */
 export function LinimasaRiwayat({
   pos,
@@ -60,7 +61,7 @@ export function LinimasaRiwayat({
 }: {
   pos: PosRiwayat[]
   kosong?: string
-  /** batas tinggi area gulir dalam px; kirim 0 untuk linimasa tanpa gulir */
+  /** batas tinggi area gulir (px) mulai layar lebar; 0 = tanpa gulir dalam */
   maksTinggi?: number
 }) {
   if (pos.length === 0) {
@@ -73,13 +74,18 @@ export function LinimasaRiwayat({
 
   return (
     <div
-      className="scrollbar-lembut overflow-y-auto overscroll-contain px-5 pb-5"
-      style={maksTinggi ? { maxHeight: maksTinggi } : undefined}
+      className={cn(
+        'px-5 pb-5',
+        maksTinggi > 0 &&
+          'scrollbar-lembut lg:max-h-[var(--maks-tinggi)] lg:overflow-y-auto lg:overscroll-contain',
+      )}
+      style={maksTinggi ? ({ '--maks-tinggi': `${maksTinggi}px` } as CSSProperties) : undefined}
     >
       {kelompokkan(pos).map(([tanggal, item]) => (
         <section key={tanggal}>
-          {/* Menempel di tepi atas area gulir linimasa, bukan di bawah topbar */}
-          <div className="sticky top-0 z-[5] -mx-5 flex items-center gap-2.5 bg-white/92 px-5 py-2.5 backdrop-blur">
+          {/* Di ponsel menempel di bawah topbar, di layar lebar di tepi atas
+              area gulir linimasa. */}
+          <div className="sticky top-[var(--tinggi-topbar)] z-[5] -mx-5 flex items-center gap-2.5 bg-white/92 px-5 py-2.5 backdrop-blur lg:top-0">
             <span className="num rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-bold text-white">
               {tanggal}
             </span>

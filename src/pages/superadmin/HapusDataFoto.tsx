@@ -87,7 +87,7 @@ export function HapusDataFoto() {
 
           {/* Arsip foto bisa puluhan ribu berkas, jadi petaknya digulir di dalam
               kartu supaya tombol hapus massal tetap terlihat tanpa menggulir halaman */}
-          <div className="scrollbar-lembut -mx-1 grid max-h-[440px] grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3.5 overflow-y-auto overscroll-contain px-1 py-1">
+          <div className="scrollbar-lembut -mx-1 grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3.5 px-1 py-1 lg:max-h-[440px] lg:overflow-y-auto lg:overscroll-contain">
             {ARSIP_FOTO.map((f, i) => {
               const aktif = dipilih.has(i)
               return (

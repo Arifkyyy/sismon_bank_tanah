@@ -3,9 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Tinggi topbar yang dipasang fixed — dipakai sebagai jarak atas untuk
+       kepala tabel & tanggal yang menempel saat halaman digulir. */
+    --tinggi-topbar: 69px;
+  }
   html,
   body {
-    @apply m-0 overflow-x-hidden bg-kertas p-0 text-teks;
+    @apply m-0 bg-kertas p-0 text-teks;
+  }
+  /**
+   * `clip`, bukan `hidden`: keduanya sama-sama memotong luberan ke samping,
+   * tapi `hidden` menjadikan halaman scroll container sendiri sehingga semua
+   * `position: sticky` di dalamnya tidak pernah menempel ke layar. Hanya
+   * dipasang di <html> supaya <body> tetap tanpa overflow.
+   */
+  html {
+    overflow-x: clip;
   }
   body {
     font-family: '"Plus Jakarta Sans"', system-ui, sans-serif;

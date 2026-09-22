@@ -3,7 +3,7 @@ import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
-  Baris, IsiKartu, KakiTabel, Kartu, KopKartu, Pil, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
+  Baris, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
 } from '@/components/ui'
 import { REKAP } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
