@@ -3,7 +3,7 @@ import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { LinimasaRiwayat, type PosRiwayat } from '@/components/Riwayat'
 import {
-  AreaTeks, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Tombol,
+  AreaTeks, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Pilihan, Tombol,
 } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { KENDALA, PETUGAS } from '@/data/mock'
@@ -12,6 +12,8 @@ import { formatJam, formatTanggal } from '@/lib/tanggal'
 import type { Jabatan, Kendala } from '@/types'
 
 const FORM_KOSONG = {
+  nama: '',
+  jabatan: '' as Jabatan | '',
   tanggal: '2026-09-15',
   jam: '',
   keterangan: '',
@@ -20,8 +22,9 @@ const FORM_KOSONG = {
 
 export function LaporanKendalaUser() {
   const { akun } = useAuth()
-  const nama = akun?.nama ?? 'Petugas'
-  const jabatan: Jabatan = PETUGAS.find((p) => p.nama === nama)?.jabatan ?? 'Security'
+  // Dipakai sebagai cadangan kalau draf dikirim tanpa nama terpilih.
+  const namaAkun = akun?.nama ?? 'Petugas'
+  const jabatanAkun: Jabatan = PETUGAS.find((p) => p.nama === namaAkun)?.jabatan ?? 'Security'
 
   const [form, setForm] = useState(FORM_KOSONG)
   const [kameraTerbuka, setKameraTerbuka] = useState(false)
@@ -40,6 +43,12 @@ export function LaporanKendalaUser() {
     fotoVarian: k.foto,
   }))
 
+  /** Jabatan mengikuti nama yang dipilih — sama seperti di halaman Aktivitas. */
+  function pilihNama(nama: string) {
+    const jabatan = PETUGAS.find((p) => p.nama === nama)?.jabatan ?? ''
+    setForm((f) => ({ ...f, nama, jabatan }))
+  }
+
   function tambahFoto(foto: string) {
     setForm((f) => ({ ...f, foto: [...f.foto, foto].slice(0, MAKS_FOTO) }))
   }
@@ -52,7 +61,7 @@ export function LaporanKendalaUser() {
     if (editId) {
       setPending((list) => list.map((p) => (p.id === editId ? { ...p, ...form } : p)))
     } else {
-      setPending((list) => [...list, { id: crypto.randomUUID(), nama, jabatan, ...form }])
+      setPending((list) => [...list, { id: crypto.randomUUID(), ...form }])
     }
     setEditId(null)
     setForm(FORM_KOSONG)
@@ -61,7 +70,14 @@ export function LaporanKendalaUser() {
 
   function editDraf(p: Draf) {
     setEditId(p.id)
-    setForm({ tanggal: p.tanggal, jam: p.jam, keterangan: p.keterangan, foto: p.foto })
+    setForm({
+      nama: p.nama,
+      jabatan: p.jabatan,
+      tanggal: p.tanggal,
+      jam: p.jam,
+      keterangan: p.keterangan,
+      foto: p.foto,
+    })
     setKameraTerbuka(false)
   }
 
@@ -79,8 +95,8 @@ export function LaporanKendalaUser() {
     const { tanggal, hari } = formatTanggal(p.tanggal)
     setTerkirim((list) => [
       {
-        nama: p.nama || nama,
-        jabatan: (p.jabatan || jabatan) as Jabatan,
+        nama: p.nama || namaAkun,
+        jabatan: (p.jabatan || jabatanAkun) as Jabatan,
         tanggal,
         hari,
         jam: formatJam(p.jam),
@@ -113,8 +129,23 @@ export function LaporanKendalaUser() {
           />
           <IsiKartu>
             <GridForm>
-              <Kolom label="Jabatan">
-                <Input readOnly value={jabatan} />
+              <Kolom label="Nama" wajib>
+                <Pilihan value={form.nama} onChange={(e) => pilihNama(e.target.value)}>
+                  <option value="">Pilih Nama</option>
+                  {PETUGAS.map((p) => (
+                    <option key={p.nama} value={p.nama}>
+                      {p.nama}
+                    </option>
+                  ))}
+                </Pilihan>
+              </Kolom>
+              <Kolom label="Jabatan" wajib>
+                <Pilihan value={form.jabatan} disabled>
+                  <option value=""></option>
+                  <option value="Security">Security</option>
+                  <option value="OB">OB</option>
+                  <option value="CS">CS</option>
+                </Pilihan>
               </Kolom>
               <Kolom label="Hari">
                 <Input readOnly value={hari} />
@@ -155,7 +186,6 @@ export function LaporanKendalaUser() {
                 <FotoBukti
                   foto={form.foto}
                   kameraTerbuka={kameraTerbuka}
-                  capWaktu={`${formatTanggal(form.tanggal).tanggal} · ${formatJam(form.jam)}`}
                   maks={MAKS_FOTO}
                   pesan="Ambil foto kendala"
                   sub="Pastikan objek terlihat jelas"

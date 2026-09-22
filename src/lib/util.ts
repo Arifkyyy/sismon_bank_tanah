@@ -40,6 +40,24 @@ export const WARNA_STATUS: Record<Status, string> = {
   Nonaktif: 'bg-[#EEF2F0] text-teks-lembut',
 }
 
+/** Urutan jabatan yang dipakai di semua pilihan dan penyaring. */
+export const DAFTAR_JABATAN: Jabatan[] = ['Security', 'OB', 'CS']
+
+/**
+ * Nama panjang jabatan untuk label yang perlu jelas (mis. pilihan jabatan saat
+ * membuat penugasan). Data tetap disimpan sebagai kode pendek `Jabatan`.
+ */
+export const JABATAN_PANJANG: Record<Jabatan, string> = {
+  Security: 'Security',
+  OB: 'Office Boy',
+  CS: 'Customer Service',
+}
+
+/** 'Office Boy' → 'OB'; label yang tidak dikenali dianggap Security. */
+export function jabatanDariLabel(label: string): Jabatan {
+  return DAFTAR_JABATAN.find((j) => JABATAN_PANJANG[j] === label) ?? 'Security'
+}
+
 export const WARNA_JABATAN: Record<Jabatan, string> = {
   Security: 'border-[#BCD4E4] bg-[#EDF5FA] text-[#1C5A7C]',
   OB: 'border-[#CFE3D6] bg-[#EDF6F0] text-hijau-tua',

@@ -4,16 +4,17 @@ import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
-  Baris, FotoKecil, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, Segmen, Tabel, Tombol,
+  Baris, FotoKecil, InputRapi, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, Segmen, Tabel, Tombol,
 } from '@/components/ui'
+import { ISO_HARI_INI } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
-import { BULAN, formatRentang, formatTanggal } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 
-/** Penanda jenis catatan: logbook, kendala, atau slot yang belum diisi. */
-function TagJenis({ jenis }: { jenis: 'Logbook' | 'Kendala' | 'Terjadwal' }) {
+/** Penanda jenis catatan: aktivitas, kendala, atau slot yang belum diisi. */
+function TagJenis({ jenis }: { jenis: 'Aktivitas' | 'Kendala' | 'Terjadwal' }) {
   const warna = {
-    Logbook: 'border-[#CFE3D6] bg-[#EDF6F0] text-hijau-tua',
+    Aktivitas: 'border-[#CFE3D6] bg-[#EDF6F0] text-hijau-tua',
     Kendala: 'border-[#F0DCAE] bg-[#FDF6E4] text-tanah-teks',
     Terjadwal: 'border-garis-kuat bg-white text-teks-samar',
   }[jenis]
@@ -24,19 +25,13 @@ function TagJenis({ jenis }: { jenis: 'Logbook' | 'Kendala' | 'Terjadwal' }) {
   )
 }
 
-/** Dua belas bulan terakhir, terbaru di atas. */
-const DAFTAR_BULAN = Array.from({ length: 12 }, (_, i) => {
-  const t = new Date()
-  t.setDate(1)
-  t.setMonth(t.getMonth() - i)
-  return `${BULAN[t.getMonth()]} ${t.getFullYear()}`
-})
+const DAFTAR_BULAN = daftarBulan().map((b) => b.label)
 
 type Periode = 'Harian' | 'Bulanan' | 'Custom' | 'All Time'
 
 export function RekapHarian() {
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState('2026-09-15')
+  const [tanggal, setTanggal] = useState(ISO_HARI_INI)
   const [bulan, setBulan] = useState(DAFTAR_BULAN[0])
   const [rentang, setRentang] = useState<Rentang | null>(null)
 
@@ -71,11 +66,11 @@ export function RekapHarian() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {periode === 'Harian' && (
-              <input
+              <InputRapi
                 type="date"
+                aria-label="Tanggal rekap"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="rounded-[10px] border border-garis-kuat bg-white px-3 py-2.5 text-[13px] focus:border-hijau focus:outline-none"
               />
             )}
             {periode === 'Bulanan' && (
@@ -92,9 +87,9 @@ export function RekapHarian() {
               </span>
             )}
 
-            <PilihRapi defaultValue="Logbook dan kendala" className="ml-auto">
-              <option>Logbook dan kendala</option>
-              <option>Logbook saja</option>
+            <PilihRapi defaultValue="Aktivitas dan kendala" className="ml-auto">
+              <option>Aktivitas dan kendala</option>
+              <option>Aktivitas saja</option>
               <option>Kendala saja</option>
             </PilihRapi>
             <Tombol varian="hantu" kecil>
@@ -105,20 +100,20 @@ export function RekapHarian() {
       </Kartu>
 
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Catatan hari ini" angka="2" ikon={<Ikon.Buku size={17} />} ket="Target 4 catatan per hari" />
-        <StatCard nama="Kendala dilaporkan" angka="1" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Sedang diproses admin" />
-        <StatCard nama="Jam kerja tercatat" angka="8" satuan="jam" nada="ink" ikon={<Ikon.Jam size={17} />} ket="Shift pagi 07.00–15.00" />
-        <StatCard nama="Jam lembur" angka="0" satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Belum ada lembur hari ini" />
+        <StatCard gaya="pekat" nama="Catatan hari ini" angka="2" ikon={<Ikon.Buku size={17} />} ket="Target 4 catatan per hari" />
+        <StatCard gaya="pekat" nama="Kendala dilaporkan" angka="1" ikon={<Ikon.Awas size={17} />} ket="Sedang diproses admin" />
+        <StatCard gaya="pekat" nama="Jam kerja tercatat" angka="8" satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Shift pagi 07.00–15.00" />
+        <StatCard gaya="pekat" nama="Jam lembur" angka="0" satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Belum ada lembur hari ini" />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
         <Kartu>
-          <KopKartu judul="Rincian catatan" sub={`Logbook dan kendala digabung berurutan · ${labelPeriode}`} />
+          <KopKartu judul="Rincian catatan" sub={`Aktivitas dan kendala digabung berurutan · ${labelPeriode}`} />
           <Tabel kepala={['Jam', 'Jenis', 'Foto', 'Keterangan', 'Status']}>
             <Baris>
               <td className="num">07.02</td>
               <td>
-                <TagJenis jenis="Logbook" />
+                <TagJenis jenis="Aktivitas" />
               </td>
               <td>
                 <FotoKecil varian="a" />
@@ -164,7 +159,7 @@ export function RekapHarian() {
         <Kartu>
           <KopKartu judul="Tujuh hari terakhir" sub="Jumlah catatan per hari" />
           <IsiKartu>
-            <BaganTujuhHari />
+            <BaganTujuhHari labelCatatan="Aktivitas masuk" />
           </IsiKartu>
         </Kartu>
       </div>

@@ -40,7 +40,7 @@ export function DataUser({ peran }: { peran: Peran }) {
           </>
         }
       />
-      <Tabel kepala={['Nama', 'Jabatan', 'Email', 'Nomor telepon', 'Status', 'Aksi']}>
+      <Tabel kepala={['Nama', 'Jabatan', 'Email', 'Nomor telepon', 'Status', 'Aksi']} maksTinggi={560}>
         {PETUGAS.map((p) => (
           <Baris key={p.email}>
             <td>

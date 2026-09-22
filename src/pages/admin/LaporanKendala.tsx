@@ -33,7 +33,7 @@ export function LaporanKendalaAdmin() {
             </>
           }
         />
-        <Tabel kepala={['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Status', 'Aksi']}>
+        <Tabel kepala={['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Status', 'Aksi']} maksTinggi={560}>
           {KENDALA.map((k) => (
             <Baris key={k.nama + k.jam}>
               <td>

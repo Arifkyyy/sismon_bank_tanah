@@ -164,7 +164,6 @@ export function LogbookUser() {
                 <FotoBukti
                   foto={form.foto}
                   kameraTerbuka={kameraTerbuka}
-                  capWaktu={`${formatTanggal(form.tanggal).tanggal} · ${formatJam(form.jam)}`}
                   onBuka={() => setKameraTerbuka(true)}
                   onTutup={() => setKameraTerbuka(false)}
                   onAmbil={tambahFoto}

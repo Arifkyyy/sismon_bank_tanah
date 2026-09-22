@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
@@ -7,7 +7,9 @@ import {
 } from '@/components/ui'
 import { REKAP } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
-import { BULAN, formatRentang } from '@/lib/tanggal'
+import { daftarBulan, formatRentang } from '@/lib/tanggal'
+import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
+import type { Jabatan } from '@/types'
 
 /** Kepatuhan di bawah 70% ditandai merah, 70–95% emas, sisanya hijau. */
 function statusPatuh(patuh: string) {
@@ -17,13 +19,7 @@ function statusPatuh(patuh: string) {
   return 'Ditolak' as const
 }
 
-/** Dua belas bulan terakhir, terbaru di atas. */
-const DAFTAR_BULAN = Array.from({ length: 12 }, (_, i) => {
-  const t = new Date()
-  t.setDate(1)
-  t.setMonth(t.getMonth() - i)
-  return `${BULAN[t.getMonth()]} ${t.getFullYear()}`
-})
+const DAFTAR_BULAN = daftarBulan().map((b) => b.label)
 
 type Periode = 'Bulanan' | 'Custom' | 'All Time'
 
@@ -31,6 +27,13 @@ export function Rekapitulasi() {
   const [periode, setPeriode] = useState<Periode>('Bulanan')
   const [bulan, setBulan] = useState(DAFTAR_BULAN[0])
   const [rentang, setRentang] = useState<Rentang | null>(null)
+  const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
+
+  // Rekap dipersempit per jabatan supaya admin bisa memeriksa satu regu saja.
+  const terlihat = useMemo(
+    () => (jabatan === 'Semua' ? REKAP : REKAP.filter((r) => r.jabatan === jabatan)),
+    [jabatan],
+  )
 
   // Dipakai sebagai keterangan periode di kartu dan kartu statistik.
   const labelPeriode =
@@ -68,11 +71,18 @@ export function Rekapitulasi() {
               </span>
             )}
 
-            <PilihRapi defaultValue="Semua jabatan" className="ml-auto">
-              <option>Semua jabatan</option>
-              <option>Security</option>
-              <option>OB</option>
-              <option>CS</option>
+            <PilihRapi
+              aria-label="Jabatan petugas"
+              value={jabatan}
+              onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+              className="ml-auto"
+            >
+              <option value="Semua">Semua jabatan</option>
+              {DAFTAR_JABATAN.map((j) => (
+                <option key={j} value={j}>
+                  {JABATAN_PANJANG[j]}
+                </option>
+              ))}
             </PilihRapi>
             <Tombol varian="hantu" kecil>
               <Ikon.Unduh size={15} /> Unduh rekap
@@ -89,27 +99,51 @@ export function Rekapitulasi() {
       </div>
 
       <Kartu className="mt-4.5">
-        <KopKartu judul="Rekap per petugas" sub={`Gabungan logbook dan lembur · ${labelPeriode}`} />
-        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan']}>
-          {REKAP.map((r) => (
-            <Baris key={r.nama}>
-              <td>
-                <SelOrang nama={r.nama} jabatan={r.jabatan} />
+        <KopKartu
+          judul="Rekap per petugas"
+          sub={`Gabungan logbook dan lembur · ${labelPeriode}${jabatan === 'Semua' ? '' : ` · ${JABATAN_PANJANG[jabatan]}`}`}
+          aksi={
+            <span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">
+              {terlihat.length} petugas
+            </span>
+          }
+        />
+        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan']} maksTinggi={560}>
+          {terlihat.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="px-5 py-12 text-center">
+                <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
+                  <Ikon.Orang size={19} />
+                </span>
+                <b className="block text-[13.5px] font-semibold text-ink">
+                  Tidak ada petugas pada saringan ini
+                </b>
+                <span className="mt-0.5 block text-[12px] text-teks-lembut">
+                  Pilih jabatan lain atau kembali ke Semua jabatan.
+                </span>
               </td>
-              <td>
-                <TagJabatan jabatan={r.jabatan} />
-              </td>
-              <td className="num whitespace-nowrap">{r.hari} hari</td>
-              <td className="num">{r.logbook}</td>
-              <td className="num">{r.kendala}</td>
-              <td className="num whitespace-nowrap">{r.lembur}</td>
-              <td>
-                <Pil status={statusPatuh(r.patuh)}>{r.patuh}</Pil>
-              </td>
-            </Baris>
-          ))}
+            </tr>
+          ) : (
+            terlihat.map((r) => (
+              <Baris key={r.nama}>
+                <td>
+                  <SelOrang nama={r.nama} jabatan={r.jabatan} />
+                </td>
+                <td>
+                  <TagJabatan jabatan={r.jabatan} />
+                </td>
+                <td className="num whitespace-nowrap">{r.hari} hari</td>
+                <td className="num">{r.logbook}</td>
+                <td className="num">{r.kendala}</td>
+                <td className="num whitespace-nowrap">{r.lembur}</td>
+                <td>
+                  <Pil status={statusPatuh(r.patuh)}>{r.patuh}</Pil>
+                </td>
+              </Baris>
+            ))
+          )}
         </Tabel>
-        <KakiTabel dari={1} ke={7} total={48} />
+       
       </Kartu>
     </>
   )

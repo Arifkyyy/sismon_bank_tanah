@@ -87,7 +87,7 @@ export function Profil() {
           <Kartu>
             <KopKartu judul="Ringkasan bulan ini" sub="1–15 September 2026" />
             <IsiKartu>
-              <BarisData label={petugas ? 'Catatan logbook' : 'Logbook ditinjau'}>
+              <BarisData label={petugas ? 'Catatan aktivitas' : 'Logbook ditinjau'}>
                 <span className="num">{petugas ? '45' : '1.204'}</span>
               </BarisData>
               <BarisData label={petugas ? 'Kendala dilaporkan' : 'Kendala ditangani'}>

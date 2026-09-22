@@ -26,6 +26,7 @@ export function Tombol({ varian = 'utama', kecil, lebar, className, ...rest }: P
       type="button"
       className={cn(
         'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-semibold transition',
+        'disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:brightness-100',
         kecil ? 'px-3 py-[7px] text-[12.5px]' : 'px-5 py-3 text-sm',
         lebar && 'w-full',
         GAYA_TOMBOL[varian],
@@ -171,16 +172,38 @@ export function FotoKecil({ varian = 'a' }: { varian?: 'a' | 'b' | 'c' }) {
 
 /* ----------------------------------------------------------------- Tabel */
 
-export function Tabel({ kepala, children }: { kepala: string[]; children: ReactNode }) {
+/**
+ * Tabel dengan area gulirnya sendiri. Begitu isinya melewati `maksTinggi`,
+ * badan tabel digulir di dalam kartu dan baris kepala tetap menempel di atas —
+ * daftar panjang (logbook, kendala, rekapitulasi) jadi tidak memanjangkan
+ * halaman. Tabel pendek tidak terpengaruh karena ini batas maksimum, bukan
+ * tinggi tetap.
+ *
+ * `border-separate` dipakai supaya garis pada kepala tabel ikut menempel saat
+ * digulir; dengan `border-collapse` garis itu hilang di kebanyakan browser.
+ */
+export function Tabel({
+  kepala,
+  maksTinggi = 420,
+  children,
+}: {
+  kepala: string[]
+  /** batas tinggi area gulir dalam px; kirim 0 untuk tabel tanpa gulir */
+  maksTinggi?: number
+  children: ReactNode
+}) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
+    <div
+      className="scrollbar-lembut overflow-auto overscroll-contain"
+      style={maksTinggi ? { maxHeight: maksTinggi } : undefined}
+    >
+      <table className="w-full border-separate border-spacing-0">
         <thead>
           <tr>
             {kepala.map((k) => (
               <th
                 key={k}
-                className="whitespace-nowrap border-b border-garis bg-[#FAFCFB] px-4 py-3 text-left text-[11.5px] font-semibold text-teks-samar"
+                className="sticky top-0 z-[2] whitespace-nowrap border-b border-garis bg-[#FAFCFB] px-4 py-3 text-left text-[11.5px] font-semibold text-teks-samar"
               >
                 {k}
               </th>
@@ -332,6 +355,19 @@ export function Segmen({
         </button>
       ))}
     </div>
+  )
+}
+
+/** Pasangan ringkas `Input` untuk baris penyaring — setinggi `PilihRapi`. */
+export function InputRapi({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        'rounded-[10px] border border-garis-kuat bg-white px-3 py-2.5 text-[13px] transition focus:border-hijau focus:outline-none',
+        className,
+      )}
+      {...rest}
+    />
   )
 }
 

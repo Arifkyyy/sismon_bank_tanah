@@ -65,14 +65,42 @@ export interface Kendala {
 }
 
 export interface Lembur {
+  /** penanda tetap satu penugasan — dipakai saat petugas menjawab */
+  id: string
   nama: string
   jabatan: Jabatan
+  /** untuk ditampilkan, mis. '16 Sep 2026' */
   tanggal: string
+  /** tanggal yang sama dalam ISO '2026-09-16' — dipakai penyaring periode */
+  tanggalIso: string
   /** contoh: '18.00 – 22.00' */
   rentang: string
   total: string
   keterangan: string
   status: Status
+  /** wajib diisi petugas saat menolak; ikut terlihat oleh admin */
+  alasan?: string
+  /** kapan petugas menjawab, mis. '15 Sep 2026 · 10.24' */
+  dijawabPada?: string
+}
+
+/**
+ * Penugasan lembur yang sudah disusun admin tapi belum dikirim ke petugas.
+ * Tanggal dan jam masih dalam format input ('2026-09-16', '18:00') supaya
+ * bisa dibuka lagi di formulir saat admin mengoreksi.
+ */
+export interface DrafLembur {
+  id: string
+  /** boleh kosong selama masih draf */
+  nama: string
+  jabatan: Jabatan
+  /** ISO, mis. '2026-09-16' */
+  tanggal: string
+  /** 'HH:MM' */
+  mulai: string
+  /** 'HH:MM' */
+  selesai: string
+  keterangan: string
 }
 
 export interface ItemMenu {

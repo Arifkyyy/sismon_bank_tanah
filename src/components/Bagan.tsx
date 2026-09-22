@@ -1,7 +1,7 @@
 import { TUJUH_HARI } from '@/data/mock'
 
-/** Batang bertumpuk: hijau = jumlah logbook, emas = jam lembur. */
-export function BaganTujuhHari() {
+/** Batang bertumpuk: hijau = jumlah catatan, emas = jam lembur. */
+export function BaganTujuhHari({ labelCatatan = 'Logbook masuk' }: { labelCatatan?: string }) {
   // Dua skala terpisah: kalau dipaksa satu skala, batang lembur jadi
   // terlalu tipis untuk dibaca karena angkanya jauh lebih kecil.
   const maksLog = Math.max(...TUJUH_HARI.map((d) => d.logbook))
@@ -16,7 +16,7 @@ export function BaganTujuhHari() {
               <div
                 className="rounded-t-md bg-gradient-to-b from-hijau-terang to-hijau"
                 style={{ height: `${(d.logbook / maksLog) * 62}%` }}
-                title={`${d.logbook} logbook`}
+                title={`${d.logbook} ${labelCatatan.toLowerCase()}`}
               />
               <div
                 className="rounded-b-md bg-emas"
@@ -31,7 +31,7 @@ export function BaganTujuhHari() {
       <div className="mt-3.5 flex gap-4 border-t border-garis pt-3 text-[11.5px] text-teks-lembut">
         <span className="flex items-center gap-1.5">
           <i className="h-2.5 w-2.5 rounded bg-hijau" />
-          Logbook masuk
+          {labelCatatan}
         </span>
         <span className="flex items-center gap-1.5">
           <i className="h-2.5 w-2.5 rounded bg-emas" />

@@ -4,11 +4,16 @@ import { StatCard } from '@/components/StatCard'
 import { IsiKartu, Kartu, KopKartu, Tombol } from '@/components/ui'
 import { KartuLembur } from '@/pages/user/Lembur'
 import { AKAR } from '@/config/menu'
-import { HARI_INI, LEMBUR } from '@/data/mock'
+import { useLembur } from '@/context/LemburContext'
+import { HARI_INI } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
 
 export function DashboardUser() {
   const akar = AKAR.user
+  const { menunggu, riwayat } = useLembur()
+  // Penugasan yang paling perlu dilihat: yang belum dijawab, kalau tidak ada
+  // tampilkan jawaban terakhir.
+  const lembur = menunggu[0] ?? riwayat[0]
 
   return (
     <>
@@ -31,7 +36,7 @@ export function DashboardUser() {
           <div className="flex flex-wrap gap-2.5">
             <Link to={`${akar}/logbook`}>
               <Tombol>
-                <Ikon.Kamera size={16} /> Isi logbook
+                <Ikon.Kamera size={16} /> Isi aktivitas
               </Tombol>
             </Link>
             <Link to={`${akar}/laporan-kendala`}>
@@ -44,10 +49,10 @@ export function DashboardUser() {
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Catatan hari ini" angka="2" satuan="/ 4" ikon={<Ikon.Buku size={17} />} ket="Dua catatan lagi sebelum pukul 15.00" />
-        <StatCard nama="Hari tercatat bulan ini" angka="15" satuan="hari" ikon={<Ikon.Centang size={17} />} ket="Kepatuhan 100%" />
-        <StatCard nama="Jam lembur bulan ini" angka="12" satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Dari 3 penugasan" />
-        <StatCard nama="Kendala saya" angka="2" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="1 masih diproses" />
+        <StatCard gaya="pekat" nama="Catatan hari ini" angka="2" satuan="/ 4" ikon={<Ikon.Buku size={17} />} ket="Dua catatan lagi sebelum pukul 15.00" />
+        <StatCard gaya="pekat" nama="Hari tercatat bulan ini" angka="15" satuan="hari" ikon={<Ikon.Centang size={17} />} ket="Kepatuhan 100%" />
+        <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka="12" satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Dari 3 penugasan" />
+        <StatCard gaya="pekat" nama="Kendala saya" angka="2" ikon={<Ikon.Awas size={17} />} ket="1 masih diproses" />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1fr_1.62fr]">
@@ -66,7 +71,7 @@ export function DashboardUser() {
           <IsiKartu>
             <Linimasa
               pos={[
-                { jam: '07.02 · Logbook', judul: 'Serah terima shift pagi', isi: 'Kondisi area aman, seluruh akses berfungsi normal.' },
+                { jam: '07.02 · Aktivitas', judul: 'Serah terima shift pagi', isi: 'Kondisi area aman, seluruh akses berfungsi normal.' },
                 { jam: '09.40 · Kendala', judul: 'Palang parkir sisi timur macet', isi: 'Sudah diteruskan ke admin, status sedang diproses.', nada: 'tanah' },
                 { jam: '11.00 · Terjadwal', judul: 'Catatan patroli siang', isi: 'Belum diisi. Foto wajib diambil langsung dari kamera.', nada: 'emas' },
               ]}
@@ -80,11 +85,11 @@ export function DashboardUser() {
         </Kartu>
 
         <div className="grid content-start gap-4.5">
-          <KartuLembur lembur={LEMBUR[0]} />
+          {lembur && <KartuLembur lembur={lembur} />}
           <Kartu>
             <KopKartu judul="Pengumuman" sub="Dari Bagian Umum" />
             <IsiKartu className="text-[13px] leading-relaxed text-teks-lembut">
-              Mulai 20 September, foto logbook wajib menampilkan wajah dan latar lokasi pos. Foto dari
+              Mulai 20 September, foto aktivitas wajib menampilkan wajah dan latar lokasi pos. Foto dari
               galeri tidak lagi diterima sistem.
             </IsiKartu>
           </Kartu>

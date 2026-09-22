@@ -48,13 +48,20 @@ function kelompokkan(pos: PosRiwayat[]): [string, PosRiwayat[]][] {
  * Riwayat sebagai linimasa per hari, bukan tabel: jam berjajar di rel kiri
  * sehingga urutan kejadian langsung terbaca, dan tiap baris muat dibaca
  * di layar ponsel tanpa geser ke samping.
+ *
+ * Isinya digulir di dalam kartu begitu melewati `maksTinggi`, supaya riwayat
+ * yang sudah menumpuk ratusan catatan tidak memanjangkan halaman. Kepala
+ * tanggal menempel di atas area gulir itu, bukan di bawah topbar halaman.
  */
 export function LinimasaRiwayat({
   pos,
   kosong = 'Belum ada catatan.',
+  maksTinggi = 460,
 }: {
   pos: PosRiwayat[]
   kosong?: string
+  /** batas tinggi area gulir dalam px; kirim 0 untuk linimasa tanpa gulir */
+  maksTinggi?: number
 }) {
   if (pos.length === 0) {
     return (
@@ -65,11 +72,14 @@ export function LinimasaRiwayat({
   }
 
   return (
-    <div className="px-5 pb-5">
+    <div
+      className="scrollbar-lembut overflow-y-auto overscroll-contain px-5 pb-5"
+      style={maksTinggi ? { maxHeight: maksTinggi } : undefined}
+    >
       {kelompokkan(pos).map(([tanggal, item]) => (
         <section key={tanggal}>
-          {/* 76px = tinggi topbar AppLayout, supaya kepala tanggal berhenti tepat di bawahnya */}
-          <div className="sticky top-[76px] z-[5] -mx-5 flex items-center gap-2.5 bg-white/92 px-5 py-2.5 backdrop-blur">
+          {/* Menempel di tepi atas area gulir linimasa, bukan di bawah topbar */}
+          <div className="sticky top-0 z-[5] -mx-5 flex items-center gap-2.5 bg-white/92 px-5 py-2.5 backdrop-blur">
             <span className="num rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-bold text-white">
               {tanggal}
             </span>

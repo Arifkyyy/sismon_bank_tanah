@@ -78,16 +78,6 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
       // Gradasi sesuai spesifikasi Figma: 09381A (0%) → 1A9E48 (100%)
       style={{ backgroundImage: 'linear-gradient(180deg,#09381A 0%,#1A9E48 100%)' }}
     >
-      {/* Tombol ciutkan/buka — hanya tampil di layar besar */}
-      <button
-        type="button"
-        onClick={onCiut}
-        aria-label={ciut ? 'Buka sidebar' : 'Ciutkan sidebar'}
-        className="absolute -right-3.5 top-24 z-[4] hidden h-7 w-7 place-items-center rounded-full border border-garis-kuat bg-white text-teks-lembut shadow-md transition hover:text-hijau lg:grid"
-      >
-        <Ikon.Chevron size={15} className={cn('transition-transform', !ciut && 'rotate-180')} />
-      </button>
-
       {/* Penanda menu aktif: sewarna latar halaman, dengan dua sudut cekung
           di atas dan bawah sehingga tepi hijau melengkung masuk. */}
       <span
@@ -167,8 +157,20 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
         ))}
       </nav>
 
-      {/* Kartu akun */}
+      {/* Kartu akun — tombol ciutkan diletakkan tepat di atasnya */}
       <div className="relative z-[3] border-t border-white/20 p-3.5">
+        {/* Tombol ciutkan/buka — hanya tampil di layar besar */}
+        <div className={cn('mb-2 hidden justify-end lg:flex', ciut && 'lg:justify-center')}>
+          <button
+            type="button"
+            onClick={onCiut}
+            aria-label={ciut ? 'Buka sidebar' : 'Ciutkan sidebar'}
+            title={ciut ? 'Buka sidebar' : 'Ciutkan sidebar'}
+            className="grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <Ikon.Chevron size={15} className={cn('transition-transform', !ciut && 'rotate-180')} />
+          </button>
+        </div>
         <div className={cn('flex items-center gap-3 rounded-[13px] bg-[rgba(4,40,20,.24)] p-2.5', ciut && 'lg:flex-col lg:gap-2')}>
           <span
             className="grid h-9 w-9 flex-none place-items-center rounded-[11px] text-[13px] font-bold"

@@ -84,9 +84,11 @@
     @apply rounded bg-white/20;
   }
 
-  /* Scrollbar tipis untuk daftar di atas latar terang (mis. daftar draf) */
+  /* Scrollbar tipis untuk daftar di atas latar terang (mis. daftar draf,
+     badan tabel, dan linimasa riwayat — termasuk arah menyamping) */
   .scrollbar-lembut::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
   .scrollbar-lembut::-webkit-scrollbar-thumb {
     @apply rounded-full bg-garis-kuat;

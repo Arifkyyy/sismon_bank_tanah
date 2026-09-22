@@ -29,7 +29,7 @@ export function LogAktivitas() {
           </>
         }
       />
-      <Tabel kepala={['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Lembur']}>
+      <Tabel kepala={['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Lembur']} maksTinggi={560}>
         {LOGBOOK.map((l) => (
           <Baris key={l.nama + l.jam}>
             <td>

@@ -1,5 +1,5 @@
 import { GaleriFoto } from '@/components/Foto'
-import { Kamera } from '@/components/Kamera'
+import { Kamera, type MetaFoto } from '@/components/Kamera'
 import { Tombol } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
 
@@ -13,7 +13,6 @@ export const MAKS_FOTO = 5
 export function FotoBukti({
   foto,
   kameraTerbuka,
-  capWaktu,
   maks = MAKS_FOTO,
   pesan,
   sub,
@@ -27,7 +26,6 @@ export function FotoBukti({
 }: {
   foto: string[]
   kameraTerbuka: boolean
-  capWaktu: string
   maks?: number
   pesan?: string
   sub?: string
@@ -36,7 +34,8 @@ export function FotoBukti({
   hadapAwal?: 'user' | 'environment'
   onBuka: () => void
   onTutup: () => void
-  onAmbil: (foto: string) => void
+  /** `meta` membawa waktu nyata dan titik GPS jepretan — boleh diabaikan pemanggil */
+  onAmbil: (foto: string, meta: MetaFoto) => void
   onHapus: (indeks: number) => void
 }) {
   const penuh = foto.length >= maks
@@ -58,7 +57,6 @@ export function FotoBukti({
 
       {kameraTerbuka ? (
         <Kamera
-          capWaktu={capWaktu}
           pesan={pesan}
           sub={sub}
           rasio={rasio}

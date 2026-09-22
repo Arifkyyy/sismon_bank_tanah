@@ -1,4 +1,4 @@
-import type { Akun, Kendala, Lembur, Logbook, Peran, Petugas } from '@/types'
+import type { Akun, DrafLembur, Kendala, Lembur, Logbook, Peran, Petugas } from '@/types'
 
 /**
  * Data contoh untuk prototipe. Ganti seluruh isi berkas ini dengan
@@ -6,6 +6,8 @@ import type { Akun, Kendala, Lembur, Logbook, Peran, Petugas } from '@/types'
  */
 
 export const HARI_INI = 'Selasa, 15 September 2026'
+/** Hari yang sama dalam ISO — nilai awal penyaring harian. */
+export const ISO_HARI_INI = '2026-09-15'
 
 export const AKUN: Record<Peran, Akun> = {
   superadmin: {
@@ -65,11 +67,57 @@ export const KENDALA: Kendala[] = [
 ]
 
 export const LEMBUR: Lembur[] = [
-  { nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '16 Sep 2026', rentang: '18.00 – 22.00', total: '4 jam', keterangan: 'Pengamanan rapat koordinasi direksi di Ruang Serbaguna.', status: 'Menunggu' },
-  { nama: 'Siti Nurhaliza', jabatan: 'CS', tanggal: '16 Sep 2026', rentang: '17.00 – 20.00', total: '3 jam', keterangan: 'Pendampingan tamu kunjungan kerja daerah.', status: 'Diterima' },
-  { nama: 'Joko Priyono', jabatan: 'OB', tanggal: '15 Sep 2026', rentang: '17.00 – 21.00', total: '4 jam', keterangan: 'Persiapan dan pembersihan ruang rapat setelah acara.', status: 'Diterima' },
-  { nama: 'Andri Kurniawan', jabatan: 'Security', tanggal: '14 Sep 2026', rentang: '19.00 – 23.00', total: '4 jam', keterangan: 'Penggantian rekan yang berhalangan hadir shift malam.', status: 'Ditolak' },
-  { nama: 'Maya Anggraini', jabatan: 'CS', tanggal: '13 Sep 2026', rentang: '16.00 – 19.00', total: '3 jam', keterangan: 'Rekap dokumen layanan akhir pekan.', status: 'Selesai' },
+  { id: 'lbr-1', nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '16 Sep 2026', tanggalIso: '2026-09-16', rentang: '18.00 – 22.00', total: '4 jam', keterangan: 'Pengamanan rapat koordinasi direksi di Ruang Serbaguna.', status: 'Menunggu' },
+  { id: 'lbr-2', nama: 'Siti Nurhaliza', jabatan: 'CS', tanggal: '16 Sep 2026', tanggalIso: '2026-09-16', rentang: '17.00 – 20.00', total: '3 jam', keterangan: 'Pendampingan tamu kunjungan kerja daerah.', status: 'Diterima', dijawabPada: '15 Sep 2026 · 09.12' },
+  { id: 'lbr-3', nama: 'Joko Priyono', jabatan: 'OB', tanggal: '15 Sep 2026', tanggalIso: '2026-09-15', rentang: '17.00 – 21.00', total: '4 jam', keterangan: 'Persiapan dan pembersihan ruang rapat setelah acara.', status: 'Diterima', dijawabPada: '14 Sep 2026 · 16.40' },
+  { id: 'lbr-4', nama: 'Andri Kurniawan', jabatan: 'Security', tanggal: '14 Sep 2026', tanggalIso: '2026-09-14', rentang: '19.00 – 23.00', total: '4 jam', keterangan: 'Penggantian rekan yang berhalangan hadir shift malam.', status: 'Ditolak', alasan: 'Sedang sakit dan sudah izin ke koordinator pos.', dijawabPada: '13 Sep 2026 · 20.05' },
+  { id: 'lbr-5', nama: 'Maya Anggraini', jabatan: 'CS', tanggal: '13 Sep 2026', tanggalIso: '2026-09-13', rentang: '16.00 – 19.00', total: '3 jam', keterangan: 'Rekap dokumen layanan akhir pekan.', status: 'Selesai', dijawabPada: '12 Sep 2026 · 15.30' },
+]
+
+/**
+ * Antrean penugasan lembur yang masih dikoreksi admin — belum sampai ke
+ * petugas. Sengaja dibuat bervariasi — ada yang sudah lengkap, ada yang
+ * keterangannya masih terlalu singkat, ada yang petugasnya sudah nonaktif atau
+ * sedang cuti, dan ada yang namanya belum diisi — supaya alur crosscheck admin
+ * terlihat sejak halaman pertama dibuka.
+ */
+export const DRAF_LEMBUR: DrafLembur[] = [
+  {
+    id: 'draf-1',
+    nama: 'Slamet Riyadi',
+    jabatan: 'Security',
+    tanggal: '2026-09-17',
+    mulai: '18:00',
+    selesai: '23:00',
+    keterangan: 'Pengamanan bongkar muat dokumen arsip dari gudang lantai dasar ke Gedung B.',
+  },
+  {
+    id: 'draf-2',
+    nama: 'Rudi Hartono',
+    jabatan: 'OB',
+    tanggal: '2026-09-17',
+    mulai: '16:30',
+    selesai: '20:00',
+    keterangan: 'Bersih-bersih.',
+  },
+  {
+    id: 'draf-3',
+    nama: 'Andri Kurniawan',
+    jabatan: 'Security',
+    tanggal: '2026-09-18',
+    mulai: '19:00',
+    selesai: '23:30',
+    keterangan: 'Pendampingan shift malam saat pemeliharaan genset di area belakang gedung.',
+  },
+  {
+    id: 'draf-4',
+    nama: '',
+    jabatan: 'CS',
+    tanggal: '2026-09-18',
+    mulai: '17:00',
+    selesai: '20:00',
+    keterangan: 'Pendampingan tamu kunjungan kerja Kementerian ATR/BPN sampai acara selesai.',
+  },
 ]
 
 /** Rekap gabungan logbook + lembur per petugas. */
