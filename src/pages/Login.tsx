@@ -1,25 +1,39 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AKAR } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
+import { pesanGalat } from '@/lib/api'
 import { Tombol } from '@/components/ui'
-import type { Peran } from '@/types'
-
-const PERAN: { id: Peran; nama: string; ket: string }[] = [
-  { id: 'superadmin', nama: 'Super Admin', ket: 'Akses penuh' },
-  { id: 'admin', nama: 'Admin', ket: 'Pengawas' },
-  { id: 'user', nama: 'Petugas', ket: 'Lapangan' },
-]
 
 export function Login() {
   const { masuk } = useAuth()
   const navigate = useNavigate()
   const [lihatSandi, setLihatSandi] = useState(false)
+  const [email, setEmail] = useState('')
+  const [sandi, setSandi] = useState('')
+  const [ingat, setIngat] = useState(false)
+  const [galat, setGalat] = useState('')
+  const [mengirim, setMengirim] = useState(false)
 
-  function pilih(peran: Peran) {
-    masuk(peran)
-    navigate(AKAR[peran])
+  async function kirim(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (mengirim) return
+    if (!email.trim() || !sandi) {
+      setGalat('Email dan kata sandi wajib diisi.')
+      return
+    }
+    setGalat('')
+    setMengirim(true)
+    try {
+      // Backend yang menentukan peran; halaman tujuan mengikuti jawabannya.
+      const peran = await masuk(email.trim(), sandi, ingat)
+      navigate(AKAR[peran])
+    } catch (err) {
+      setGalat(pesanGalat(err))
+      setMengirim(false)
+    }
   }
 
   return (
@@ -69,7 +83,7 @@ export function Login() {
 
       {/* Panel kanan: formulir */}
       <div className="flex min-w-0 items-center justify-center bg-white px-5 py-9 lg:px-10 lg:py-12">
-        <div className="w-full max-w-[392px]">
+        <form className="w-full max-w-[392px]" onSubmit={kirim} noValidate>
           <div className="mb-7 text-center">
             <img src="/logo-bank-tanah.png" alt="Badan Bank Tanah" className="mx-auto mb-5 w-[150px]" />
             <h2 className="m-0 mb-1.5 text-[27px] font-extrabold tracking-[-0.025em] text-ink">
@@ -90,7 +104,11 @@ export function Login() {
                 id="em"
                 type="email"
                 autoComplete="username"
-                defaultValue="rahmat.hidayat@banktanah.go.id"
+                value={email}
+                onChange={(ev) => {
+                  setEmail(ev.target.value)
+                  if (galat) setGalat('')
+                }}
                 className="w-full rounded-xl border border-garis-kuat py-3 pl-11 pr-3.5 text-sm focus:border-hijau focus:outline-none focus:ring-[3px] focus:ring-hijau/15"
               />
             </div>
@@ -108,7 +126,11 @@ export function Login() {
                 id="pw"
                 type={lihatSandi ? 'text' : 'password'}
                 autoComplete="current-password"
-                defaultValue="petugas2026"
+                value={sandi}
+                onChange={(ev) => {
+                  setSandi(ev.target.value)
+                  if (galat) setGalat('')
+                }}
                 className="w-full rounded-xl border border-garis-kuat py-3 pl-11 pr-11 text-sm focus:border-hijau focus:outline-none focus:ring-[3px] focus:ring-hijau/15"
               />
               <button
@@ -124,36 +146,30 @@ export function Login() {
 
           <div className="mb-5 mt-1 flex items-center justify-between text-[12.5px]">
             <label className="flex cursor-pointer items-center gap-2 text-teks-lembut">
-              <input type="checkbox" className="accent-hijau" /> Ingat perangkat ini
+              <input
+                type="checkbox"
+                className="accent-hijau"
+                checked={ingat}
+                onChange={(ev) => setIngat(ev.target.checked)}
+              />{' '}
+              Ingat perangkat ini
             </label>
             <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-hijau no-underline">
               Lupa kata sandi?
             </a>
           </div>
 
-          <Tombol lebar onClick={() => pilih('admin')}>
-            Masuk
-          </Tombol>
-
-          <div className="mt-6 border-t border-garis pt-5">
-            <p className="m-0 mb-2.5 text-center text-xs text-teks-samar">
-              Pratinjau tampilan sesuai peran
-            </p>
-            <div className="grid grid-cols-3 gap-2.5">
-              {PERAN.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => pilih(p.id)}
-                  className="rounded-xl border border-garis-kuat bg-white px-2 py-3 text-center transition hover:border-hijau hover:bg-hijau-lembut"
-                >
-                  <b className="block text-[12.5px] font-bold text-ink">{p.nama}</b>
-                  <span className="text-[10.5px] text-teks-samar">{p.ket}</span>
-                </button>
-              ))}
+          {galat && (
+            <div className="mb-3.5 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3 py-2 text-[11.5px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galat}</span>
             </div>
-          </div>
-        </div>
+          )}
+
+          <Tombol lebar type="submit" disabled={mengirim}>
+            {mengirim ? 'Memproses…' : 'Masuk'}
+          </Tombol>
+        </form>
       </div>
     </div>
   )
