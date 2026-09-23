@@ -1,137 +1,176 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { DRAF_LEMBUR, LEMBUR } from '@/data/mock'
-import { formatJam, formatTanggal, lamaLembur } from '@/lib/tanggal'
-import type { DrafLembur, Lembur } from '@/types'
+import { api, pesanGalat } from '@/lib/api'
+import { useApi } from '@/lib/useApi'
+import type { DrafLembur, Lembur, Petugas } from '@/types'
+
+/** Isi draf tanpa id — bentuk yang dipakai formulir admin. */
+export type IsiDraf = Omit<DrafLembur, 'id'>
 
 interface NilaiLembur {
   daftar: Lembur[]
-  /** penugasan seluruh petugas yang belum dijawab — sudut pandang admin */
+  /** penugasan yang belum dijawab; backend sudah menyaring sesuai peran */
   menunggu: Lembur[]
-  /** penugasan seluruh petugas yang sudah dijawab, yang terbaru di depan */
+  /** penugasan yang sudah dijawab */
   riwayat: Lembur[]
-  terima: (id: string) => void
-  tolak: (id: string, alasan: string) => void
-  /** antrean penugasan yang masih dikoreksi admin, belum sampai ke petugas */
+  memuat: boolean
+  /** galat saat mengambil daftar */
+  galat: string | null
+  muat: () => void
+  /** galat dari aksi terakhir (terima/tolak/simpan/kirim/hapus) */
+  galatAksi: string | null
+  bersihkanGalatAksi: () => void
+  terima: (id: string) => Promise<boolean>
+  tolak: (id: string, alasan: string) => Promise<boolean>
+  /** antrean draf milik admin; kosong untuk petugas */
   pending: DrafLembur[]
-  tambahPending: (isi: Omit<DrafLembur, 'id'>) => void
-  ubahPending: (id: string, isi: Omit<DrafLembur, 'id'>) => void
-  hapusPending: (id: string) => void
-  /** memindahkan satu draf ke daftar penugasan; petugas baru melihatnya di sini */
-  kirimPending: (id: string) => void
+  /** daftar petugas, dipakai mencocokkan nama pada draf dengan petugasId */
+  petugas: Petugas[]
+  tambahPending: (isi: IsiDraf) => Promise<boolean>
+  ubahPending: (id: string, isi: IsiDraf) => Promise<boolean>
+  hapusPending: (id: string) => Promise<boolean>
+  kirimPending: (id: string) => Promise<boolean>
 }
 
 const Konteks = createContext<NilaiLembur | null>(null)
 
-/** Cap waktu jawaban, mis. '15 Sep 2026 · 10.24'. */
-function sekarang(): string {
-  const t = new Date()
-  const tanggal = t.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-  const jam = t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.')
-  return `${tanggal} · ${jam}`
-}
-
-/** Draf admin → penugasan yang siap dibaca petugas. */
-function keLembur(d: DrafLembur): Lembur {
-  return {
-    id: d.id,
-    nama: d.nama,
-    jabatan: d.jabatan,
-    tanggal: formatTanggal(d.tanggal).tanggal,
-    tanggalIso: d.tanggal,
-    rentang: `${formatJam(d.mulai)} – ${formatJam(d.selesai)}`,
-    total: lamaLembur(d.mulai, d.selesai),
-    keterangan: d.keterangan,
-    status: 'Menunggu',
-  }
-}
-
 /**
- * Sumber data penugasan lembur yang dipakai bersama halaman petugas dan
- * halaman admin. Jawaban petugas langsung terlihat di tabel admin karena
- * keduanya membaca state yang sama.
+ * Seluruh data penugasan lembur berasal dari backend.
  *
- * `pending` sengaja dipisah dari `daftar`: selama masih di `pending`, penugasan
- * hanya terlihat oleh admin sehingga bisa dikoreksi dulu. Ia baru muncul di
- * halaman petugas setelah `kirimPending`. State-nya disimpan di provider, bukan
- * di halaman, supaya antrean tidak hilang saat admin berpindah menu.
- *
- * Untuk produksi, ganti `terima`/`tolak`/`kirimPending` dengan pemanggilan API
- * lalu muat ulang daftarnya — bentuk datanya sudah sama.
+ * - `GET /api/lembur` sudah menyaring sendiri: admin menerima semua petugas,
+ *   petugas hanya menerima miliknya. Jadi tidak ada penyaringan di browser.
+ * - `pending` (draf) hanya diambil untuk admin; endpointnya memang ditolak
+ *   untuk peran petugas.
+ * - Setiap aksi memanggil API lalu memuat ulang daftarnya, dan mengembalikan
+ *   true/false supaya formulir tahu boleh dikosongkan atau tidak.
  */
 export function LemburProvider({ children }: { children: ReactNode }) {
-  const [daftar, setDaftar] = useState<Lembur[]>(LEMBUR)
-  const [pending, setPending] = useState<DrafLembur[]>(DRAF_LEMBUR)
-  // Urutan jawaban terbaru; dipakai untuk menaruh penugasan yang baru saja
-  // dijawab di paling depan riwayat.
-  const [urutJawab, setUrutJawab] = useState<string[]>([])
+  const { peran } = useAuth()
+  const masuk = peran !== null
+  const pengawas = peran === 'admin' || peran === 'superadmin'
 
-  const jawab = useCallback((id: string, status: Lembur['status'], alasan?: string) => {
-    setDaftar((list) =>
-      list.map((l) => (l.id === id ? { ...l, status, alasan, dijawabPada: sekarang() } : l)),
-    )
-    setUrutJawab((urut) => [id, ...urut.filter((x) => x !== id)])
-  }, [])
+  const { data: daftar, memuat, galat, muat } = useApi<Lembur[]>(masuk ? '/api/lembur' : null, [])
+  const { data: pending, muat: muatPending } = useApi<DrafLembur[]>(
+    pengawas ? '/api/lembur/draf' : null,
+    [],
+  )
+  const { data: petugas } = useApi<Petugas[]>(pengawas ? '/api/petugas' : null, [])
 
-  const terima = useCallback((id: string) => jawab(id, 'Diterima'), [jawab])
-  const tolak = useCallback((id: string, alasan: string) => jawab(id, 'Ditolak', alasan), [jawab])
+  const [galatAksi, setGalatAksi] = useState<string | null>(null)
+  const bersihkanGalatAksi = useCallback(() => setGalatAksi(null), [])
 
-  const tambahPending = useCallback((isi: Omit<DrafLembur, 'id'>) => {
-    setPending((list) => [...list, { id: crypto.randomUUID(), ...isi }])
-  }, [])
-
-  const ubahPending = useCallback((id: string, isi: Omit<DrafLembur, 'id'>) => {
-    setPending((list) => list.map((p) => (p.id === id ? { ...isi, id } : p)))
-  }, [])
-
-  const hapusPending = useCallback((id: string) => {
-    setPending((list) => list.filter((p) => p.id !== id))
-  }, [])
-
-  // Draf dicari di luar updater: updater state bisa dijalankan dua kali oleh
-  // StrictMode, dan penugasannya akan masuk dobel kalau `setDaftar` ada di dalamnya.
-  const kirimPending = useCallback(
-    (id: string) => {
-      const draf = pending.find((p) => p.id === id)
-      if (!draf) return
-      setDaftar((isi) => [keLembur(draf), ...isi])
-      setPending((list) => list.filter((p) => p.id !== id))
+  /**
+   * Pembungkus satu aksi: jalankan, muat ulang yang perlu, simpan pesan galat
+   * bila gagal. Semua aksi di bawah memakai pola yang sama.
+   */
+  const jalankan = useCallback(
+    async (aksi: () => Promise<unknown>, muatUlang: (() => void)[]): Promise<boolean> => {
+      setGalatAksi(null)
+      try {
+        await aksi()
+        muatUlang.forEach((f) => f())
+        return true
+      } catch (e) {
+        setGalatAksi(pesanGalat(e))
+        return false
+      }
     },
-    [pending],
+    [],
   )
 
-  const nilai = useMemo<NilaiLembur>(() => {
-    const menunggu = daftar.filter((l) => l.status === 'Menunggu')
-    const dijawab = daftar.filter((l) => l.status !== 'Menunggu')
-    const peringkat = (l: Lembur) => {
-      const i = urutJawab.indexOf(l.id)
-      return i === -1 ? urutJawab.length : i
-    }
-    const riwayat = [...dijawab].sort((a, b) => peringkat(a) - peringkat(b))
-    return {
+  const terima = useCallback(
+    (id: string) => jalankan(() => api(`/api/lembur/${id}/terima`, 'POST'), [muat]),
+    [jalankan, muat],
+  )
+
+  const tolak = useCallback(
+    (id: string, alasan: string) =>
+      jalankan(() => api(`/api/lembur/${id}/tolak`, 'POST', { alasan }), [muat]),
+    [jalankan, muat],
+  )
+
+  /**
+   * Formulir memakai nama petugas, backend memakai petugasId. Nama yang tidak
+   * ada di daftar petugas ditolak di sini supaya galatnya jelas, bukan berupa
+   * 422 dari server.
+   */
+  const keKirimanDraf = useCallback(
+    (isi: IsiDraf) => {
+      const cocok = petugas.find((p) => p.nama === isi.nama)
+      if (isi.nama && !cocok) throw new Error(`Petugas "${isi.nama}" tidak ada di data petugas.`)
+      return {
+        petugasId: cocok?.id ?? null,
+        jabatan: isi.jabatan,
+        tanggal: isi.tanggal,
+        mulai: isi.mulai,
+        selesai: isi.selesai,
+        keterangan: isi.keterangan,
+      }
+    },
+    [petugas],
+  )
+
+  const tambahPending = useCallback(
+    (isi: IsiDraf) =>
+      jalankan(() => api('/api/lembur/draf', 'POST', keKirimanDraf(isi)), [muatPending]),
+    [jalankan, keKirimanDraf, muatPending],
+  )
+
+  const ubahPending = useCallback(
+    (id: string, isi: IsiDraf) =>
+      jalankan(() => api(`/api/lembur/draf/${id}`, 'PUT', keKirimanDraf(isi)), [muatPending]),
+    [jalankan, keKirimanDraf, muatPending],
+  )
+
+  const hapusPending = useCallback(
+    (id: string) => jalankan(() => api(`/api/lembur/draf/${id}`, 'DELETE'), [muatPending]),
+    [jalankan, muatPending],
+  )
+
+  // Draf pindah ke daftar penugasan, jadi keduanya dimuat ulang.
+  const kirimPending = useCallback(
+    (id: string) =>
+      jalankan(() => api(`/api/lembur/draf/${id}/kirim`, 'POST'), [muatPending, muat]),
+    [jalankan, muatPending, muat],
+  )
+
+  const nilai = useMemo<NilaiLembur>(
+    () => ({
       daftar,
-      menunggu,
-      riwayat,
+      menunggu: daftar.filter((l) => l.status === 'Menunggu'),
+      riwayat: daftar.filter((l) => l.status !== 'Menunggu'),
+      memuat,
+      galat,
+      muat,
+      galatAksi,
+      bersihkanGalatAksi,
       terima,
       tolak,
       pending,
+      petugas,
       tambahPending,
       ubahPending,
       hapusPending,
       kirimPending,
-    }
-  }, [
-    daftar,
-    urutJawab,
-    terima,
-    tolak,
-    pending,
-    tambahPending,
-    ubahPending,
-    hapusPending,
-    kirimPending,
-  ])
+    }),
+    [
+      daftar,
+      memuat,
+      galat,
+      muat,
+      galatAksi,
+      bersihkanGalatAksi,
+      terima,
+      tolak,
+      pending,
+      petugas,
+      tambahPending,
+      ubahPending,
+      hapusPending,
+      kirimPending,
+    ],
+  )
 
   return <Konteks.Provider value={nilai}>{children}</Konteks.Provider>
 }
@@ -147,32 +186,21 @@ export function useLembur(): NilaiLembur {
 interface LemburSaya {
   menunggu: Lembur[]
   riwayat: Lembur[]
-  terima: (id: string) => void
-  tolak: (id: string, alasan: string) => void
+  memuat: boolean
+  galat: string | null
+  muat: () => void
+  galatAksi: string | null
+  terima: (id: string) => Promise<boolean>
+  tolak: (id: string, alasan: string) => Promise<boolean>
 }
 
 /**
- * Sudut pandang petugas: hanya penugasan yang namanya dipilih admin saat
- * membuat draf. Kalau admin menugaskan Security A, penugasan itu tidak boleh
- * muncul di akun petugas lain — penyaringannya dilakukan di sini supaya semua
- * halaman petugas memakai aturan yang sama.
- *
- * Nama dipakai sebagai penanda karena itu yang tersimpan di penugasan; ganti ke
- * id petugas begitu backend menyediakannya.
+ * Sudut pandang petugas. Penyaringan per petugas dilakukan backend lewat token,
+ * jadi di sini tidak ada penyaringan lagi — hook ini tetap ada supaya halaman
+ * petugas punya pintu masuk sendiri yang tidak menyentuh data draf admin.
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useLemburSaya(): LemburSaya {
-  const { menunggu, riwayat, terima, tolak } = useLembur()
-  const { akun } = useAuth()
-  const nama = akun?.nama ?? ''
-
-  return useMemo(
-    () => ({
-      menunggu: menunggu.filter((l) => l.nama === nama),
-      riwayat: riwayat.filter((l) => l.nama === nama),
-      terima,
-      tolak,
-    }),
-    [menunggu, riwayat, nama, terima, tolak],
-  )
+  const { menunggu, riwayat, memuat, galat, muat, galatAksi, terima, tolak } = useLembur()
+  return { menunggu, riwayat, memuat, galat, muat, galatAksi, terima, tolak }
 }
