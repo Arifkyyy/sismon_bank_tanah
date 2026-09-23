@@ -3,23 +3,49 @@ import { BaganTujuhHari, Donat } from '@/components/Bagan'
 import { Linimasa } from '@/components/Linimasa'
 import { StatCard } from '@/components/StatCard'
 import { Baris, FotoKecil, Kartu, KopKartu, IsiKartu, Pil, PilihRapi, SelOrang, Tabel, Tombol } from '@/components/ui'
+import { StatusData } from '@/components/StatusData'
 import { AKAR } from '@/config/menu'
-import { KENDALA, LOGBOOK } from '@/data/mock'
+import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
+import { query } from '@/lib/api'
+import { useApi } from '@/lib/useApi'
+import { keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Peran } from '@/types'
+import type { Kendala, Logbook, Peran, Petugas } from '@/types'
+
+/** Mengambil angka jam dari teks seperti '4 jam'. */
+function jamDari(total: string): number {
+  return Number.parseFloat(total.replace(',', '.')) || 0
+}
 
 export function DashboardAdmin({ peran }: { peran: Peran }) {
   const akar = AKAR[peran]
   const superAdmin = peran === 'superadmin'
 
+  const hariIniIso = keIso(new Date())
+  const awalBulan = `${hariIniIso.slice(0, 7)}-01`
+
+  const petugas = useApi<Petugas[]>('/api/petugas', [])
+  const logbookHariIni = useApi<Logbook[]>(`/api/logbook${query({ tanggal: hariIniIso })}`, [])
+  const kendalaTerbuka = useApi<Kendala[]>('/api/kendala?batas=200', [])
+  const { daftar: lembur } = useLembur()
+
+  const bertugas = petugas.data.filter((p) => p.status === 'Aktif').length
+  const belumSelesai = kendalaTerbuka.data.filter((k) => k.status !== 'Selesai')
+  const jumlahBaru = belumSelesai.filter((k) => k.status === 'Baru').length
+  const jumlahDiproses = belumSelesai.filter((k) => k.status === 'Diproses').length
+  const jamLemburBulanIni = lembur
+    .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
+    .filter((l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso)
+    .reduce((n, l) => n + jamDari(l.total), 0)
+
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Petugas bertugas hari ini" angka="46" satuan="/ 53" nada="ink" ikon={<Ikon.Orang size={17} />} ket="7 petugas cuti atau libur" />
-        <StatCard nama="Logbook masuk hari ini" angka="58" ikon={<Ikon.Buku size={17} />} arah="naik" ket="12% lebih banyak dari kemarin" />
-        <StatCard nama="Kendala belum selesai" angka="2" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="1 baru, 1 sedang diproses" />
-        <StatCard nama="Jam lembur bulan ini" angka="186" satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} arah="naik" ket="24 jam dibanding Agustus" />
+        <StatCard nama="Petugas bertugas hari ini" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
+        <StatCard nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
+        <StatCard nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
+        <StatCard nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
@@ -62,15 +88,25 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
               </Link>
             }
           />
+          <StatusData
+            memuat={logbookHariIni.memuat}
+            galat={logbookHariIni.galat}
+            onUlang={logbookHariIni.muat}
+          />
           <IsiKartu>
-            <Linimasa
-              pos={LOGBOOK.slice(0, 5).map((l, i) => ({
-                jam: `${l.jam} · ${l.hari}`,
-                judul: `${l.nama} — ${l.jabatan}`,
-                isi: l.keterangan,
-                nada: i === 2 ? 'emas' : i === 4 ? 'tanah' : 'hijau',
-              }))}
-            />
+            {logbookHariIni.data.length === 0 ? (
+              <p className="m-0 py-6 text-center text-[12.5px] text-teks-lembut">
+                Belum ada catatan masuk hari ini.
+              </p>
+            ) : (
+              <Linimasa
+                pos={logbookHariIni.data.slice(0, 5).map((l) => ({
+                  jam: `${l.jam} · ${l.hari}`,
+                  judul: `${l.nama} — ${l.jabatan}`,
+                  isi: l.keterangan,
+                }))}
+              />
+            )}
           </IsiKartu>
         </Kartu>
 
@@ -86,26 +122,45 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
               </Link>
             }
           />
+          <StatusData
+            memuat={kendalaTerbuka.memuat}
+            galat={kendalaTerbuka.galat}
+            onUlang={kendalaTerbuka.muat}
+          />
           <Tabel kepala={['Pelapor', 'Kendala', 'Waktu', 'Foto', 'Status']}>
-            {KENDALA.slice(0, 4).map((k) => (
-              <Baris key={k.nama + k.jam}>
-                <td>
-                  <SelOrang nama={k.nama} jabatan={k.jabatan} />
+            {belumSelesai.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
+                  {kendalaTerbuka.memuat
+                    ? 'Memuat laporan kendala…'
+                    : 'Tidak ada kendala yang perlu ditindak.'}
                 </td>
-                <td className="max-w-[290px] whitespace-normal text-teks-lembut">{k.keterangan}</td>
-                <td className="num whitespace-nowrap text-teks-lembut">
-                  {k.tanggal}
-                  <br />
-                  <span className="text-[11.5px]">{k.jam}</span>
-                </td>
-                <td>
-                  <FotoKecil varian={k.foto} />
-                </td>
-                <td>
-                  <Pil status={k.status} />
-                </td>
-              </Baris>
-            ))}
+              </tr>
+            ) : (
+              belumSelesai.slice(0, 4).map((k) => (
+                <Baris key={k.id}>
+                  <td>
+                    <SelOrang nama={k.nama} jabatan={k.jabatan} />
+                  </td>
+                  <td className="max-w-[290px] whitespace-normal text-teks-lembut">{k.keterangan}</td>
+                  <td className="num whitespace-nowrap text-teks-lembut">
+                    {k.tanggal}
+                    <br />
+                    <span className="text-[11.5px]">{k.jam}</span>
+                  </td>
+                  <td>
+                    <FotoKecil
+                      varian={k.foto}
+                      url={k.fotoUrl?.[0]}
+                      onClick={() => k.fotoUrl?.[0] && window.open(k.fotoUrl[0], '_blank', 'noopener')}
+                    />
+                  </td>
+                  <td>
+                    <Pil status={k.status} />
+                  </td>
+                </Baris>
+              ))
+            )}
           </Tabel>
         </Kartu>
       </div>
