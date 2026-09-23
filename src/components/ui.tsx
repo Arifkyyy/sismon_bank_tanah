@@ -155,17 +155,34 @@ export function SelOrang({ nama, jabatan }: { nama: string; jabatan: Jabatan }) 
 
 /* ------------------------------------------------------------ Foto bukti */
 
-export function FotoKecil({ varian = 'a' }: { varian?: 'a' | 'b' | 'c' }) {
+/**
+ * Kotak foto bukti pada tabel. Bila `url` diisi, foto aslinya yang tampil;
+ * kalau tidak, dipakai gradasi `varian` sebagai pengganti.
+ */
+export function FotoKecil({
+  varian = 'a',
+  url,
+  onClick,
+}: {
+  varian?: 'a' | 'b' | 'c'
+  url?: string
+  onClick?: () => void
+}) {
   return (
     <button
       type="button"
       aria-label="Lihat foto"
+      onClick={onClick}
       className={cn(
         'grid h-[34px] w-11 place-items-center overflow-hidden rounded-md border border-garis-kuat bg-gradient-to-br text-white/90 hover:border-hijau',
         WARNA_FOTO[varian],
       )}
     >
-      <Ikon.Foto size={15} />
+      {url ? (
+        <img src={url} alt="Foto bukti" className="h-full w-full object-cover" loading="lazy" />
+      ) : (
+        <Ikon.Foto size={15} />
+      )}
     </button>
   )
 }
@@ -262,22 +279,26 @@ export function TombolIkon({
   bahaya,
   children,
   onClick,
+  disabled,
 }: {
   label: string
   bahaya?: boolean
   children: ReactNode
   onClick?: () => void
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'grid h-[31px] w-[31px] place-items-center rounded-lg border border-garis bg-white text-teks-lembut',
+        'disabled:cursor-not-allowed disabled:opacity-45',
         bahaya
-          ? 'hover:border-merah hover:bg-merah-lembut hover:text-merah'
-          : 'hover:border-hijau hover:bg-hijau-lembut hover:text-hijau',
+          ? 'enabled:hover:border-merah enabled:hover:bg-merah-lembut enabled:hover:text-merah'
+          : 'enabled:hover:border-hijau enabled:hover:bg-hijau-lembut enabled:hover:text-hijau',
       )}
     >
       {children}
