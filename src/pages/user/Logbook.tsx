@@ -1,34 +1,45 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { LinimasaRiwayat, type PosRiwayat } from '@/components/Riwayat'
 import {
   AreaTeks, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Pilihan, Segmen, Tombol,
 } from '@/components/ui'
-import { LOGBOOK, PETUGAS } from '@/data/mock'
+import { StatusData } from '@/components/StatusData'
+import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
-import { formatJam, formatTanggal } from '@/lib/tanggal'
+import { api, pesanGalat } from '@/lib/api'
+import { useApi } from '@/lib/useApi'
+import { keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
-import type { Jabatan } from '@/types'
+import type { Jabatan, Logbook, Petugas } from '@/types'
 
-const FORM_KOSONG = {
-  jabatan: 'Security' as Jabatan,
-  nama: '',
-  tanggal: '2026-09-15',
-  jam: '',
-  keterangan: '',
-  foto: [] as string[],
+/** Formulir kosong; tanggalnya hari ini karena catatan diisi di hari yang sama. */
+function formKosong() {
+  return {
+    jabatan: 'Security' as Jabatan,
+    nama: '',
+    tanggal: keIso(new Date()),
+    jam: '',
+    keterangan: '',
+    foto: [] as string[],
+  }
 }
 
 export function LogbookUser() {
-  const [form, setForm] = useState(FORM_KOSONG)
+  const { akun } = useAuth()
+  const [form, setForm] = useState(formKosong)
   const [kameraTerbuka, setKameraTerbuka] = useState(false)
   const [pending, setPending] = useState<Draf[]>([])
   const [editId, setEditId] = useState<string | null>(null)
-  const [terkirim, setTerkirim] = useState<typeof LOGBOOK>([])
+  const [galatKirim, setGalatKirim] = useState<string | null>(null)
 
-  const riwayat: PosRiwayat[] = [...terkirim, ...LOGBOOK].slice(0, 7).map((l, i) => ({
-    id: `${l.tanggal}-${l.jam}-${i}`,
+  // Backend hanya mengembalikan catatan milik petugas yang sedang masuk.
+  const { data: petugas } = useApi<Petugas[]>('/api/petugas', [])
+  const { data: catatan, memuat, galat, muat } = useApi<Logbook[]>('/api/logbook?batas=7', [])
+
+  const riwayat: PosRiwayat[] = catatan.map((l) => ({
+    id: String(l.id),
     tanggal: l.tanggal,
     hari: l.hari,
     jam: l.jam,
@@ -52,10 +63,20 @@ export function LogbookUser() {
    * sedang dikoreksi, supaya pilihan tidak berubah diam-diam saat draf dibuka.
    */
   const kandidat = useMemo(() => {
-    const cocok = PETUGAS.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
-    const terpilih = PETUGAS.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
+    const cocok = petugas.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
+    const terpilih = petugas.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
     return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
-  }, [form.jabatan, form.nama])
+  }, [petugas, form.jabatan, form.nama])
+
+  /**
+   * Begitu daftar petugas tiba, formulir langsung diarahkan ke akun yang sedang
+   * masuk — petugas tidak perlu mencari namanya sendiri.
+   */
+  useEffect(() => {
+    const saya = petugas.find((p) => p.nama === akun?.nama)
+    if (!saya) return
+    setForm((f) => (f.nama === '' ? { ...f, nama: saya.nama, jabatan: saya.jabatan } : f))
+  }, [petugas, akun?.nama])
 
   /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
   function gantiJabatan(label: string) {
@@ -77,7 +98,7 @@ export function LogbookUser() {
       setPending((list) => [...list, { id: crypto.randomUUID(), ...form }])
     }
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
     setKameraTerbuka(false)
   }
 
@@ -98,34 +119,42 @@ export function LogbookUser() {
     setPending((list) => list.filter((p) => p.id !== id))
     if (editId === id) {
       setEditId(null)
-      setForm(FORM_KOSONG)
+      setForm(formKosong())
     }
   }
 
-  function kirimDraf(id: string) {
+  /**
+   * Draf baru dibuang setelah server menerimanya. Kalau gagal — jaringan mati,
+   * keterangan kurang panjang, jam di masa depan — drafnya tetap di layar
+   * lengkap dengan fotonya supaya tidak perlu difoto ulang.
+   */
+  async function kirimDraf(id: string) {
     const p = pending.find((x) => x.id === id)
     if (!p) return
-    const { tanggal, hari } = formatTanggal(p.tanggal)
-    setTerkirim((list) => [
-      {
-        nama: p.nama || 'Tanpa nama',
-        jabatan: (p.jabatan || 'Security') as Jabatan,
-        tanggal,
-        hari,
-        jam: formatJam(p.jam),
-        keterangan: p.keterangan || '—',
-        foto: 'a',
-        fotoUrl: p.foto,
-        lembur: '—',
-      },
-      ...list,
-    ])
-    hapusDraf(id)
+    const orang = petugas.find((x) => x.nama === p.nama)
+    if (!orang) {
+      setGalatKirim(`Petugas "${p.nama}" tidak ada di data petugas.`)
+      return
+    }
+    setGalatKirim(null)
+    try {
+      await api('/api/logbook', 'POST', {
+        petugasId: orang.id,
+        tanggal: p.tanggal,
+        jam: p.jam,
+        keterangan: p.keterangan,
+        foto: p.foto,
+      })
+      hapusDraf(id)
+      muat()
+    } catch (e) {
+      setGalatKirim(pesanGalat(e))
+    }
   }
 
   function batalEdit() {
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
     setKameraTerbuka(false)
   }
 
@@ -220,13 +249,21 @@ export function LogbookUser() {
           </KakiForm>
         </Kartu>
 
-        <KartuDataPending
-          daftar={pending}
-          editId={editId}
-          onEdit={editDraf}
-          onKirim={kirimDraf}
-          onHapus={hapusDraf}
-        />
+        <div className="grid content-start gap-4.5">
+          {galatKirim && (
+            <div className="flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galatKirim}</span>
+            </div>
+          )}
+          <KartuDataPending
+            daftar={pending}
+            editId={editId}
+            onEdit={editDraf}
+            onKirim={kirimDraf}
+            onHapus={hapusDraf}
+          />
+        </div>
       </div>
 
       <Kartu className="mt-4.5">
@@ -239,6 +276,7 @@ export function LogbookUser() {
             </span>
           }
         />
+        <StatusData memuat={memuat} galat={galat} onUlang={muat} />
         <LinimasaRiwayat pos={riwayat} kosong="Belum ada catatan yang dikirim." />
       </Kartu>
     </>
