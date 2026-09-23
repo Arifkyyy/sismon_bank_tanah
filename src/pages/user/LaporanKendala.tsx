@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { LinimasaRiwayat, type PosRiwayat } from '@/components/Riwayat'
@@ -6,36 +6,41 @@ import {
   AreaTeks, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Pilihan, Segmen,
   Tombol,
 } from '@/components/ui'
+import { StatusData } from '@/components/StatusData'
 import { useAuth } from '@/context/AuthContext'
-import { KENDALA, PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
-import { formatJam, formatTanggal } from '@/lib/tanggal'
+import { api, pesanGalat } from '@/lib/api'
+import { useApi } from '@/lib/useApi'
+import { formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
-import type { Jabatan, Kendala } from '@/types'
+import type { Jabatan, Kendala, Petugas } from '@/types'
 
-const FORM_KOSONG = {
-  jabatan: 'Security' as Jabatan,
-  nama: '',
-  tanggal: '2026-09-15',
-  jam: '',
-  keterangan: '',
-  foto: [] as string[],
+/** Formulir kosong; tanggalnya hari ini karena kendala dilaporkan saat terjadi. */
+function formKosong() {
+  return {
+    jabatan: 'Security' as Jabatan,
+    nama: '',
+    tanggal: keIso(new Date()),
+    jam: '',
+    keterangan: '',
+    foto: [] as string[],
+  }
 }
 
 export function LaporanKendalaUser() {
   const { akun } = useAuth()
-  // Dipakai sebagai cadangan kalau draf dikirim tanpa nama terpilih.
-  const namaAkun = akun?.nama ?? 'Petugas'
-  const jabatanAkun: Jabatan = PETUGAS.find((p) => p.nama === namaAkun)?.jabatan ?? 'Security'
-
-  const [form, setForm] = useState(FORM_KOSONG)
+  const [form, setForm] = useState(formKosong)
   const [kameraTerbuka, setKameraTerbuka] = useState(false)
   const [pending, setPending] = useState<Draf[]>([])
   const [editId, setEditId] = useState<string | null>(null)
-  const [terkirim, setTerkirim] = useState<Kendala[]>([])
+  const [galatKirim, setGalatKirim] = useState<string | null>(null)
 
-  const riwayat: PosRiwayat[] = [...terkirim, ...KENDALA].slice(0, 7).map((k, i) => ({
-    id: `${k.tanggal}-${k.jam}-${i}`,
+  // Backend hanya mengembalikan laporan milik petugas yang sedang masuk.
+  const { data: petugas } = useApi<Petugas[]>('/api/petugas', [])
+  const { data: laporan, memuat, galat, muat } = useApi<Kendala[]>('/api/kendala?batas=7', [])
+
+  const riwayat: PosRiwayat[] = laporan.map((k) => ({
+    id: String(k.id),
     tanggal: k.tanggal,
     hari: k.hari,
     jam: k.jam,
@@ -52,10 +57,17 @@ export function LaporanKendalaUser() {
    * draf yang sedang dikoreksi.
    */
   const kandidat = useMemo(() => {
-    const cocok = PETUGAS.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
-    const terpilih = PETUGAS.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
+    const cocok = petugas.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
+    const terpilih = petugas.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
     return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
-  }, [form.jabatan, form.nama])
+  }, [petugas, form.jabatan, form.nama])
+
+  /** Formulir langsung diarahkan ke akun yang sedang masuk. */
+  useEffect(() => {
+    const saya = petugas.find((p) => p.nama === akun?.nama)
+    if (!saya) return
+    setForm((f) => (f.nama === '' ? { ...f, nama: saya.nama, jabatan: saya.jabatan } : f))
+  }, [petugas, akun?.nama])
 
   /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
   function gantiJabatan(label: string) {
@@ -77,7 +89,7 @@ export function LaporanKendalaUser() {
       setPending((list) => [...list, { id: crypto.randomUUID(), ...form }])
     }
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
     setKameraTerbuka(false)
   }
 
@@ -98,34 +110,41 @@ export function LaporanKendalaUser() {
     setPending((list) => list.filter((p) => p.id !== id))
     if (editId === id) {
       setEditId(null)
-      setForm(FORM_KOSONG)
+      setForm(formKosong())
     }
   }
 
-  function kirimDraf(id: string) {
+  /**
+   * Draf baru dibuang setelah server menerimanya, supaya foto dan keterangan
+   * tidak hilang kalau pengirimannya gagal.
+   */
+  async function kirimDraf(id: string) {
     const p = pending.find((x) => x.id === id)
     if (!p) return
-    const { tanggal, hari } = formatTanggal(p.tanggal)
-    setTerkirim((list) => [
-      {
-        nama: p.nama || namaAkun,
-        jabatan: (p.jabatan || jabatanAkun) as Jabatan,
-        tanggal,
-        hari,
-        jam: formatJam(p.jam),
-        keterangan: p.keterangan || '—',
-        status: 'Baru',
-        foto: 'a',
-        fotoUrl: p.foto,
-      },
-      ...list,
-    ])
-    hapusDraf(id)
+    const orang = petugas.find((x) => x.nama === p.nama)
+    if (!orang) {
+      setGalatKirim(`Petugas "${p.nama}" tidak ada di data petugas.`)
+      return
+    }
+    setGalatKirim(null)
+    try {
+      await api('/api/kendala', 'POST', {
+        petugasId: orang.id,
+        tanggal: p.tanggal,
+        jam: p.jam,
+        keterangan: p.keterangan,
+        foto: p.foto,
+      })
+      hapusDraf(id)
+      muat()
+    } catch (e) {
+      setGalatKirim(pesanGalat(e))
+    }
   }
 
   function batalEdit() {
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
     setKameraTerbuka(false)
   }
 
@@ -262,6 +281,7 @@ export function LaporanKendalaUser() {
             </span>
           }
         />
+        <StatusData memuat={memuat} galat={galat ?? galatKirim} onUlang={muat} />
         <LinimasaRiwayat pos={riwayat} kosong="Belum ada laporan yang dikirim." />
       </Kartu>
     </>
