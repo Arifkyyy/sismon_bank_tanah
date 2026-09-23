@@ -54,7 +54,8 @@ export const MENU: Record<Peran, GrupMenu[]> = {
       judul: 'Catatan saya',
       item: [
         { id: 'rekap', label: 'Rekap harian', path: 'rekap-harian', ikon: 'Rekap' },
-        { id: 'lembur', label: 'Lembur', path: 'lembur', ikon: 'Jam', tanda: '1' },
+        // `tanda` diisi Sidebar dari jumlah penugasan milik petugas yang sedang masuk
+        { id: 'lembur', label: 'Lembur', path: 'lembur', ikon: 'Jam' },
       ],
     },
     akun,
@@ -74,7 +75,7 @@ export const AKAR: Record<Peran, string> = {
  */
 export const JUDUL: Record<string, [string, string]> = {
   '': ['Dashboard', 'Selasa, 15 September 2026'],
-  'data-user': ['Data user', 'Daftar petugas Security, Office Boy, dan Customer Service'],
+  'data-user': ['Data user', 'Daftar petugas Security, Office Boy, Customer Service, dan Messenger'],
   'log-aktivitas': ['Log aktivitas', 'Seluruh logbook yang masuk dari petugas'],
   rekapitulasi: ['Rekapitulasi', 'Gabungan logbook dan lembur per periode'],
   'laporan-kendala': ['Laporan kendala', 'Kendala lapangan yang dilaporkan petugas'],

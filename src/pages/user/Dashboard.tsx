@@ -4,13 +4,13 @@ import { StatCard } from '@/components/StatCard'
 import { IsiKartu, Kartu, KopKartu, Tombol } from '@/components/ui'
 import { KartuLembur } from '@/pages/user/Lembur'
 import { AKAR } from '@/config/menu'
-import { useLembur } from '@/context/LemburContext'
+import { useLemburSaya } from '@/context/LemburContext'
 import { HARI_INI } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
 
 export function DashboardUser() {
   const akar = AKAR.user
-  const { menunggu, riwayat } = useLembur()
+  const { menunggu, riwayat } = useLemburSaya()
   // Penugasan yang paling perlu dilihat: yang belum dijawab, kalau tidak ada
   // tampilkan jawaban terakhir.
   const lembur = menunggu[0] ?? riwayat[0]

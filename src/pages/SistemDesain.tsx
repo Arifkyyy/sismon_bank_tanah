@@ -93,6 +93,7 @@ export function SistemDesain() {
               <TagJabatan jabatan="Security" />
               <TagJabatan jabatan="OB" />
               <TagJabatan jabatan="CS" />
+              <TagJabatan jabatan="Messenger" />
             </div>
           </IsiKartu>
         </Kartu>

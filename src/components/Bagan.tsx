@@ -48,6 +48,7 @@ export function Donat() {
     { label: 'Security', nilai: 30, warna: '#10874C' },
     { label: 'Customer Service', nilai: 11, warna: '#F2BE26' },
     { label: 'Office Boy', nilai: 7, warna: '#DE7B2C' },
+    { label: 'Messenger', nilai: 5, warna: '#3E7FA3' },
   ]
   const total = data.reduce((a, b) => a + b.nilai, 0)
 

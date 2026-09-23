@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { StatCard } from '@/components/StatCard'
 import { Avatar, AreaTeks, Kolom, Pil, Tombol } from '@/components/ui'
-import { useLembur } from '@/context/LemburContext'
+import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { cn } from '@/lib/util'
 import type { Lembur } from '@/types'
@@ -94,7 +94,8 @@ export function KartuLembur({
 }
 
 export function LemburUser() {
-  const { menunggu, riwayat, terima, tolak } = useLembur()
+  // Hanya penugasan yang ditujukan kepada petugas yang sedang masuk.
+  const { menunggu, riwayat, terima, tolak } = useLemburSaya()
   const [ditolakkan, setDitolakkan] = useState<Lembur | null>(null)
   const [alasan, setAlasan] = useState('')
   const [galat, setGalat] = useState('')
@@ -167,12 +168,24 @@ export function LemburUser() {
       )}
 
       <h3 className="mb-3.5 mt-6.5 text-[15px] font-bold text-ink">Riwayat penugasan</h3>
-      {/* Riwayat terus bertambah tiap penugasan, jadi digulir di tempat */}
-      <div className="scrollbar-lembut -mx-1 grid grid-cols-1 gap-4.5 px-1 py-1 lg:max-h-[460px] lg:overflow-y-auto lg:overscroll-contain xl:grid-cols-2">
-        {riwayat.map((l) => (
-          <KartuLembur key={l.id} lembur={l} />
-        ))}
-      </div>
+      {riwayat.length ? (
+        /* Riwayat terus bertambah tiap penugasan, jadi digulir di tempat */
+        <div className="scrollbar-lembut -mx-1 grid grid-cols-1 gap-4.5 px-1 py-1 lg:max-h-[460px] lg:overflow-y-auto lg:overscroll-contain xl:grid-cols-2">
+          {riwayat.map((l) => (
+            <KartuLembur key={l.id} lembur={l} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-kartu border border-dashed border-garis-kuat bg-white px-5 py-8 text-center">
+          <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#EEF2F0] text-teks-lembut">
+            <Ikon.Jam size={20} />
+          </span>
+          <b className="block text-[13.5px] font-semibold text-ink">Belum ada penugasan yang dijawab</b>
+          <span className="mt-0.5 block text-[12px] text-teks-lembut">
+            Penugasan yang Anda terima atau tolak akan tercatat di sini.
+          </span>
+        </div>
+      )}
 
       {ditolakkan && (
         <Modal

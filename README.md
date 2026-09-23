@@ -1,7 +1,7 @@
 # Sistem Monitoring Petugas — Badan Bank Tanah
 
 Aplikasi web untuk memantau logbook harian, laporan kendala, dan lembur petugas
-**Security**, **Office Boy**, dan **Customer Service**.
+**Security**, **Office Boy**, **Customer Service**, dan **Messenger**.
 
 Dibangun dengan **React 18 + TypeScript + Vite + Tailwind CSS**.
 

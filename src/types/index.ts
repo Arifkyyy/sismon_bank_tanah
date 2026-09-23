@@ -1,5 +1,5 @@
-/** Tiga jabatan petugas lapangan yang dipantau sistem ini. */
-export type Jabatan = 'Security' | 'OB' | 'CS'
+/** Empat jabatan petugas lapangan yang dipantau sistem ini. */
+export type Jabatan = 'Security' | 'OB' | 'CS' | 'Messenger'
 
 /** Peran akun di dalam sistem. */
 export type Peran = 'superadmin' | 'admin' | 'user'

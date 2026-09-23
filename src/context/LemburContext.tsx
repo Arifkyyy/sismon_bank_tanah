@@ -1,14 +1,15 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useAuth } from '@/context/AuthContext'
 import { DRAF_LEMBUR, LEMBUR } from '@/data/mock'
 import { formatJam, formatTanggal, lamaLembur } from '@/lib/tanggal'
 import type { DrafLembur, Lembur } from '@/types'
 
 interface NilaiLembur {
   daftar: Lembur[]
-  /** penugasan yang belum dijawab petugas */
+  /** penugasan seluruh petugas yang belum dijawab — sudut pandang admin */
   menunggu: Lembur[]
-  /** penugasan yang sudah dijawab, yang terbaru di depan */
+  /** penugasan seluruh petugas yang sudah dijawab, yang terbaru di depan */
   riwayat: Lembur[]
   terima: (id: string) => void
   tolak: (id: string, alasan: string) => void
@@ -140,4 +141,38 @@ export function useLembur(): NilaiLembur {
   const nilai = useContext(Konteks)
   if (!nilai) throw new Error('useLembur harus dipakai di dalam <LemburProvider>')
   return nilai
+}
+
+/** Penugasan milik petugas yang sedang masuk, beserta cara menjawabnya. */
+interface LemburSaya {
+  menunggu: Lembur[]
+  riwayat: Lembur[]
+  terima: (id: string) => void
+  tolak: (id: string, alasan: string) => void
+}
+
+/**
+ * Sudut pandang petugas: hanya penugasan yang namanya dipilih admin saat
+ * membuat draf. Kalau admin menugaskan Security A, penugasan itu tidak boleh
+ * muncul di akun petugas lain — penyaringannya dilakukan di sini supaya semua
+ * halaman petugas memakai aturan yang sama.
+ *
+ * Nama dipakai sebagai penanda karena itu yang tersimpan di penugasan; ganti ke
+ * id petugas begitu backend menyediakannya.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useLemburSaya(): LemburSaya {
+  const { menunggu, riwayat, terima, tolak } = useLembur()
+  const { akun } = useAuth()
+  const nama = akun?.nama ?? ''
+
+  return useMemo(
+    () => ({
+      menunggu: menunggu.filter((l) => l.nama === nama),
+      riwayat: riwayat.filter((l) => l.nama === nama),
+      terima,
+      tolak,
+    }),
+    [menunggu, riwayat, nama, terima, tolak],
+  )
 }

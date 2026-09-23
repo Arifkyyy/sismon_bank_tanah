@@ -6,6 +6,7 @@ import { Baris, FotoKecil, Kartu, KopKartu, IsiKartu, Pil, PilihRapi, SelOrang, 
 import { AKAR } from '@/config/menu'
 import { KENDALA, LOGBOOK } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
+import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Peran } from '@/types'
 
 export function DashboardAdmin({ peran }: { peran: Peran }) {
@@ -15,7 +16,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Petugas bertugas hari ini" angka="42" satuan="/ 48" nada="ink" ikon={<Ikon.Orang size={17} />} ket="6 petugas cuti atau libur" />
+        <StatCard nama="Petugas bertugas hari ini" angka="46" satuan="/ 53" nada="ink" ikon={<Ikon.Orang size={17} />} ket="7 petugas cuti atau libur" />
         <StatCard nama="Logbook masuk hari ini" angka="58" ikon={<Ikon.Buku size={17} />} arah="naik" ket="12% lebih banyak dari kemarin" />
         <StatCard nama="Kendala belum selesai" angka="2" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="1 baru, 1 sedang diproses" />
         <StatCard nama="Jam lembur bulan ini" angka="186" satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} arah="naik" ket="24 jam dibanding Agustus" />
@@ -29,9 +30,9 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             aksi={
               <PilihRapi defaultValue="Semua jabatan">
                 <option>Semua jabatan</option>
-                <option>Security</option>
-                <option>Office Boy</option>
-                <option>Customer Service</option>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j}>{JABATAN_PANJANG[j]}</option>
+                ))}
               </PilihRapi>
             }
           />

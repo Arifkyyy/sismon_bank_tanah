@@ -60,8 +60,8 @@ export function Login() {
               <em className="block not-italic text-emas">untuk satu hari.</em>
             </h1>
             <p className="m-0 max-w-[42ch] text-[14.5px] text-white/75">
-              Logbook harian, laporan kendala, dan lembur petugas Security, Office Boy, dan Customer
-              Service dalam satu tempat.
+              Logbook harian, laporan kendala, dan lembur petugas Security, Office Boy, Customer
+              Service, dan Messenger dalam satu tempat.
             </p>
           </div>
         </div>

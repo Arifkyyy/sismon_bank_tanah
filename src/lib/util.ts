@@ -24,6 +24,8 @@ export function warnaAvatar(jabatan: Jabatan): string {
       return 'linear-gradient(135deg,#24985C,#145D31)'
     case 'CS':
       return 'linear-gradient(135deg,#E8C25A,#C09A3E)'
+    case 'Messenger':
+      return 'linear-gradient(135deg,#E89A5C,#A8541A)'
   }
 }
 
@@ -41,7 +43,7 @@ export const WARNA_STATUS: Record<Status, string> = {
 }
 
 /** Urutan jabatan yang dipakai di semua pilihan dan penyaring. */
-export const DAFTAR_JABATAN: Jabatan[] = ['Security', 'OB', 'CS']
+export const DAFTAR_JABATAN: Jabatan[] = ['Security', 'OB', 'CS', 'Messenger']
 
 /**
  * Nama panjang jabatan untuk label yang perlu jelas (mis. pilihan jabatan saat
@@ -51,6 +53,7 @@ export const JABATAN_PANJANG: Record<Jabatan, string> = {
   Security: 'Security',
   OB: 'Office Boy',
   CS: 'Customer Service',
+  Messenger: 'Messenger',
 }
 
 /** 'Office Boy' → 'OB'; label yang tidak dikenali dianggap Security. */
@@ -62,6 +65,7 @@ export const WARNA_JABATAN: Record<Jabatan, string> = {
   Security: 'border-[#BCD4E4] bg-[#EDF5FA] text-[#1C5A7C]',
   OB: 'border-[#CFE3D6] bg-[#EDF6F0] text-hijau-tua',
   CS: 'border-[#F0DCAE] bg-[#FDF6E4] text-emas-teks',
+  Messenger: 'border-[#F2D5BC] bg-[#FCEEE0] text-tanah-teks',
 }
 
 /** Gradasi placeholder foto bukti. */

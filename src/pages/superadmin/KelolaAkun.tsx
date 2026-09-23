@@ -5,6 +5,7 @@ import {
 } from '@/components/ui'
 import { AKUN_ADMIN, PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
+import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 
 export function KelolaAkun() {
   const [jenis, setJenis] = useState('Akun admin')
@@ -23,9 +24,9 @@ export function KelolaAkun() {
             </Kolom>
             <Kolom label="Jabatan" wajib>
               <Pilihan defaultValue="Security">
-                <option>Security</option>
-                <option>Office Boy</option>
-                <option>Customer Service</option>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j}>{JABATAN_PANJANG[j]}</option>
+                ))}
                 <option>Admin pengawas</option>
               </Pilihan>
             </Kolom>
@@ -91,13 +92,13 @@ export function KelolaAkun() {
         <Kartu>
           <KopKartu
             judul="Akun petugas"
-            sub="48 akun terdaftar"
+            sub="53 akun terdaftar"
             aksi={
               <PilihRapi defaultValue="Semua jabatan">
                 <option>Semua jabatan</option>
-                <option>Security</option>
-                <option>OB</option>
-                <option>CS</option>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j}>{j}</option>
+                ))}
               </PilihRapi>
             }
           />
@@ -130,7 +131,7 @@ export function KelolaAkun() {
               </Baris>
             ))}
           </Tabel>
-          <KakiTabel dari={1} ke={5} total={48} />
+          <KakiTabel dari={1} ke={5} total={53} />
         </Kartu>
 
         <Kartu className="border-[#F0CFCB]">

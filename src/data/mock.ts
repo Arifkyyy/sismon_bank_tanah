@@ -46,6 +46,8 @@ export const PETUGAS: Petugas[] = [
   { nama: 'Rudi Hartono', jabatan: 'OB', email: 'rudi.hartono@banktanah.go.id', telepon: '0856-2277-9903', status: 'Nonaktif' },
   { nama: 'Fitri Handayani', jabatan: 'CS', email: 'fitri.handayani@banktanah.go.id', telepon: '0821-6655-3310', status: 'Aktif' },
   { nama: 'Slamet Riyadi', jabatan: 'Security', email: 'slamet.riyadi@banktanah.go.id', telepon: '0877-1122-8890', status: 'Aktif' },
+  { nama: 'Agus Firmansyah', jabatan: 'Messenger', email: 'agus.firmansyah@banktanah.go.id', telepon: '0813-4499-6701', status: 'Aktif' },
+  { nama: 'Dedi Kurniadi', jabatan: 'Messenger', email: 'dedi.kurniadi@banktanah.go.id', telepon: '0852-7733-1184', status: 'Cuti' },
 ]
 
 export const LOGBOOK: Logbook[] = [
@@ -56,6 +58,8 @@ export const LOGBOOK: Logbook[] = [
   { nama: 'Slamet Riyadi', jabatan: 'Security', tanggal: '15 Sep 2026', hari: 'Selasa', jam: '09.14', keterangan: 'Patroli keliling area parkir dan pintu belakang, tidak ada temuan.', foto: 'b', lembur: '2j 00m' },
   { nama: 'Fitri Handayani', jabatan: 'CS', tanggal: '14 Sep 2026', hari: 'Senin', jam: '16.48', keterangan: 'Penutupan layanan, laporan harian diserahkan ke koordinator.', foto: 'c', lembur: '—' },
   { nama: 'Andri Kurniawan', jabatan: 'Security', tanggal: '14 Sep 2026', hari: 'Senin', jam: '19.00', keterangan: 'Mulai shift malam, pengecekan seluruh titik CCTV.', foto: 'a', lembur: '3j 00m' },
+  { nama: 'Agus Firmansyah', jabatan: 'Messenger', tanggal: '15 Sep 2026', hari: 'Selasa', jam: '09.05', keterangan: 'Pengantaran 6 surat dinas ke Kementerian ATR/BPN, seluruh tanda terima sudah dikumpulkan.', foto: 'c', lembur: '—' },
+  { nama: 'Agus Firmansyah', jabatan: 'Messenger', tanggal: '14 Sep 2026', hari: 'Senin', jam: '14.22', keterangan: 'Pengambilan dokumen legal dari notaris dan diserahkan ke Bagian Hukum.', foto: 'b', lembur: '1j 00m' },
 ]
 
 export const KENDALA: Kendala[] = [
@@ -64,6 +68,7 @@ export const KENDALA: Kendala[] = [
   { nama: 'Siti Nurhaliza', jabatan: 'CS', tanggal: '14 Sep 2026', hari: 'Senin', jam: '13.25', keterangan: 'Printer meja depan tidak terdeteksi jaringan sejak pagi.', status: 'Diproses', foto: 'c' },
   { nama: 'Maya Anggraini', jabatan: 'CS', tanggal: '13 Sep 2026', hari: 'Minggu', jam: '11.05', keterangan: 'AC ruang tunggu tidak dingin, tamu mengeluh sejak siang.', status: 'Selesai', foto: 'a' },
   { nama: 'Slamet Riyadi', jabatan: 'Security', tanggal: '12 Sep 2026', hari: 'Sabtu', jam: '21.30', keterangan: 'Lampu sorot halaman belakang mati, area jadi gelap saat patroli.', status: 'Selesai', foto: 'b' },
+  { nama: 'Agus Firmansyah', jabatan: 'Messenger', tanggal: '15 Sep 2026', hari: 'Selasa', jam: '11.48', keterangan: 'Motor dinas mogok di perjalanan pulang, pengantaran surat sore tertunda.', status: 'Baru', foto: 'c' },
 ]
 
 export const LEMBUR: Lembur[] = [
@@ -72,6 +77,13 @@ export const LEMBUR: Lembur[] = [
   { id: 'lbr-3', nama: 'Joko Priyono', jabatan: 'OB', tanggal: '15 Sep 2026', tanggalIso: '2026-09-15', rentang: '17.00 – 21.00', total: '4 jam', keterangan: 'Persiapan dan pembersihan ruang rapat setelah acara.', status: 'Diterima', dijawabPada: '14 Sep 2026 · 16.40' },
   { id: 'lbr-4', nama: 'Andri Kurniawan', jabatan: 'Security', tanggal: '14 Sep 2026', tanggalIso: '2026-09-14', rentang: '19.00 – 23.00', total: '4 jam', keterangan: 'Penggantian rekan yang berhalangan hadir shift malam.', status: 'Ditolak', alasan: 'Sedang sakit dan sudah izin ke koordinator pos.', dijawabPada: '13 Sep 2026 · 20.05' },
   { id: 'lbr-5', nama: 'Maya Anggraini', jabatan: 'CS', tanggal: '13 Sep 2026', tanggalIso: '2026-09-13', rentang: '16.00 – 19.00', total: '3 jam', keterangan: 'Rekap dokumen layanan akhir pekan.', status: 'Selesai', dijawabPada: '12 Sep 2026 · 15.30' },
+  { id: 'lbr-6', nama: 'Agus Firmansyah', jabatan: 'Messenger', tanggal: '16 Sep 2026', tanggalIso: '2026-09-16', rentang: '17.00 – 20.00', total: '3 jam', keterangan: 'Pengantaran berkas lelang ke kantor wilayah sebelum batas waktu.', status: 'Menunggu' },
+  // Riwayat milik akun petugas contoh (Bagas Setiawan) — totalnya 12 jam dari
+  // 3 penugasan, sama dengan angka di rekapitulasi dan dashboard.
+  { id: 'lbr-7', nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '12 Sep 2026', tanggalIso: '2026-09-12', rentang: '18.00 – 22.00', total: '4 jam', keterangan: 'Pengamanan acara sosialisasi di Aula Gedung B.', status: 'Diterima', dijawabPada: '11 Sep 2026 · 14.02' },
+  { id: 'lbr-8', nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '09 Sep 2026', tanggalIso: '2026-09-09', rentang: '19.00 – 23.00', total: '4 jam', keterangan: 'Pendampingan pemeliharaan panel listrik di area parkir.', status: 'Selesai', dijawabPada: '08 Sep 2026 · 09.35' },
+  { id: 'lbr-9', nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '05 Sep 2026', tanggalIso: '2026-09-05', rentang: '18.00 – 22.00', total: '4 jam', keterangan: 'Penjagaan pintu utama saat kunjungan mitra di luar jam kerja.', status: 'Diterima', dijawabPada: '04 Sep 2026 · 16.18' },
+  { id: 'lbr-10', nama: 'Bagas Setiawan', jabatan: 'Security', tanggal: '02 Sep 2026', tanggalIso: '2026-09-02', rentang: '17.00 – 21.00', total: '4 jam', keterangan: 'Penggantian rekan shift sore di Pos Belakang.', status: 'Ditolak', alasan: 'Ada jadwal kontrol kesehatan rutin di jam yang sama.', dijawabPada: '01 Sep 2026 · 11.47' },
 ]
 
 /**
@@ -118,6 +130,15 @@ export const DRAF_LEMBUR: DrafLembur[] = [
     selesai: '20:00',
     keterangan: 'Pendampingan tamu kunjungan kerja Kementerian ATR/BPN sampai acara selesai.',
   },
+  {
+    id: 'draf-5',
+    nama: 'Agus Firmansyah',
+    jabatan: 'Messenger',
+    tanggal: '2026-09-19',
+    mulai: '16:00',
+    selesai: '20:00',
+    keterangan: 'Pengantaran dokumen perjanjian ke tiga mitra sebelum akhir pekan.',
+  },
 ]
 
 /** Rekap gabungan logbook + lembur per petugas. */
@@ -129,6 +150,7 @@ export const REKAP = [
   { nama: 'Slamet Riyadi', jabatan: 'Security' as const, hari: 15, logbook: 44, kendala: 3, lembur: '14 jam', patuh: '100%' },
   { nama: 'Fitri Handayani', jabatan: 'CS' as const, hari: 12, logbook: 33, kendala: 0, lembur: '3 jam', patuh: '80%' },
   { nama: 'Andri Kurniawan', jabatan: 'Security' as const, hari: 9, logbook: 26, kendala: 1, lembur: '8 jam', patuh: '60%' },
+  { nama: 'Agus Firmansyah', jabatan: 'Messenger' as const, hari: 14, logbook: 36, kendala: 2, lembur: '7 jam', patuh: '93%' },
 ]
 
 /** [logbook, jam lembur] tujuh hari terakhir. */
@@ -151,6 +173,8 @@ export const ARSIP_FOTO = [
   { nama: 'Slamet Riyadi', waktu: '14 Sep 2026 · 21.30', sumber: 'Kendala', dipilih: true },
   { nama: 'Fitri Handayani', waktu: '14 Sep 2026 · 16.48', sumber: 'Logbook', dipilih: false },
   { nama: 'Andri Kurniawan', waktu: '13 Sep 2026 · 19.00', sumber: 'Logbook', dipilih: false },
+  { nama: 'Agus Firmansyah', waktu: '15 Sep 2026 · 09.05', sumber: 'Logbook', dipilih: false },
+  { nama: 'Agus Firmansyah', waktu: '15 Sep 2026 · 11.48', sumber: 'Kendala', dipilih: false },
 ]
 
 export const AKUN_ADMIN = [

@@ -6,7 +6,7 @@ import {
 } from '@/components/ui'
 import { ARSIP_FOTO } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
-import { cn, WARNA_FOTO } from '@/lib/util'
+import { cn, DAFTAR_JABATAN, WARNA_FOTO } from '@/lib/util'
 
 const VARIAN = ['a', 'b', 'c'] as const
 
@@ -52,9 +52,9 @@ export function HapusDataFoto() {
               </PilihRapi>
               <PilihRapi defaultValue="Semua jabatan">
                 <option>Semua jabatan</option>
-                <option>Security</option>
-                <option>OB</option>
-                <option>CS</option>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j}>{j}</option>
+                ))}
               </PilihRapi>
             </>
           }

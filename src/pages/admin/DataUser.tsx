@@ -6,6 +6,7 @@ import {
 import { AKAR } from '@/config/menu'
 import { PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
+import { DAFTAR_JABATAN } from '@/lib/util'
 import type { Peran } from '@/types'
 
 export function DataUser({ peran }: { peran: Peran }) {
@@ -20,9 +21,9 @@ export function DataUser({ peran }: { peran: Peran }) {
           <>
             <PilihRapi defaultValue="Semua jabatan">
               <option>Semua jabatan</option>
-              <option>Security</option>
-              <option>OB</option>
-              <option>CS</option>
+              {DAFTAR_JABATAN.map((j) => (
+                <option key={j}>{j}</option>
+              ))}
             </PilihRapi>
             <PilihRapi defaultValue="Semua status">
               <option>Semua status</option>

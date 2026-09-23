@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { NavLink, useLocation } from 'react-router-dom'
 import { AKAR, MENU } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
+import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import type { NamaIkon } from '@/lib/ikon'
 import { cn } from '@/lib/util'
@@ -17,6 +18,9 @@ interface Props {
 
 export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
   const { akun, keluar } = useAuth()
+  // Penugasan lembur milik akun ini saja — jadi angka notifikasinya ikut
+  // petugas yang dipilih admin, bukan total seluruh petugas.
+  const { menunggu } = useLemburSaya()
   const lokasi = useLocation()
   const navRef = useRef<HTMLElement>(null)
   const sisiRef = useRef<HTMLElement>(null)
@@ -116,6 +120,10 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
             {ciut && <div className="mx-5 my-2 hidden h-px bg-white/15 lg:block" />}
             {grup.item.map((item) => {
               const Glif = Ikon[item.ikon as NamaIkon]
+              const tanda =
+                peran === 'user' && item.id === 'lembur'
+                  ? menunggu.length > 0 && String(menunggu.length)
+                  : item.tanda
               return (
                 <NavLink
                   key={item.id}
@@ -137,7 +145,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
                     <>
                       <Glif className={cn('flex-none', isActive ? 'text-hijau' : 'opacity-85')} />
                       <span className={cn(ciut && 'lg:hidden')}>{item.label}</span>
-                      {item.tanda && (
+                      {tanda && (
                         <i
                           className={cn(
                             'num ml-auto grid h-5 min-w-[20px] place-items-center rounded-full px-1.5 text-[11px] font-bold not-italic',
@@ -145,7 +153,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
                             ciut && 'lg:hidden',
                           )}
                         >
-                          {item.tanda}
+                          {tanda}
                         </i>
                       )}
                     </>

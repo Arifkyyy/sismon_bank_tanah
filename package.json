@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Sistem Monitoring Petugas — Badan Bank Tanah (Security, Office Boy, Customer Service)",
+  "description": "Sistem Monitoring Petugas — Badan Bank Tanah (Security, Office Boy, Customer Service, Messenger)",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
