@@ -1,13 +1,78 @@
+import { useState } from 'react'
 import {
   BarisData, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Tombol,
 } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
+import { api, pesanGalat, query } from '@/lib/api'
+import { useApi } from '@/lib/useApi'
+import { keIso } from '@/lib/tanggal'
+import type { Kendala, Logbook } from '@/types'
+
+/** Mengambil angka jam dari teks seperti '4 jam'. */
+function jamDari(total: string): number {
+  return Number.parseFloat(total.replace(',', '.')) || 0
+}
 
 export function Profil() {
   const { akun, peran, keluar } = useAuth()
-  if (!akun) return null
   const petugas = peran === 'user'
+
+  const [sandiLama, setSandiLama] = useState('')
+  const [sandiBaru, setSandiBaru] = useState('')
+  const [ulangi, setUlangi] = useState('')
+  const [pesan, setPesan] = useState<{ nada: 'baik' | 'buruk'; teks: string } | null>(null)
+  const [menyimpan, setMenyimpan] = useState(false)
+
+  const hariIniIso = keIso(new Date())
+  const awalBulan = `${hariIniIso.slice(0, 7)}-01`
+  const jendela = query({ dari: awalBulan, sampai: hariIniIso })
+
+  // Untuk admin, backend mengembalikan seluruh petugas; untuk petugas, miliknya.
+  const { data: logbook } = useApi<Logbook[]>(`/api/logbook${jendela}`, [])
+  const { data: kendala } = useApi<Kendala[]>(`/api/kendala${jendela}`, [])
+  const { data: lembur } = useApi<{ tanggalIso: string; total: string; status: string }[]>(
+    '/api/lembur',
+    [],
+  )
+
+  const lemburBulanIni = lembur.filter(
+    (l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso,
+  )
+  const jamLembur = lemburBulanIni
+    .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
+    .reduce((n, l) => n + jamDari(l.total), 0)
+  const kendalaSelesai = kendala.filter((k) => k.status === 'Selesai').length
+  // Kepatuhan = bagian hari berjalan yang punya catatan.
+  const hariTercatat = new Set(logbook.map((l) => l.tanggalIso)).size
+  const hariBerjalan = Number(hariIniIso.slice(8, 10))
+  const patuh = hariBerjalan ? Math.round((hariTercatat / hariBerjalan) * 100) : 0
+
+  async function gantiSandi() {
+    if (sandiBaru.length < 8) {
+      setPesan({ nada: 'buruk', teks: 'Kata sandi baru minimal 8 karakter.' })
+      return
+    }
+    if (sandiBaru !== ulangi) {
+      setPesan({ nada: 'buruk', teks: 'Ulangan kata sandi tidak sama.' })
+      return
+    }
+    setMenyimpan(true)
+    setPesan(null)
+    try {
+      await api('/api/auth/ganti-sandi', 'POST', { sandiLama, sandiBaru })
+      setPesan({ nada: 'baik', teks: 'Kata sandi berhasil diganti.' })
+      setSandiLama('')
+      setSandiBaru('')
+      setUlangi('')
+    } catch (e) {
+      setPesan({ nada: 'buruk', teks: pesanGalat(e) })
+    } finally {
+      setMenyimpan(false)
+    }
+  }
+
+  if (!akun) return null
 
   return (
     <>
@@ -55,10 +120,9 @@ export function Profil() {
               <BarisData label="Unit penempatan">{akun.unit}</BarisData>
               <BarisData label="Email kantor">{akun.email}</BarisData>
               <BarisData label="Nomor telepon">
-                <span className="num">0812-1144-9021</span>
+                <span className="num">{akun.telepon || '—'}</span>
               </BarisData>
-              {petugas && <BarisData label="Jadwal shift">Pagi · 07.00 – 15.00</BarisData>}
-              <BarisData label="Bergabung sejak">19 Juli 2021</BarisData>
+              <BarisData label="Bergabung sejak">{akun.bergabung || '—'}</BarisData>
             </IsiKartu>
           </Kartu>
 
@@ -67,68 +131,72 @@ export function Profil() {
             <IsiKartu>
               <GridForm>
                 <Kolom label="Kata sandi saat ini" penuh>
-                  <Input type="password" defaultValue="petugas2026" />
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    value={sandiLama}
+                    onChange={(e) => setSandiLama(e.target.value)}
+                  />
                 </Kolom>
                 <Kolom label="Kata sandi baru">
-                  <Input type="password" placeholder="Minimal 8 karakter" />
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Minimal 8 karakter"
+                    value={sandiBaru}
+                    onChange={(e) => setSandiBaru(e.target.value)}
+                  />
                 </Kolom>
                 <Kolom label="Ulangi kata sandi baru">
-                  <Input type="password" placeholder="Ketik ulang" />
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Ketik ulang"
+                    value={ulangi}
+                    onChange={(e) => setUlangi(e.target.value)}
+                  />
                 </Kolom>
               </GridForm>
+              {pesan && (
+                <div
+                  className={
+                    pesan.nada === 'baik'
+                      ? 'mt-3.5 rounded-xl border border-hijau/30 bg-hijau-lembut px-3.5 py-2.5 text-[12px] text-hijau-tua'
+                      : 'mt-3.5 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] text-merah-teks'
+                  }
+                >
+                  {pesan.teks}
+                </div>
+              )}
             </IsiKartu>
             <KakiForm>
-              <Tombol>Simpan kata sandi</Tombol>
+              <Tombol onClick={gantiSandi} disabled={menyimpan}>
+                {menyimpan ? 'Menyimpan…' : 'Simpan kata sandi'}
+              </Tombol>
             </KakiForm>
           </Kartu>
         </div>
 
         <div className="grid content-start gap-4.5">
           <Kartu>
-            <KopKartu judul="Ringkasan bulan ini" sub="1–15 September 2026" />
+            <KopKartu judul="Ringkasan bulan ini" sub="Dihitung dari data bulan berjalan" />
             <IsiKartu>
               <BarisData label={petugas ? 'Catatan aktivitas' : 'Logbook ditinjau'}>
-                <span className="num">{petugas ? '45' : '1.204'}</span>
+                <span className="num">{logbook.length.toLocaleString('id-ID')}</span>
               </BarisData>
               <BarisData label={petugas ? 'Kendala dilaporkan' : 'Kendala ditangani'}>
-                <span className="num">{petugas ? '2' : '19'}</span>
+                <span className="num">{petugas ? kendala.length : kendalaSelesai}</span>
               </BarisData>
               <BarisData label={petugas ? 'Jam lembur' : 'Penugasan lembur dibuat'}>
-                <span className="num">{petugas ? '12 jam' : '34'}</span>
+                <span className="num">{petugas ? `${jamLembur} jam` : lemburBulanIni.length}</span>
               </BarisData>
-              <BarisData label="Kepatuhan">
-                <Pil status="Selesai">100%</Pil>
-              </BarisData>
-            </IsiKartu>
-          </Kartu>
-
-          <Kartu>
-            <KopKartu judul="Perangkat yang masuk" sub="Keluarkan perangkat yang tidak Anda kenali" />
-            <IsiKartu>
-              <BarisData
-                label={
-                  <>
-                    Android · Pos Utama
-                    <br />
-                    <span className="text-[11px] text-teks-samar">Aktif sekarang</span>
-                  </>
-                }
-              >
-                <Pil status="Aktif">Perangkat ini</Pil>
-              </BarisData>
-              <BarisData
-                label={
-                  <>
-                    Chrome · Windows
-                    <br />
-                    <span className="text-[11px] text-teks-samar">14 Sep 2026, 16.20</span>
-                  </>
-                }
-              >
-                <Tombol varian="hantu" kecil>
-                  Keluarkan
-                </Tombol>
-              </BarisData>
+              {petugas && (
+                <BarisData label="Kepatuhan">
+                  <Pil status={patuh >= 96 ? 'Selesai' : patuh >= 70 ? 'Diproses' : 'Ditolak'}>
+                    {patuh}%
+                  </Pil>
+                </BarisData>
+              )}
             </IsiKartu>
           </Kartu>
 
