@@ -1,30 +1,64 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { AKUN } from '@/data/mock'
+import { ambilToken, api, hapusToken, simpanToken } from '@/lib/api'
 import type { Akun, Peran } from '@/types'
 
 interface NilaiAuth {
   peran: Peran | null
   akun: Akun | null
-  masuk: (peran: Peran) => void
+  /** true selama sesi lama sedang dipulihkan dari token saat halaman dibuka */
+  memulihkan: boolean
+  /** Login ke backend. Melempar galat berisi pesan kalau gagal. Mengembalikan peran. */
+  masuk: (email: string, sandi: string, ingat: boolean) => Promise<Peran>
   keluar: () => void
+}
+
+interface Sesi {
+  peran: Peran
+  akun: Akun
 }
 
 const Konteks = createContext<NilaiAuth | null>(null)
 
 /**
- * Menyimpan peran yang sedang aktif. Untuk produksi, ganti `masuk`
- * dengan pemanggilan API login dan simpan token di httpOnly cookie.
+ * Menyimpan siapa yang sedang login. Tokennya disimpan oleh lib/api.ts;
+ * di sini hanya peran dan data akunnya. Saat halaman dimuat ulang, sesi
+ * dipulihkan dengan menanyakan GET /api/auth/saya memakai token yang ada.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [peran, setPeran] = useState<Peran | null>(null)
+  const [sesi, setSesi] = useState<Sesi | null>(null)
+  const [memulihkan, setMemulihkan] = useState(() => ambilToken() !== null)
 
-  const masuk = useCallback((p: Peran) => setPeran(p), [])
-  const keluar = useCallback(() => setPeran(null), [])
+  useEffect(() => {
+    if (!ambilToken()) return
+    api<Sesi>('/api/auth/saya')
+      .then(setSesi)
+      .catch(() => hapusToken())
+      .finally(() => setMemulihkan(false))
+  }, [])
+
+  // lib/api.ts memancarkan 'sesi-habis' bila backend menolak token.
+  useEffect(() => {
+    const habis = () => setSesi(null)
+    window.addEventListener('sesi-habis', habis)
+    return () => window.removeEventListener('sesi-habis', habis)
+  }, [])
+
+  const masuk = useCallback(async (email: string, sandi: string, ingat: boolean) => {
+    const hasil = await api<Sesi & { token: string }>('/api/auth/masuk', 'POST', { email, sandi })
+    simpanToken(hasil.token, ingat)
+    setSesi({ peran: hasil.peran, akun: hasil.akun })
+    return hasil.peran
+  }, [])
+
+  const keluar = useCallback(() => {
+    hapusToken()
+    setSesi(null)
+  }, [])
 
   const nilai = useMemo<NilaiAuth>(
-    () => ({ peran, akun: peran ? AKUN[peran] : null, masuk, keluar }),
-    [peran, masuk, keluar],
+    () => ({ peran: sesi?.peran ?? null, akun: sesi?.akun ?? null, memulihkan, masuk, keluar }),
+    [sesi, memulihkan, masuk, keluar],
   )
 
   return <Konteks.Provider value={nilai}>{children}</Konteks.Provider>
