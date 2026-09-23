@@ -1,16 +1,28 @@
-import { TUJUH_HARI } from '@/data/mock'
+import { useApi } from '@/lib/useApi'
+import type { HariBagan, SebaranJabatan } from '@/types'
 
 /** Batang bertumpuk: hijau = jumlah catatan, emas = jam lembur. */
 export function BaganTujuhHari({ labelCatatan = 'Logbook masuk' }: { labelCatatan?: string }) {
+  const { data: tujuhHari } = useApi<HariBagan[]>('/api/statistik/tujuh-hari', [])
+
   // Dua skala terpisah: kalau dipaksa satu skala, batang lembur jadi
   // terlalu tipis untuk dibaca karena angkanya jauh lebih kecil.
-  const maksLog = Math.max(...TUJUH_HARI.map((d) => d.logbook))
-  const maksLembur = Math.max(...TUJUH_HARI.map((d) => d.lembur))
+  // `|| 1` menjaga pembagian saat semua nilainya nol.
+  const maksLog = Math.max(1, ...tujuhHari.map((d) => d.logbook))
+  const maksLembur = Math.max(1, ...tujuhHari.map((d) => d.lembur))
+
+  if (tujuhHari.length === 0) {
+    return (
+      <div className="grid h-[186px] place-items-center text-[12.5px] text-teks-samar">
+        Belum ada data tujuh hari terakhir
+      </div>
+    )
+  }
 
   return (
     <>
       <div className="flex h-[186px] items-end gap-3 px-0.5">
-        {TUJUH_HARI.map((d) => (
+        {tujuhHari.map((d) => (
           <div key={d.hari} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
             <div className="flex h-full w-full max-w-[42px] flex-col justify-end gap-0.5">
               <div
@@ -42,15 +54,28 @@ export function BaganTujuhHari({ labelCatatan = 'Logbook masuk' }: { labelCatata
   )
 }
 
+/** Warna irisan donat per jabatan; backend hanya mengirim label dan nilai. */
+const WARNA_IRISAN: Record<string, string> = {
+  Security: '#10874C',
+  'Customer Service': '#F2BE26',
+  'Office Boy': '#DE7B2C',
+  Messenger: '#3E7FA3',
+}
+const WARNA_CADANGAN = '#8AA0A8'
+
 /** Donat sebaran jabatan. */
 export function Donat() {
-  const data = [
-    { label: 'Security', nilai: 30, warna: '#10874C' },
-    { label: 'Customer Service', nilai: 11, warna: '#F2BE26' },
-    { label: 'Office Boy', nilai: 7, warna: '#DE7B2C' },
-    { label: 'Messenger', nilai: 5, warna: '#3E7FA3' },
-  ]
+  const { data: sebaran } = useApi<SebaranJabatan[]>('/api/statistik/sebaran-jabatan', [])
+  const data = sebaran.map((d) => ({ ...d, warna: WARNA_IRISAN[d.label] ?? WARNA_CADANGAN }))
   const total = data.reduce((a, b) => a + b.nilai, 0)
+
+  if (total === 0) {
+    return (
+      <div className="grid h-[132px] place-items-center text-[12.5px] text-teks-samar">
+        Belum ada petugas terdaftar
+      </div>
+    )
+  }
 
   let jalan = 0
   const potongan = data
