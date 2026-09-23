@@ -5,48 +5,47 @@ import {
   Baris, FotoKecil, InputRapi, IsiKartu, Kartu, KopKartu, PilihRapi, SelOrang,
   Segmen, Tabel, TagJabatan, Tombol,
 } from '@/components/ui'
-import { ISO_HARI_INI, LOGBOOK } from '@/data/mock'
+import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
-import { daftarBulan, formatRentang, formatTanggal, isoDariTampilan } from '@/lib/tanggal'
+import { query } from '@/lib/api'
+import { unduhCsv } from '@/lib/csv'
+import { jendelaPeriode } from '@/lib/periode'
+import type { Periode } from '@/lib/periode'
+import { useApi } from '@/lib/useApi'
+import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Jabatan } from '@/types'
+import type { Jabatan, Logbook } from '@/types'
 
 const BULAN_PILIHAN = daftarBulan()
 
-type Periode = 'Harian' | 'Bulanan' | 'Custom' | 'All Time'
-
 export function LogAktivitas() {
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState(ISO_HARI_INI)
+  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
 
   /**
-   * Catatan disaring per periode dan jabatan. Tanggal logbook disimpan siap
-   * tampil ('15 Sep 2026'), jadi diubah dulu ke ISO supaya bisa dibandingkan
-   * sebagai teks.
+   * Seluruh penyaringan dikerjakan backend: periode jadi dari/sampai, jabatan
+   * dikirim apa adanya. `jendela` bernilai null saat Custom dipilih tapi
+   * rentangnya belum diisi — saat itu data sengaja tidak diambil.
    */
-  const terlihat = useMemo(() => {
-    function dalamPeriode(iso: string): boolean {
-      switch (periode) {
-        case 'Harian':
-          return iso === tanggal
-        case 'Bulanan':
-          return iso.startsWith(bulan)
-        case 'Custom':
-          return !!rentang && iso >= rentang.mulai && iso <= rentang.sampai
-        default:
-          return true
-      }
-    }
+  const jendela = useMemo(
+    () => jendelaPeriode(periode, tanggal, bulan, rentang),
+    [periode, tanggal, bulan, rentang],
+  )
+  const alamat = jendela
+    ? `/api/logbook${query({ ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan })}`
+    : null
+  const { data: terlihat, memuat, galat, muat } = useApi<Logbook[]>(alamat, [])
 
-    return LOGBOOK.filter(
-      (l) =>
-        dalamPeriode(isoDariTampilan(l.tanggal)) &&
-        (jabatan === 'Semua' || l.jabatan === jabatan),
+  function unduh() {
+    unduhCsv(
+      `log-aktivitas-${jendela?.dari ?? 'semua'}`,
+      ['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Lembur'],
+      terlihat.map((l) => [l.nama, l.jabatan, l.tanggal, l.hari, l.jam, l.keterangan, l.lembur]),
     )
-  }, [periode, tanggal, bulan, rentang, jabatan])
+  }
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
   let labelPeriode: string
@@ -120,7 +119,7 @@ export function LogAktivitas() {
                 </option>
               ))}
             </PilihRapi>
-            <Tombol varian="hantu" kecil>
+            <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
               <Ikon.Unduh size={15} /> Unduh Excel
             </Tombol>
           </div>
@@ -137,6 +136,7 @@ export function LogAktivitas() {
             </span>
           }
         />
+        <StatusData memuat={memuat} galat={galat} onUlang={muat} />
         <Tabel kepala={['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Lembur']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
@@ -145,16 +145,18 @@ export function LogAktivitas() {
                   <Ikon.Buku size={19} />
                 </span>
                 <b className="block text-[13.5px] font-semibold text-ink">
-                  Tidak ada catatan pada saringan ini
+                  {memuat ? 'Memuat catatan…' : 'Tidak ada catatan pada saringan ini'}
                 </b>
                 <span className="mt-0.5 block text-[12px] text-teks-lembut">
-                  Ganti periode atau pilih jabatan lain.
+                  {alamat === null
+                    ? 'Pilih rentang tanggal dulu.'
+                    : 'Ganti periode atau pilih jabatan lain.'}
                 </span>
               </td>
             </tr>
           ) : (
             terlihat.map((l) => (
-              <Baris key={l.nama + l.tanggal + l.jam}>
+              <Baris key={l.id}>
                 <td>
                   <SelOrang nama={l.nama} jabatan={l.jabatan} />
                 </td>
@@ -165,7 +167,11 @@ export function LogAktivitas() {
                 <td className="text-teks-lembut">{l.hari}</td>
                 <td className="num">{l.jam}</td>
                 <td>
-                  <FotoKecil varian={l.foto} />
+                  <FotoKecil
+                    varian={l.foto}
+                    url={l.fotoUrl?.[0]}
+                    onClick={() => l.fotoUrl?.[0] && window.open(l.fotoUrl[0], '_blank', 'noopener')}
+                  />
                 </td>
                 <td className="max-w-[330px] whitespace-normal text-teks-lembut">{l.keterangan}</td>
                 <td className="num">
