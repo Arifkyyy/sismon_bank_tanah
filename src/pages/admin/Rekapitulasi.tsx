@@ -5,11 +5,15 @@ import { StatCard } from '@/components/StatCard'
 import {
   Baris, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
 } from '@/components/ui'
-import { REKAP } from '@/data/mock'
+import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
+import { query } from '@/lib/api'
+import { unduhCsv } from '@/lib/csv'
+import { jendelaPeriode } from '@/lib/periode'
+import { useApi } from '@/lib/useApi'
 import { daftarBulan, formatRentang } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Jabatan } from '@/types'
+import type { Jabatan, RekapPetugas } from '@/types'
 
 /** Kepatuhan di bawah 70% ditandai merah, 70–95% emas, sisanya hijau. */
 function statusPatuh(patuh: string) {
@@ -19,31 +23,58 @@ function statusPatuh(patuh: string) {
   return 'Ditolak' as const
 }
 
-const DAFTAR_BULAN = daftarBulan().map((b) => b.label)
+const BULAN_PILIHAN = daftarBulan()
 
 type Periode = 'Bulanan' | 'Custom' | 'All Time'
 
+/** Mengambil angka jam dari teks seperti '12 jam'. */
+function jamDari(teks: string): number {
+  return Number.parseFloat(teks.replace(',', '.')) || 0
+}
+
 export function Rekapitulasi() {
   const [periode, setPeriode] = useState<Periode>('Bulanan')
-  const [bulan, setBulan] = useState(DAFTAR_BULAN[0])
+  const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
 
-  // Rekap dipersempit per jabatan supaya admin bisa memeriksa satu regu saja.
-  const terlihat = useMemo(
-    () => (jabatan === 'Semua' ? REKAP : REKAP.filter((r) => r.jabatan === jabatan)),
-    [jabatan],
+  // Periode dan jabatan dikirim ke backend; tidak ada penyaringan di browser.
+  const jendela = useMemo(
+    () => jendelaPeriode(periode, '', bulan, rentang),
+    [periode, bulan, rentang],
   )
+  const alamat = jendela
+    ? `/api/statistik/rekap${query({ ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan })}`
+    : null
+  const { data: terlihat, memuat, galat, muat } = useApi<RekapPetugas[]>(alamat, [])
+
+  // Seluruh angka kartu statistik dijumlahkan dari baris rekap yang sama.
+  const totalLogbook = terlihat.reduce((n, r) => n + r.logbook, 0)
+  const totalKendala = terlihat.reduce((n, r) => n + r.kendala, 0)
+  const totalJam = terlihat.reduce((n, r) => n + jamDari(r.lembur), 0)
+  const rataPatuh = terlihat.length
+    ? Math.round(terlihat.reduce((n, r) => n + (Number.parseInt(r.patuh, 10) || 0), 0) / terlihat.length)
+    : 0
 
   // Dipakai sebagai keterangan periode di kartu dan kartu statistik.
   const labelPeriode =
     periode === 'Bulanan'
-      ? bulan
+      ? (BULAN_PILIHAN.find((b) => b.kunci === bulan)?.label ?? bulan)
       : periode === 'Custom'
         ? rentang
           ? formatRentang(rentang.mulai, rentang.sampai)
           : 'Rentang tanggal belum dipilih'
         : 'Seluruh periode'
+
+  function unduh() {
+    unduhCsv(
+      `rekapitulasi-${jendela?.dari ?? 'semua'}`,
+      ['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan', 'Checklist'],
+      terlihat.map((r) => [
+        r.nama, r.jabatan, r.hari, r.logbook, r.kendala, r.lembur, r.patuh, r.checklist,
+      ]),
+    )
+  }
 
   return (
     <>
@@ -59,8 +90,10 @@ export function Rekapitulasi() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {periode === 'Bulanan' && (
               <PilihRapi value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
-                {DAFTAR_BULAN.map((b) => (
-                  <option key={b}>{b}</option>
+                {BULAN_PILIHAN.map((b) => (
+                  <option key={b.kunci} value={b.kunci}>
+                    {b.label}
+                  </option>
                 ))}
               </PilihRapi>
             )}
@@ -84,7 +117,7 @@ export function Rekapitulasi() {
                 </option>
               ))}
             </PilihRapi>
-            <Tombol varian="hantu" kecil>
+            <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
               <Ikon.Unduh size={15} /> Unduh rekap
             </Tombol>
           </div>
@@ -92,10 +125,10 @@ export function Rekapitulasi() {
       </Kartu>
 
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Total logbook" angka="1.204" ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard nama="Kehadiran tercatat" angka="96,4" satuan="%" ikon={<Ikon.Centang size={17} />} ket="Dihitung dari jadwal shift" />
-        <StatCard nama="Total jam lembur" angka="186" satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Dari 34 penugasan" />
-        <StatCard nama="Kendala dilaporkan" angka="19" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="17 sudah selesai" />
+        <StatCard nama="Total logbook" angka={totalLogbook.toLocaleString('id-ID')} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
+        <StatCard nama="Kehadiran tercatat" angka={String(rataPatuh)} satuan="%" ikon={<Ikon.Centang size={17} />} ket="Rata-rata kepatuhan petugas" />
+        <StatCard nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={labelPeriode} />
+        <StatCard nama="Kendala dilaporkan" angka={String(totalKendala)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`Dari ${terlihat.length} petugas`} />
       </div>
 
       <Kartu className="mt-4.5">
@@ -108,6 +141,7 @@ export function Rekapitulasi() {
             </span>
           }
         />
+        <StatusData memuat={memuat} galat={galat} onUlang={muat} />
         <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
@@ -116,16 +150,18 @@ export function Rekapitulasi() {
                   <Ikon.Orang size={19} />
                 </span>
                 <b className="block text-[13.5px] font-semibold text-ink">
-                  Tidak ada petugas pada saringan ini
+                  {memuat ? 'Memuat rekap…' : 'Tidak ada petugas pada saringan ini'}
                 </b>
                 <span className="mt-0.5 block text-[12px] text-teks-lembut">
-                  Pilih jabatan lain atau kembali ke Semua jabatan.
+                  {alamat === null
+                    ? 'Pilih rentang tanggal dulu.'
+                    : 'Pilih jabatan lain atau kembali ke Semua jabatan.'}
                 </span>
               </td>
             </tr>
           ) : (
             terlihat.map((r) => (
-              <Baris key={r.nama}>
+              <Baris key={r.petugasId}>
                 <td>
                   <SelOrang nama={r.nama} jabatan={r.jabatan} />
                 </td>
