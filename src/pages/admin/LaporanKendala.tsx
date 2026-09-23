@@ -6,53 +6,90 @@ import {
   AksiBaris, Baris, FotoKecil, InputRapi, IsiKartu, Kartu, KopKartu, Pil, PilihRapi,
   SelOrang, Segmen, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
-import { ISO_HARI_INI, KENDALA } from '@/data/mock'
+import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
-import { daftarBulan, formatRentang, formatTanggal, isoDariTampilan } from '@/lib/tanggal'
+import { api, pesanGalat, query } from '@/lib/api'
+import { unduhCsv } from '@/lib/csv'
+import { jendelaPeriode } from '@/lib/periode'
+import type { Periode } from '@/lib/periode'
+import { useApi } from '@/lib/useApi'
+import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Jabatan, Status } from '@/types'
+import type { Jabatan, Kendala, Status } from '@/types'
 
 const BULAN_PILIHAN = daftarBulan()
 
 /** Status yang mungkin dimiliki satu laporan kendala. */
 const STATUS_KENDALA: Status[] = ['Baru', 'Diproses', 'Selesai']
 
-type Periode = 'Harian' | 'Bulanan' | 'Custom' | 'All Time'
+/** Satu langkah maju pada alur penanganan kendala. */
+const LANJUTAN: Partial<Record<Status, Status>> = {
+  Baru: 'Diproses',
+  Diproses: 'Selesai',
+}
 
 export function LaporanKendalaAdmin() {
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState(ISO_HARI_INI)
+  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
   const [status, setStatus] = useState<Status | 'Semua'>('Semua')
 
-  /**
-   * Laporan disaring per periode, jabatan, dan status. Tanggal kendala disimpan
-   * siap tampil ('15 Sep 2026'), jadi diubah dulu ke ISO supaya bisa
-   * dibandingkan sebagai teks.
-   */
-  const terlihat = useMemo(() => {
-    function dalamPeriode(iso: string): boolean {
-      switch (periode) {
-        case 'Harian':
-          return iso === tanggal
-        case 'Bulanan':
-          return iso.startsWith(bulan)
-        case 'Custom':
-          return !!rentang && iso >= rentang.mulai && iso <= rentang.sampai
-        default:
-          return true
-      }
-    }
+  const [sibuk, setSibuk] = useState<number | null>(null)
+  const [galatAksi, setGalatAksi] = useState<string | null>(null)
 
-    return KENDALA.filter(
-      (k) =>
-        dalamPeriode(isoDariTampilan(k.tanggal)) &&
-        (jabatan === 'Semua' || k.jabatan === jabatan) &&
-        (status === 'Semua' || k.status === status),
+  const jendela = useMemo(
+    () => jendelaPeriode(periode, tanggal, bulan, rentang),
+    [periode, tanggal, bulan, rentang],
+  )
+  const dasar = jendela ? { ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan } : null
+
+  /**
+   * Dua pengambilan dengan sengaja: yang pertama tanpa saringan status, dipakai
+   * menghitung ketiga kartu statistik; yang kedua memakai saringan status untuk
+   * isi tabel. Semua saringan tetap dikirim sebagai parameter alamat.
+   */
+  const periodeUrl = dasar ? `/api/kendala${query(dasar)}` : null
+  const { data: sePeriode, muat: muatPeriode } = useApi<Kendala[]>(periodeUrl, [])
+
+  const alamat = dasar
+    ? `/api/kendala${query({ ...dasar, status: status === 'Semua' ? '' : status })}`
+    : null
+  const { data: terlihat, memuat, galat, muat } = useApi<Kendala[]>(alamat, [])
+
+  const jumlah = (s: Status) => sePeriode.filter((k) => k.status === s).length
+
+  /** Tombol pena: majukan satu langkah setelah admin mengiyakan. */
+  async function majukan(k: Kendala) {
+    const berikut = LANJUTAN[k.status]
+    if (!k.id || !berikut) return
+    if (!window.confirm(`Ubah status laporan ${k.nama} dari ${k.status} menjadi ${berikut}?`)) return
+    setSibuk(k.id)
+    setGalatAksi(null)
+    try {
+      await api(`/api/kendala/${k.id}/status`, 'PATCH', { status: berikut })
+      muat()
+      muatPeriode()
+    } catch (e) {
+      setGalatAksi(pesanGalat(e))
+    } finally {
+      setSibuk(null)
+    }
+  }
+
+  function bukaFoto(k: Kendala) {
+    const url = k.fotoUrl?.[0]
+    if (url) window.open(url, '_blank', 'noopener')
+  }
+
+  function unduh() {
+    unduhCsv(
+      `laporan-kendala-${jendela?.dari ?? 'semua'}`,
+      ['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Status'],
+      terlihat.map((k) => [k.nama, k.jabatan, k.tanggal, k.hari, k.jam, k.keterangan, k.status]),
     )
-  }, [periode, tanggal, bulan, rentang, jabatan, status])
+  }
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
   let labelPeriode: string
@@ -75,9 +112,9 @@ export function LaporanKendalaAdmin() {
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <StatCard nama="Laporan baru" angka="1" nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum ditinjau admin" />
-        <StatCard nama="Sedang diproses" angka="2" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sudah diteruskan ke teknisi" />
-        <StatCard nama="Selesai bulan ini" angka="17" ikon={<Ikon.Centang size={17} />} ket="Rata-rata tuntas 1,4 hari" />
+        <StatCard nama="Laporan baru" angka={String(jumlah('Baru'))} nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum ditinjau admin" />
+        <StatCard nama="Sedang diproses" angka={String(jumlah('Diproses'))} nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sudah diteruskan ke teknisi" />
+        <StatCard nama="Selesai" angka={String(jumlah('Selesai'))} ikon={<Ikon.Centang size={17} />} ket="Pada periode yang dipilih" />
       </div>
 
       <Kartu className="mt-4.5">
@@ -144,7 +181,7 @@ export function LaporanKendalaAdmin() {
                 </option>
               ))}
             </PilihRapi>
-            <Tombol varian="hantu" kecil>
+            <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
               <Ikon.Unduh size={15} /> Unduh
             </Tombol>
           </div>
@@ -161,6 +198,7 @@ export function LaporanKendalaAdmin() {
             </span>
           }
         />
+        <StatusData memuat={memuat} galat={galat ?? galatAksi} onUlang={muat} />
         <Tabel kepala={['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Status', 'Aksi']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
@@ -169,16 +207,18 @@ export function LaporanKendalaAdmin() {
                   <Ikon.Awas size={19} />
                 </span>
                 <b className="block text-[13.5px] font-semibold text-ink">
-                  Tidak ada laporan pada saringan ini
+                  {memuat ? 'Memuat laporan…' : 'Tidak ada laporan pada saringan ini'}
                 </b>
                 <span className="mt-0.5 block text-[12px] text-teks-lembut">
-                  Ganti periode, jabatan, atau status laporan.
+                  {alamat === null
+                    ? 'Pilih rentang tanggal dulu.'
+                    : 'Ganti periode, jabatan, atau status laporan.'}
                 </span>
               </td>
             </tr>
           ) : (
             terlihat.map((k) => (
-              <Baris key={k.nama + k.tanggal + k.jam}>
+              <Baris key={k.id}>
                 <td>
                   <SelOrang nama={k.nama} jabatan={k.jabatan} />
                 </td>
@@ -189,7 +229,7 @@ export function LaporanKendalaAdmin() {
                 <td className="text-teks-lembut">{k.hari}</td>
                 <td className="num">{k.jam}</td>
                 <td>
-                  <FotoKecil varian={k.foto} />
+                  <FotoKecil varian={k.foto} url={k.fotoUrl?.[0]} onClick={() => bukaFoto(k)} />
                 </td>
                 <td className="max-w-[300px] whitespace-normal text-teks-lembut">{k.keterangan}</td>
                 <td>
@@ -197,10 +237,22 @@ export function LaporanKendalaAdmin() {
                 </td>
                 <td>
                   <AksiBaris>
-                    <TombolIkon label="Lihat detail">
+                    <TombolIkon
+                      label="Lihat foto bukti"
+                      onClick={() => bukaFoto(k)}
+                      disabled={!k.fotoUrl?.length}
+                    >
                       <Ikon.Mata size={15} />
                     </TombolIkon>
-                    <TombolIkon label="Ubah status">
+                    <TombolIkon
+                      label={
+                        LANJUTAN[k.status]
+                          ? `Ubah status jadi ${LANJUTAN[k.status]}`
+                          : 'Laporan sudah selesai'
+                      }
+                      onClick={() => majukan(k)}
+                      disabled={!LANJUTAN[k.status] || sibuk === k.id}
+                    >
                       <Ikon.Pena size={15} />
                     </TombolIkon>
                   </AksiBaris>
