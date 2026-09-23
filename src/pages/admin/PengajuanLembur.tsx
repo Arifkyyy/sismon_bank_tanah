@@ -6,20 +6,23 @@ import {
   AreaTeks, Baris, GridForm, Input, InputRapi, IsiKartu, KakiForm, Kartu, Kolom,
   KopKartu, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, Tombol,
 } from '@/components/ui'
+import { StatusData } from '@/components/StatusData'
 import { useLembur } from '@/context/LemburContext'
-import { ISO_HARI_INI, PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
-import { daftarBulan, formatRentang, formatTanggal, lamaLembur } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, keIso, lamaLembur } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
 import type { DrafLembur, Jabatan, Status } from '@/types'
 
-const FORM_KOSONG = {
-  jabatan: 'Security' as Jabatan,
-  nama: '',
-  tanggal: '2026-09-16',
-  mulai: '18:00',
-  selesai: '22:00',
-  keterangan: '',
+/** Formulir kosong; tanggalnya hari ini supaya tidak pernah basi. */
+function formKosong() {
+  return {
+    jabatan: 'Security' as Jabatan,
+    nama: '',
+    tanggal: keIso(new Date()),
+    mulai: '18:00',
+    selesai: '22:00',
+    keterangan: '',
+  }
 }
 
 const BULAN_PILIHAN = daftarBulan()
@@ -33,12 +36,14 @@ const KET_STATUS: Partial<Record<Status, string>> = {
 }
 
 export function PengajuanLembur() {
-  const { daftar, menunggu, pending, tambahPending, ubahPending, hapusPending, kirimPending } =
-    useLembur()
-  const [form, setForm] = useState(FORM_KOSONG)
+  const {
+    daftar, menunggu, pending, petugas, memuat, galat, muat, galatAksi,
+    tambahPending, ubahPending, hapusPending, kirimPending,
+  } = useLembur()
+  const [form, setForm] = useState(formKosong)
   const [editId, setEditId] = useState<string | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState(ISO_HARI_INI)
+  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatanSaring, setJabatanSaring] = useState<Jabatan | 'Semua'>('Semua')
@@ -50,22 +55,23 @@ export function PengajuanLembur() {
    * supaya nilai pilihan tidak berubah diam-diam saat draf lama dibuka.
    */
   const kandidat = useMemo(() => {
-    const cocok = PETUGAS.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
-    const terpilih = PETUGAS.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
+    const cocok = petugas.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
+    const terpilih = petugas.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
     return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
-  }, [form.jabatan, form.nama])
+  }, [petugas, form.jabatan, form.nama])
 
   /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
   function gantiJabatan(label: string) {
     setForm((f) => ({ ...f, jabatan: jabatanDariLabel(label), nama: '' }))
   }
 
-  function simpanDraf() {
+  /** Formulir hanya dikosongkan kalau server benar-benar menerima drafnya. */
+  async function simpanDraf() {
     const isi: Omit<DrafLembur, 'id'> = { ...form }
-    if (editId) ubahPending(editId, isi)
-    else tambahPending(isi)
+    const berhasil = editId ? await ubahPending(editId, isi) : await tambahPending(isi)
+    if (!berhasil) return
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
   }
 
   function editDraf(d: DrafLembur) {
@@ -80,14 +86,14 @@ export function PengajuanLembur() {
     })
   }
 
-  function hapusDraf(id: string) {
-    hapusPending(id)
+  async function hapusDraf(id: string) {
+    if (!(await hapusPending(id))) return
     if (editId === id) batalEdit()
   }
 
-  function kirimDraf(id: string) {
+  async function kirimDraf(id: string) {
     const draf = pending.find((p) => p.id === id)
-    kirimPending(id)
+    if (!(await kirimPending(id))) return
     // Penyaring ikut pindah ke tanggal dan jabatan penugasannya: tabel disaring
     // harian per jabatan, jadi tanpa ini penugasan yang baru dikirim seolah hilang.
     if (draf) {
@@ -103,15 +109,19 @@ export function PengajuanLembur() {
    * Penyaring tidak digeser di sini karena draf bisa jatuh di beberapa tanggal
    * sekaligus — tidak ada satu hari yang benar untuk ditampilkan.
    */
-  function kirimSemuaDraf() {
+  async function kirimSemuaDraf() {
     const siap = pending.filter((d) => kekuranganDraf(d).length === 0)
-    for (const d of siap) kirimPending(d.id)
+    // Berurutan, bukan paralel: kalau satu ditolak server, sisanya tidak ikut
+    // terkirim diam-diam dan pesan galatnya tetap terbaca.
+    for (const d of siap) {
+      if (!(await kirimPending(d.id))) break
+    }
     if (editId && siap.some((d) => d.id === editId)) batalEdit()
   }
 
   function batalEdit() {
     setEditId(null)
-    setForm(FORM_KOSONG)
+    setForm(formKosong())
   }
 
   /**
@@ -244,6 +254,12 @@ export function PengajuanLembur() {
               </Kolom>
             </GridForm>
           </IsiKartu>
+          {galatAksi && (
+            <div className="mx-5 mb-4 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3 py-2 text-[11.5px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galatAksi}</span>
+            </div>
+          )}
           <KakiForm>
             <Tombol varian="hantu" onClick={batalEdit}>
               {editId ? 'Batal' : 'Kosongkan'}
@@ -258,6 +274,7 @@ export function PengajuanLembur() {
         <div className="grid content-start gap-4.5">
           <KartuAntreanLembur
             daftar={pending}
+            petugas={petugas}
             editId={editId}
             onEdit={editDraf}
             onKirim={kirimDraf}
@@ -328,6 +345,7 @@ export function PengajuanLembur() {
           </span>
         </IsiKartu>
 
+        <StatusData memuat={memuat} galat={galat} onUlang={muat} />
         <Tabel kepala={['Petugas', 'Tanggal', 'Rentang jam', 'Total', 'Keterangan', 'Status']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>

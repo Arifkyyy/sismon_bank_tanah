@@ -1,9 +1,8 @@
 import { Avatar, IsiKartu, Kartu, KopKartu, Pil, TagJabatan, Tombol, TombolIkon } from '@/components/ui'
-import { PETUGAS } from '@/data/mock'
 import { Ikon } from '@/lib/ikon'
 import { formatJam, formatTanggal, lamaLembur } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
-import type { DrafLembur } from '@/types'
+import type { DrafLembur, Petugas } from '@/types'
 
 /** Bagian yang masih kosong pada sebuah draf — menahan tombol Kirim. */
 export function kekuranganDraf(d: DrafLembur): string[] {
@@ -20,9 +19,13 @@ export function kekuranganDraf(d: DrafLembur): string[] {
  * Kirim — kadang penugasan memang perlu dikirim ke petugas yang sedang cuti
  * setelah dikonfirmasi lewat jalur lain.
  */
-export function peringatanDraf(d: DrafLembur, lain: DrafLembur[]): string[] {
+export function peringatanDraf(
+  d: DrafLembur,
+  lain: DrafLembur[],
+  daftarPetugas: Petugas[],
+): string[] {
   const catat: string[] = []
-  const petugas = PETUGAS.find((p) => p.nama === d.nama)
+  const petugas = daftarPetugas.find((p) => p.nama === d.nama)
 
   if (d.nama && !petugas) catat.push('Nama ini tidak ada di data petugas.')
   else if (petugas && petugas.jabatan !== d.jabatan)
@@ -43,6 +46,7 @@ export function peringatanDraf(d: DrafLembur, lain: DrafLembur[]): string[] {
  */
 export function KartuAntreanLembur({
   daftar,
+  petugas,
   editId,
   onEdit,
   onKirim,
@@ -50,6 +54,8 @@ export function KartuAntreanLembur({
   onHapus,
 }: {
   daftar: DrafLembur[]
+  /** dipakai memeriksa nama, jabatan, dan status petugas pada tiap draf */
+  petugas: Petugas[]
   editId: string | null
   onEdit: (d: DrafLembur) => void
   onKirim: (id: string) => void
@@ -110,7 +116,7 @@ export function KartuAntreanLembur({
                 const sedangDiedit = editId === d.id
                 const kurang = kekuranganDraf(d)
                 const lengkap = kurang.length === 0
-                const peringatan = peringatanDraf(d, daftar)
+                const peringatan = peringatanDraf(d, daftar, petugas)
                 return (
                   <article
                     key={d.id}
