@@ -17,17 +17,24 @@ export type Status =
   | 'Ditolak'
 
 export interface Akun {
+  /** id baris di basis data backend */
+  id: number
   nama: string
   peran: string
   email: string
   inisial: string
   nip: string
   unit: string
+  telepon?: string
+  /** tanggal bergabung siap tampil, mis. '19 Juli 2021' */
+  bergabung?: string
   /** true untuk super admin — avatarnya pakai gradasi emas */
   emas?: boolean
 }
 
 export interface Petugas {
+  /** id baris di basis data backend */
+  id: number
   nama: string
   jabatan: Jabatan
   email: string
@@ -37,13 +44,17 @@ export interface Petugas {
 
 /** Satu baris logbook. */
 export interface Logbook {
+  /** id baris di backend; belum ada selama draf masih di layar */
+  id?: number
   nama: string
   jabatan: Jabatan
   tanggal: string
+  /** tanggal yang sama dalam ISO '2026-09-15' */
+  tanggalIso?: string
   hari: string
   jam: string
   keterangan: string
-  /** varian warna placeholder foto — dipakai data contoh */
+  /** varian warna placeholder foto — dipakai saat foto aslinya belum dimuat */
   foto: 'a' | 'b' | 'c'
   /** foto asli hasil kamera (data URL); mengalahkan `foto` bila ada isinya */
   fotoUrl?: string[]
@@ -52,9 +63,11 @@ export interface Logbook {
 }
 
 export interface Kendala {
+  id?: number
   nama: string
   jabatan: Jabatan
   tanggal: string
+  tanggalIso?: string
   hari: string
   jam: string
   keterangan: string
@@ -82,6 +95,8 @@ export interface Lembur {
   alasan?: string
   /** kapan petugas menjawab, mis. '15 Sep 2026 · 10.24' */
   dijawabPada?: string
+  /** nama admin yang membuat penugasan */
+  dibuatOleh?: string | null
 }
 
 /**
@@ -116,4 +131,65 @@ export interface ItemMenu {
 export interface GrupMenu {
   judul: string
   item: ItemMenu[]
+}
+
+/* ------------------------------------------------- Bentuk data dari backend */
+
+/** Satu baris rekapitulasi per petugas — GET /api/statistik/rekap. */
+export interface RekapPetugas {
+  petugasId: number
+  nama: string
+  jabatan: Jabatan
+  hari: number
+  logbook: number
+  kendala: number
+  /** sudah berupa teks, mis. '12 jam' */
+  lembur: string
+  /** sudah berupa persen, mis. '93%' */
+  patuh: string
+  /** lembar checklist terkirim, mis. '12/14 hari' */
+  checklist: string
+}
+
+/** Satu batang pada bagan tujuh hari — GET /api/statistik/tujuh-hari. */
+export interface HariBagan {
+  hari: string
+  logbook: number
+  lembur: number
+}
+
+/** Satu irisan donat sebaran jabatan — GET /api/statistik/sebaran-jabatan. */
+export interface SebaranJabatan {
+  /** nama panjang jabatan, mis. 'Customer Service' */
+  label: string
+  nilai: number
+}
+
+/** Satu foto di arsip — GET /api/foto. */
+export interface FotoArsip {
+  id: number
+  nama: string
+  jabatan: Jabatan
+  waktu: string
+  waktuIso: string
+  sumber: 'Logbook' | 'Kendala'
+  url: string
+  ukuranByte: number
+}
+
+/** Ringkasan penyimpanan foto — GET /api/foto/statistik. */
+export interface StatistikFoto {
+  total: number
+  ukuranByte: number
+  lebihEnamBulan: number
+}
+
+/** Satu baris daftar akun admin — GET /api/akun/admin. */
+export interface AkunAdmin {
+  id: number
+  nama: string
+  email: string
+  /** kapan terakhir masuk, sudah berupa teks */
+  masuk: string
+  status: Status
 }
