@@ -112,6 +112,8 @@ def lembur(l: Lembur) -> LemburKeluar:
         alasan=l.alasan_tolak,
         dijawab_pada=f.cap_waktu(l.dijawab_pada),
         dibuat_oleh=l.pembuat.nama if l.pembuat else None,
+        pembuat_peran=l.pembuat.peran if l.pembuat else None,
+        pembuat_unit=l.pembuat.unit if l.pembuat else None,
     )
 
 
