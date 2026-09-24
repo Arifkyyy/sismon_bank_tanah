@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PratinjauFoto } from '@/components/Foto'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
@@ -29,6 +30,7 @@ const LANJUTAN: Partial<Record<Status, Status>> = {
 }
 
 export function LaporanKendalaAdmin() {
+  const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
   const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
@@ -79,8 +81,7 @@ export function LaporanKendalaAdmin() {
   }
 
   function bukaFoto(k: Kendala) {
-    const url = k.fotoUrl?.[0]
-    if (url) window.open(url, '_blank', 'noopener')
+    if (k.fotoUrl?.length) setPratinjau({ foto: k.fotoUrl, judul: `Foto kendala · ${k.nama}` })
   }
 
   function unduh() {
@@ -262,6 +263,9 @@ export function LaporanKendalaAdmin() {
           )}
         </Tabel>
       </Kartu>
+      {pratinjau && (
+        <PratinjauFoto foto={pratinjau.foto} judul={pratinjau.judul} onTutup={() => setPratinjau(null)} />
+      )}
     </>
   )
 }
