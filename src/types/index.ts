@@ -40,6 +40,10 @@ export interface Petugas {
   email: string
   telepon: string
   status: Status
+  /** nomor induk pegawai */
+  nip?: string
+  /** unit/pos tugas, mis. 'Pos Utama — Gedung A' */
+  unit?: string
 }
 
 /** Satu baris logbook. */
