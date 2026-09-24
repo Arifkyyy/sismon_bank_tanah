@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BaganTujuhHari, Donat } from '@/components/Bagan'
+import { PratinjauFoto } from '@/components/Foto'
 import { Linimasa } from '@/components/Linimasa'
 import { StatCard } from '@/components/StatCard'
 import { Baris, FotoKecil, Kartu, KopKartu, IsiKartu, Pil, PilihRapi, SelOrang, Tabel, Tombol } from '@/components/ui'
@@ -19,6 +21,7 @@ function jamDari(total: string): number {
 }
 
 export function DashboardAdmin({ peran }: { peran: Peran }) {
+  const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const akar = AKAR[peran]
   const superAdmin = peran === 'superadmin'
 
@@ -152,7 +155,10 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
                     <FotoKecil
                       varian={k.foto}
                       url={k.fotoUrl?.[0]}
-                      onClick={() => k.fotoUrl?.[0] && window.open(k.fotoUrl[0], '_blank', 'noopener')}
+                      onClick={() =>
+                        k.fotoUrl?.length &&
+                        setPratinjau({ foto: k.fotoUrl, judul: `Foto kendala · ${k.nama}` })
+                      }
                     />
                   </td>
                   <td>
@@ -185,6 +191,9 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             ))}
           </IsiKartu>
         </Kartu>
+      )}
+      {pratinjau && (
+        <PratinjauFoto foto={pratinjau.foto} judul={pratinjau.judul} onTutup={() => setPratinjau(null)} />
       )}
     </>
   )
