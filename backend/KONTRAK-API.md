@@ -25,6 +25,7 @@ jadi pesannya bisa langsung ditampilkan ke pengguna.
 | Metode | Alamat | Hak akses | Keterangan |
 | --- | --- | --- | --- |
 | GET | `/petugas?jabatan=` | login | daftar petugas (`Petugas[]`) |
+| PATCH | `/petugas/{id}` | admin | `{nama, jabatan, email, telepon, nip, unit, status}` → `Petugas` |
 
 ### Logbook
 | Metode | Alamat | Hak akses | Keterangan |
