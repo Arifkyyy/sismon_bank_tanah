@@ -69,6 +69,17 @@ class PetugasKeluar(Skema):
     unit: str = ""
 
 
+class DetailPetugas(Skema):
+    """Isi popup Lihat detail: yang tidak tampil di tabel Data user."""
+    bergabung: str
+    terakhir_masuk: str | None = None
+    aktivitas_terakhir: str | None = None
+    logbook_bulan_ini: int
+    kendala_bulan_ini: int
+    kendala_terbuka: int
+    lembur_bulan_ini: str
+
+
 class UbahPetugas(Skema):
     """Isi popup Ubah data di halaman Data user."""
     nama: str = Field(min_length=3, max_length=120)
