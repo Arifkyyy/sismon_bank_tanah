@@ -1,18 +1,33 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Modal } from '@/components/Modal'
 import { StatusData } from '@/components/StatusData'
 import {
-  AksiBaris, Baris, Kartu, KopKartu, Pil, PilihRapi, SelOrang,
+  AksiBaris, Baris, GridForm, Input, Kartu, Kolom, KopKartu, Pil, Pilihan, PilihRapi, SelOrang,
   Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { AKAR } from '@/config/menu'
 import { Ikon } from '@/lib/ikon'
-import { query } from '@/lib/api'
+import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { DAFTAR_JABATAN } from '@/lib/util'
 import type { Jabatan, Peran, Petugas, Status } from '@/types'
 
 const STATUS_AKUN: Status[] = ['Aktif', 'Cuti', 'Nonaktif']
+
+type FormUbah = Required<Pick<Petugas, 'nama' | 'jabatan' | 'email' | 'telepon' | 'nip' | 'unit' | 'status'>>
+
+function formDari(p: Petugas): FormUbah {
+  return {
+    nama: p.nama,
+    jabatan: p.jabatan,
+    email: p.email,
+    telepon: p.telepon,
+    nip: p.nip ?? '',
+    unit: p.unit ?? '',
+    status: p.status,
+  }
+}
 
 export function DataUser({ peran }: { peran: Peran }) {
   const superAdmin = peran === 'superadmin'
@@ -26,6 +41,45 @@ export function DataUser({ peran }: { peran: Peran }) {
     [],
   )
   const terlihat = status === 'Semua' ? petugas : petugas.filter((p) => p.status === status)
+
+  const [diubah, setDiubah] = useState<Petugas | null>(null)
+  const [form, setForm] = useState<FormUbah | null>(null)
+  const [sibuk, setSibuk] = useState(false)
+  const [galatAksi, setGalatAksi] = useState<string | null>(null)
+
+  function bukaUbah(p: Petugas) {
+    setDiubah(p)
+    setForm(formDari(p))
+    setGalatAksi(null)
+  }
+
+  function tutupUbah() {
+    if (sibuk) return
+    setDiubah(null)
+    setForm(null)
+  }
+
+  function isi<K extends keyof FormUbah>(kunci: K, nilai: FormUbah[K]) {
+    setForm((f) => (f ? { ...f, [kunci]: nilai } : f))
+  }
+
+  async function simpan() {
+    if (!diubah || !form) return
+    if (form.nama.trim().length < 3) return setGalatAksi('Nama lengkap minimal 3 huruf.')
+    if (!form.email.trim()) return setGalatAksi('Email wajib diisi.')
+    setSibuk(true)
+    setGalatAksi(null)
+    try {
+      await api(`/api/petugas/${diubah.id}`, 'PATCH', form)
+      setDiubah(null)
+      setForm(null)
+      muat()
+    } catch (e) {
+      setGalatAksi(pesanGalat(e))
+    } finally {
+      setSibuk(false)
+    }
+  }
 
   return (
     <Kartu>
@@ -97,7 +151,7 @@ export function DataUser({ peran }: { peran: Peran }) {
                   <TombolIkon label="Lihat detail">
                     <Ikon.Mata size={15} />
                   </TombolIkon>
-                  <TombolIkon label="Ubah data">
+                  <TombolIkon label="Ubah data" onClick={() => bukaUbah(p)}>
                     <Ikon.Pena size={15} />
                   </TombolIkon>
                   {superAdmin && (
@@ -111,6 +165,76 @@ export function DataUser({ peran }: { peran: Peran }) {
           ))
         )}
       </Tabel>
+
+      {diubah && form && (
+        <Modal
+          judul="Ubah data petugas"
+          sub={diubah.nama}
+          lebar="max-w-[560px]"
+          onTutup={tutupUbah}
+          aksi={
+            <>
+              <Tombol varian="hantu" onClick={tutupUbah} disabled={sibuk}>
+                Batal
+              </Tombol>
+              <Tombol onClick={simpan} disabled={sibuk}>
+                <Ikon.Centang size={15} /> {sibuk ? 'Menyimpan…' : 'Simpan perubahan'}
+              </Tombol>
+            </>
+          }
+        >
+          <GridForm>
+            <Kolom label="Nama lengkap" wajib penuh>
+              <Input autoFocus value={form.nama} onChange={(e) => isi('nama', e.target.value)} />
+            </Kolom>
+            <Kolom label="Jabatan" wajib>
+              <Pilihan value={form.jabatan} onChange={(e) => isi('jabatan', e.target.value as Jabatan)}>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j}>{j}</option>
+                ))}
+              </Pilihan>
+            </Kolom>
+            <Kolom
+              label="Status"
+              wajib
+              bantu={form.status === 'Nonaktif' ? 'Akun nonaktif tidak bisa masuk ke aplikasi.' : undefined}
+            >
+              <Pilihan value={form.status} onChange={(e) => isi('status', e.target.value as Status)}>
+                {STATUS_AKUN.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </Pilihan>
+            </Kolom>
+            <Kolom label="Email kantor" wajib penuh bantu="Dipakai petugas untuk masuk ke aplikasi.">
+              <Input type="email" value={form.email} onChange={(e) => isi('email', e.target.value)} />
+            </Kolom>
+            <Kolom label="Nomor telepon">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={form.telepon}
+                onChange={(e) => isi('telepon', e.target.value)}
+              />
+            </Kolom>
+            <Kolom label="Nomor induk">
+              <Input value={form.nip} onChange={(e) => isi('nip', e.target.value)} />
+            </Kolom>
+            <Kolom label="Unit / pos tugas" penuh>
+              <Input
+                placeholder="Contoh: Pos Utama — Gedung A"
+                value={form.unit}
+                onChange={(e) => isi('unit', e.target.value)}
+              />
+            </Kolom>
+          </GridForm>
+          {galatAksi && (
+            <div className="mt-3.5 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galatAksi}</span>
+            </div>
+          )}
+        </Modal>
+      )}
     </Kartu>
   )
 }
