@@ -28,7 +28,14 @@ def akun(u: User) -> AkunKeluar:
 
 def petugas(u: User) -> PetugasKeluar:
     return PetugasKeluar(
-        id=u.id, nama=u.nama, jabatan=u.jabatan, email=u.email, telepon=u.telepon, status=u.status
+        id=u.id,
+        nama=u.nama,
+        jabatan=u.jabatan,
+        email=u.email,
+        telepon=u.telepon,
+        status=u.status,
+        nip=u.nip,
+        unit=u.unit,
     )
 
 
