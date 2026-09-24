@@ -158,6 +158,8 @@ class LemburKeluar(Skema):
     alasan: str | None = None
     dijawab_pada: str | None = None
     dibuat_oleh: str | None = None
+    pembuat_peran: Literal["admin", "superadmin"] | None = None
+    pembuat_unit: str | None = None
 
 
 class DrafKeluar(Skema):
