@@ -97,6 +97,9 @@ export interface Lembur {
   dijawabPada?: string
   /** nama admin yang membuat penugasan */
   dibuatOleh?: string | null
+  pembuatPeran?: 'admin' | 'superadmin' | null
+  /** unit kerja pembuat, mis. 'Bagian Pengelolaan Gedung' */
+  pembuatUnit?: string | null
 }
 
 /**
