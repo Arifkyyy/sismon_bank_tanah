@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PratinjauFoto } from '@/components/Foto'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
@@ -42,7 +43,7 @@ interface Rincian {
   keterangan: string
   status: Status
   foto: 'a' | 'b' | 'c'
-  fotoUrl?: string
+  fotoUrl?: string[]
 }
 
 /** '07.02' → menit sejak tengah malam; dipakai mengurutkan dan menghitung jam kerja. */
@@ -57,6 +58,7 @@ function jamDari(total: string): number {
 }
 
 export function RekapHarian() {
+  const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
   const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
@@ -92,7 +94,7 @@ export function RekapHarian() {
       keterangan: l.keterangan,
       status: 'Selesai',
       foto: l.foto,
-      fotoUrl: l.fotoUrl?.[0],
+      fotoUrl: l.fotoUrl,
     }))
     const dariKendala: Rincian[] = laporan.data.map((k) => ({
       id: `k-${k.id}`,
@@ -102,7 +104,7 @@ export function RekapHarian() {
       keterangan: k.keterangan,
       status: k.status,
       foto: k.foto,
-      fotoUrl: k.fotoUrl?.[0],
+      fotoUrl: k.fotoUrl,
     }))
     return [...dariLogbook, ...dariKendala].sort(
       (a, b) => a.tanggalIso.localeCompare(b.tanggalIso) || keMenit(a.jam) - keMenit(b.jam),
@@ -247,8 +249,11 @@ export function RekapHarian() {
                   <td>
                     <FotoKecil
                       varian={r.foto}
-                      url={r.fotoUrl}
-                      onClick={() => r.fotoUrl && window.open(r.fotoUrl, '_blank', 'noopener')}
+                      url={r.fotoUrl?.[0]}
+                      onClick={() =>
+                        r.fotoUrl?.length &&
+                        setPratinjau({ foto: r.fotoUrl, judul: `Foto ${r.jenis.toLowerCase()} · ${r.jam}` })
+                      }
                     />
                   </td>
                   <td className="whitespace-normal text-teks-lembut">{r.keterangan}</td>
@@ -263,6 +268,9 @@ export function RekapHarian() {
 
         
       </div>
+      {pratinjau && (
+        <PratinjauFoto foto={pratinjau.foto} judul={pratinjau.judul} onTutup={() => setPratinjau(null)} />
+      )}
     </>
   )
 }
