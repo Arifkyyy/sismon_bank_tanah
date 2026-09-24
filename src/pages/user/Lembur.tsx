@@ -28,6 +28,8 @@ export function KartuLembur({
   const menunggu = lembur.status === 'Menunggu'
   const ditolak = lembur.status === 'Ditolak'
   const bisaDijawab = menunggu && Boolean(onTerima && onTolak)
+  // Akun pembuat bisa sudah dihapus; backend lalu mengirim null.
+  const pembuat = lembur.dibuatOleh ?? 'Admin'
 
   return (
     <div className="overflow-hidden rounded-kartu border border-garis bg-white shadow-kartu">
@@ -39,10 +41,14 @@ export function KartuLembur({
       />
       <div className="px-5 py-4.5">
         <div className="mb-4 flex items-center gap-3">
-          <Avatar nama="Rahmat Hidayat" jabatan="Security" />
+          <Avatar nama={pembuat} emas={lembur.pembuatPeran === 'superadmin'} />
           <div className="min-w-0 flex-1">
-            <b className="block text-[13.5px] font-semibold text-ink">Rahmat Hidayat</b>
-            <span className="text-[11.5px] text-teks-samar">Admin · Bagian Pengelolaan Gedung</span>
+            <b className="block text-[13.5px] font-semibold text-ink">{pembuat}</b>
+            <span className="text-[11.5px] text-teks-samar">
+              {[lembur.pembuatPeran === 'superadmin' ? 'Super Admin' : 'Admin', lembur.pembuatUnit]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
           </div>
           <Pil status={lembur.status} />
         </div>
