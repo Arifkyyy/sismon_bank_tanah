@@ -65,6 +65,19 @@ class PetugasKeluar(Skema):
     email: str
     telepon: str
     status: StatusAkun
+    nip: str = ""
+    unit: str = ""
+
+
+class UbahPetugas(Skema):
+    """Isi popup Ubah data di halaman Data user."""
+    nama: str = Field(min_length=3, max_length=120)
+    jabatan: Jabatan
+    email: EmailStr
+    telepon: str = Field(default="", max_length=30)
+    nip: str = Field(default="", max_length=40)
+    unit: str = Field(default="", max_length=120)
+    status: StatusAkun
 
 
 class AkunAdminKeluar(Skema):
