@@ -72,6 +72,38 @@ export function DataUser({ peran }: { peran: Peran }) {
     setForm((f) => (f ? { ...f, [kunci]: nilai } : f))
   }
 
+  // Khusus super admin; backend juga menolak DELETE /api/akun dari admin biasa.
+  const [akanDihapus, setAkanDihapus] = useState<Petugas | null>(null)
+  const [ketikan, setKetikan] = useState('')
+
+  function bukaHapus(p: Petugas) {
+    setAkanDihapus(p)
+    setKetikan('')
+    setGalatAksi(null)
+  }
+
+  function tutupHapus() {
+    if (sibuk) return
+    setAkanDihapus(null)
+    setKetikan('')
+  }
+
+  async function hapusAkun() {
+    if (!akanDihapus || ketikan !== 'HAPUS') return
+    setSibuk(true)
+    setGalatAksi(null)
+    try {
+      await api(`/api/akun/${akanDihapus.id}`, 'DELETE')
+      setAkanDihapus(null)
+      setKetikan('')
+      muat()
+    } catch (e) {
+      setGalatAksi(pesanGalat(e))
+    } finally {
+      setSibuk(false)
+    }
+  }
+
   async function simpan() {
     if (!diubah || !form) return
     if (form.nama.trim().length < 3) return setGalatAksi('Nama lengkap minimal 3 huruf.')
@@ -164,7 +196,7 @@ export function DataUser({ peran }: { peran: Peran }) {
                     <Ikon.Pena size={15} />
                   </TombolIkon>
                   {superAdmin && (
-                    <TombolIkon label="Hapus akun" bahaya>
+                    <TombolIkon label="Hapus akun" bahaya onClick={() => bukaHapus(p)}>
                       <Ikon.Sampah size={15} />
                     </TombolIkon>
                   )}
@@ -246,6 +278,46 @@ export function DataUser({ peran }: { peran: Peran }) {
               </div>
             ))}
           </div>
+        </Modal>
+      )}
+
+      {superAdmin && akanDihapus && (
+        <Modal
+          judul="Hapus akun permanen"
+          sub={`${akanDihapus.nama} · ${akanDihapus.jabatan}`}
+          onTutup={tutupHapus}
+          aksi={
+            <>
+              <Tombol varian="hantu" onClick={tutupHapus} disabled={sibuk}>
+                Batal
+              </Tombol>
+              <Tombol varian="bahaya" onClick={hapusAkun} disabled={ketikan !== 'HAPUS' || sibuk}>
+                <Ikon.Sampah size={15} /> {sibuk ? 'Menghapus…' : 'Hapus akun'}
+              </Tombol>
+            </>
+          }
+        >
+          <p className="m-0 mb-3.5 text-[12.5px] leading-relaxed text-teks-lembut">
+            Seluruh logbook, laporan kendala, riwayat lembur, dan foto bukti milik{' '}
+            <b className="font-semibold text-ink">{akanDihapus.nama}</b> ikut terhapus dan tidak bisa
+            dikembalikan. Bila petugas hanya berhenti sementara, ubah statusnya menjadi Nonaktif lewat
+            tombol pensil.
+          </p>
+          <Kolom label="Ketik HAPUS untuk mengonfirmasi" wajib>
+            <Input
+              autoFocus
+              value={ketikan}
+              onChange={(e) => setKetikan(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && hapusAkun()}
+              placeholder="HAPUS"
+            />
+          </Kolom>
+          {galatAksi && (
+            <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3 py-2 text-[11.5px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galatAksi}</span>
+            </div>
+          )}
         </Modal>
       )}
 
