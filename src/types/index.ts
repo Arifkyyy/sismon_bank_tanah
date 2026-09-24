@@ -46,6 +46,21 @@ export interface Petugas {
   unit?: string
 }
 
+/** Isi popup Lihat detail di Data user — hal yang tidak tampil di tabel. */
+export interface DetailPetugas {
+  /** mis. '19 Jul 2021' */
+  bergabung: string
+  terakhirMasuk?: string | null
+  /** waktu logbook terakhir, mis. '24 Sep 2026 · 07.02' */
+  aktivitasTerakhir?: string | null
+  logbookBulanIni: number
+  kendalaBulanIni: number
+  /** kendala berstatus Baru/Diproses, dari bulan mana pun */
+  kendalaTerbuka: number
+  /** lembur yang diterima bulan ini, mis. '3 jam 30 menit', atau '—' */
+  lemburBulanIni: string
+}
+
 /** Satu baris logbook. */
 export interface Logbook {
   /** id baris di backend; belum ada selama draf masih di layar */
