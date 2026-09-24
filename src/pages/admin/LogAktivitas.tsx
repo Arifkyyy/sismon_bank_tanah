@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PratinjauFoto } from '@/components/Foto'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import {
@@ -19,6 +20,7 @@ import type { Jabatan, Logbook } from '@/types'
 const BULAN_PILIHAN = daftarBulan()
 
 export function LogAktivitas() {
+  const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
   const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
@@ -170,7 +172,10 @@ export function LogAktivitas() {
                   <FotoKecil
                     varian={l.foto}
                     url={l.fotoUrl?.[0]}
-                    onClick={() => l.fotoUrl?.[0] && window.open(l.fotoUrl[0], '_blank', 'noopener')}
+                    onClick={() =>
+                      l.fotoUrl?.length &&
+                      setPratinjau({ foto: l.fotoUrl, judul: `Foto aktivitas · ${l.nama}` })
+                    }
                   />
                 </td>
                 <td className="max-w-[330px] whitespace-normal text-teks-lembut">{l.keterangan}</td>
@@ -188,6 +193,9 @@ export function LogAktivitas() {
           )}
         </Tabel>
       </Kartu>
+      {pratinjau && (
+        <PratinjauFoto foto={pratinjau.foto} judul={pratinjau.judul} onTutup={() => setPratinjau(null)} />
+      )}
     </>
   )
 }
