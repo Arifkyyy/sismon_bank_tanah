@@ -23,14 +23,16 @@ import type { Peran } from '@/types'
 
 /** Menahan rute bila peran yang sedang masuk tidak cocok. */
 function Penjaga({ izin, children }: { izin: Peran[]; children: ReactNode }) {
-  const { peran } = useAuth()
+  const { peran, memulihkan } = useAuth()
+  // Tunggu GET /api/auth/saya selesai agar refresh tidak dilempar ke login.
+  if (memulihkan) return null
   if (!peran) return <Navigate to="/masuk" replace />
   if (!izin.includes(peran)) return <Navigate to={AKAR[peran]} replace />
   return <>{children}</>
 }
 
 export default function App() {
-  const { peran } = useAuth()
+  const { peran, memulihkan } = useAuth()
 
   return (
     <Routes>
@@ -94,7 +96,10 @@ export default function App() {
         <Route path="sistem-desain" element={<SistemDesain />} />
       </Route>
 
-      <Route path="*" element={<Navigate to={peran ? AKAR[peran] : '/masuk'} replace />} />
+      <Route
+        path="*"
+        element={memulihkan ? null : <Navigate to={peran ? AKAR[peran] : '/masuk'} replace />}
+      />
     </Routes>
   )
 }
