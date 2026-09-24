@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom'
 import { Modal } from '@/components/Modal'
 import { StatusData } from '@/components/StatusData'
 import {
-  AksiBaris, Baris, GridForm, Input, Kartu, Kolom, KopKartu, Pil, Pilihan, PilihRapi, SelOrang,
-  Tabel, TagJabatan, Tombol, TombolIkon,
+  AksiBaris, Baris, BarisData, GridForm, Input, Kartu, Kolom, KopKartu, Pil, Pilihan, PilihRapi,
+  SelOrang, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { AKAR } from '@/config/menu'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { DAFTAR_JABATAN } from '@/lib/util'
-import type { Jabatan, Peran, Petugas, Status } from '@/types'
+import type { DetailPetugas, Jabatan, Peran, Petugas, Status } from '@/types'
 
 const STATUS_AKUN: Status[] = ['Aktif', 'Cuti', 'Nonaktif']
 
@@ -41,6 +41,15 @@ export function DataUser({ peran }: { peran: Peran }) {
     [],
   )
   const terlihat = status === 'Semua' ? petugas : petugas.filter((p) => p.status === status)
+
+  const [dilihat, setDilihat] = useState<Petugas | null>(null)
+  const detail = useApi<DetailPetugas | null>(dilihat ? `/api/petugas/${dilihat.id}/detail` : null, null)
+
+  // Kosongkan ringkasan supaya milik petugas sebelumnya tidak sempat terlihat.
+  function tutupDetail() {
+    setDilihat(null)
+    detail.setData(null)
+  }
 
   const [diubah, setDiubah] = useState<Petugas | null>(null)
   const [form, setForm] = useState<FormUbah | null>(null)
@@ -148,7 +157,7 @@ export function DataUser({ peran }: { peran: Peran }) {
               </td>
               <td>
                 <AksiBaris>
-                  <TombolIkon label="Lihat detail">
+                  <TombolIkon label="Lihat detail" onClick={() => setDilihat(p)}>
                     <Ikon.Mata size={15} />
                   </TombolIkon>
                   <TombolIkon label="Ubah data" onClick={() => bukaUbah(p)}>
@@ -165,6 +174,80 @@ export function DataUser({ peran }: { peran: Peran }) {
           ))
         )}
       </Tabel>
+
+      {dilihat && (
+        <Modal
+          judul="Detail petugas"
+          sub={`${dilihat.nama} · ${dilihat.jabatan}`}
+          lebar="max-w-[520px]"
+          onTutup={tutupDetail}
+          aksi={
+            <>
+              <Tombol varian="hantu" onClick={tutupDetail}>
+                Tutup
+              </Tombol>
+              <Tombol
+                onClick={() => {
+                  bukaUbah(dilihat)
+                  tutupDetail()
+                }}
+              >
+                <Ikon.Pena size={15} /> Ubah data
+              </Tombol>
+            </>
+          }
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <SelOrang nama={dilihat.nama} jabatan={dilihat.jabatan} />
+            <Pil status={dilihat.status} />
+          </div>
+          <div className="mb-4">
+            <BarisData label="Email kantor">{dilihat.email || '—'}</BarisData>
+            <BarisData label="Nomor telepon">
+              <span className="num">{dilihat.telepon || '—'}</span>
+            </BarisData>
+            <BarisData label="Nomor induk">
+              <span className="num">{dilihat.nip || '—'}</span>
+            </BarisData>
+            <BarisData label="Unit / pos tugas">{dilihat.unit || '—'}</BarisData>
+            <BarisData label="Bergabung">
+              <span className="num">{detail.data?.bergabung ?? '…'}</span>
+            </BarisData>
+            <BarisData label="Terakhir masuk aplikasi">
+              <span className="num">{detail.data ? (detail.data.terakhirMasuk ?? 'Belum pernah') : '…'}</span>
+            </BarisData>
+            <BarisData label="Logbook terakhir">
+              <span className="num">{detail.data ? (detail.data.aktivitasTerakhir ?? 'Belum ada') : '…'}</span>
+            </BarisData>
+          </div>
+
+          <span className="mb-2 block text-[11.5px] font-semibold text-teks-samar">Ringkasan bulan ini</span>
+          {detail.galat && (
+            <div className="mb-3 flex items-center gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="flex-none" />
+              <span className="flex-1">{detail.galat}</span>
+              <Tombol varian="hantu" kecil onClick={detail.muat}>
+                Coba lagi
+              </Tombol>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-garis bg-[#F7FAF8] p-3.5">
+            {[
+              ['Logbook', detail.data?.logbookBulanIni],
+              ['Laporan kendala', detail.data?.kendalaBulanIni],
+              ['Kendala belum selesai', detail.data?.kendalaTerbuka],
+              ['Lembur diterima', detail.data?.lemburBulanIni],
+            ].map(([label, nilai]) => (
+              <div key={label}>
+                <span className="mb-0.5 block text-[11px] text-teks-samar">{label}</span>
+                <b className="num text-[13px] font-semibold text-ink">
+                  {nilai ?? '…'}
+                </b>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
 
       {diubah && form && (
         <Modal
