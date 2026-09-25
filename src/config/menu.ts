@@ -10,6 +10,7 @@ const pemantauan: GrupMenu = {
     { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
     { id: 'log', label: 'Log aktivitas', path: 'log-aktivitas', ikon: 'Buku', tanda: '12' },
     { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas', tanda: '2' },
+    { id: 'wajib', label: 'Kerja wajib petugas', path: 'kerja-wajib-petugas', ikon: 'Daftar' },
   ],
 }
 
@@ -47,6 +48,7 @@ export const MENU: Record<Peran, GrupMenu[]> = {
       item: [
         { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
         { id: 'logbook', label: 'Aktivitas', path: 'logbook', ikon: 'Buku' },
+        { id: 'wajib', label: 'Kerja wajib', path: 'kerja-wajib', ikon: 'Daftar' },
         { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas' },
       ],
     },
@@ -79,6 +81,8 @@ export const JUDUL: Record<string, [string, string]> = {
   'log-aktivitas': ['Log aktivitas', 'Seluruh logbook yang masuk dari petugas'],
   rekapitulasi: ['Rekapitulasi', 'Gabungan logbook dan lembur per periode'],
   'laporan-kendala': ['Laporan kendala', 'Kendala lapangan yang dilaporkan petugas'],
+  'kerja-wajib-petugas': ['Kerja wajib petugas', 'Pantau checklist kerja harian tiap petugas'],
+  'kerja-wajib': ['Kerja wajib harian', 'Checklist kerja harian sesuai SOP jabatan Anda'],
   'pengajuan-lembur': ['Pengajuan lembur', 'Buat penugasan lembur dan pantau jawabannya'],
   'kelola-akun': ['Kelola akun', 'Tambah, ubah, dan hapus akun admin maupun petugas'],
   'hapus-data-foto': ['Hapus data foto', 'Bersihkan arsip foto logbook dan laporan kendala'],
