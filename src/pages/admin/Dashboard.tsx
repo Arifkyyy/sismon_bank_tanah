@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BaganTujuhHari, Donat } from '@/components/Bagan'
+import { Donat } from '@/components/Bagan'
 import { PratinjauFoto } from '@/components/Foto'
 import { Linimasa } from '@/components/Linimasa'
 import { StatCard } from '@/components/StatCard'
-import { Baris, FotoKecil, Kartu, KopKartu, IsiKartu, Pil, PilihRapi, SelOrang, Tabel, Tombol } from '@/components/ui'
+import { Avatar, Baris, FotoKecil, Kartu, KopKartu, IsiKartu, Pil, SelOrang, Tabel, Tombol } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
 import { AKAR } from '@/config/menu'
 import { useLembur } from '@/context/LemburContext'
@@ -12,7 +12,7 @@ import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { keIso } from '@/lib/tanggal'
-import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
+import { JABATAN_PANJANG } from '@/lib/util'
 import type { Kendala, Logbook, Peran, Petugas } from '@/types'
 
 /** Mengambil angka jam dari teks seperti '4 jam'. */
@@ -31,7 +31,9 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   const petugas = useApi<Petugas[]>('/api/petugas', [])
   const logbookHariIni = useApi<Logbook[]>(`/api/logbook${query({ tanggal: hariIniIso })}`, [])
   const kendalaTerbuka = useApi<Kendala[]>('/api/kendala?batas=200', [])
-  const { daftar: lembur } = useLembur()
+  const { daftar: lembur, memuat: memuatLembur, galat: galatLembur, muat: muatLembur } = useLembur()
+  // id penugasan berurutan dari backend: yang terbesar adalah yang paling baru dibuat.
+  const lemburTerbaru = [...lembur].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 5)
 
   const bertugas = petugas.data.filter((p) => p.status === 'Aktif').length
   const belumSelesai = kendalaTerbuka.data.filter((k) => k.status !== 'Selesai')
@@ -54,20 +56,40 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
         <Kartu>
           <KopKartu
-            judul="Logbook dan lembur tujuh hari terakhir"
-            sub="Batang hijau logbook, batang emas jam lembur"
+            judul="Penugasan lembur terbaru"
+            sub="Daftar penugasan yang perlu dipantau"
             aksi={
-              <PilihRapi defaultValue="Semua jabatan">
-                <option>Semua jabatan</option>
-                {DAFTAR_JABATAN.map((j) => (
-                  <option key={j}>{JABATAN_PANJANG[j]}</option>
-                ))}
-              </PilihRapi>
+              <Link to={`${akar}/pengajuan-lembur`}>
+                <Tombol varian="hantu" kecil>
+                  Lihat semua
+                </Tombol>
+              </Link>
             }
           />
-          <IsiKartu>
-            <BaganTujuhHari />
-          </IsiKartu>
+          <StatusData memuat={memuatLembur} galat={galatLembur} onUlang={muatLembur} />
+          {lemburTerbaru.length === 0 ? (
+            <p className="m-0 px-5 py-8 text-center text-[12.5px] text-teks-lembut">
+              {memuatLembur ? 'Memuat penugasan…' : 'Belum ada penugasan lembur yang dikirim.'}
+            </p>
+          ) : (
+            <ul className="m-0 list-none p-0">
+              {lemburTerbaru.map((l) => (
+                <li key={l.id} className="flex items-center gap-3.5 border-b border-garis px-5 py-3.5 last:border-b-0">
+                  <Avatar nama={l.nama} jabatan={l.jabatan} ukuran={42} />
+                  <div className="min-w-0 flex-1">
+                    <span className="num block text-[11.5px] text-teks-samar">
+                      {l.tanggal} · {l.rentang}
+                    </span>
+                    <b className="block truncate text-[13px] font-bold text-ink">
+                      {l.nama} - {JABATAN_PANJANG[l.jabatan]}
+                    </b>
+                    <span className="block truncate text-[12.5px] text-teks-lembut">{l.keterangan}</span>
+                  </div>
+                  <Pil status={l.status} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Kartu>
 
         <Kartu>
