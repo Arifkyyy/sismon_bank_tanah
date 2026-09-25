@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { StatusData } from '@/components/StatusData'
 import { KakiForm, Kartu, Tombol } from '@/components/ui'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
@@ -83,6 +84,7 @@ export function KerjaWajib() {
   const [simpanan, setSimpanan] = useState<'diam' | 'menyimpan' | 'tersimpan'>('diam')
   const [galatSimpan, setGalatSimpan] = useState<string | null>(null)
   const [mengirim, setMengirim] = useState(false)
+  const konfirmasi = useKonfirmasi()
 
   // Cukup per setengah menit untuk membuka sesi Siang/Sore tepat waktu.
   const [kini, setKini] = useState(() => new Date())
@@ -220,7 +222,13 @@ export function KerjaWajib() {
   }
 
   async function kirim() {
-    if (!window.confirm('Kirim kerja wajib hari ini ke admin? Setelah dikirim, isian tidak bisa diubah lagi.')) return
+    const ya = await konfirmasi({
+      judul: 'Kirim kerja wajib?',
+      pesan: 'Isian hari ini dikirim ke admin lalu terkunci. Setelah dikirim, isian tidak bisa diubah lagi.',
+      tombol: 'Kirim ke admin',
+      ikon: <Ikon.Kirim size={22} />,
+    })
+    if (!ya) return
     window.clearTimeout(timer.current)
     timer.current = 0
     setMengirim(true)
