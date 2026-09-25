@@ -102,6 +102,7 @@ def kendala(k: Kendala) -> KendalaKeluar:
         status=k.status,
         foto=f.varian_foto(k.id),
         foto_url=[url_foto(x.lokasi_file) for x in k.foto],
+        diperbarui_pada=f.cap_waktu(k.diperbarui_pada),
     )
 
 
@@ -118,6 +119,7 @@ def lembur(l: Lembur) -> LemburKeluar:
         status=status_lembur(l),
         alasan=l.alasan_tolak,
         dijawab_pada=f.cap_waktu(l.dijawab_pada),
+        dikirim_pada=f.cap_waktu(l.dikirim_pada),
         dibuat_oleh=l.pembuat.nama if l.pembuat else None,
         pembuat_peran=l.pembuat.peran if l.pembuat else None,
         pembuat_unit=l.pembuat.unit if l.pembuat else None,
