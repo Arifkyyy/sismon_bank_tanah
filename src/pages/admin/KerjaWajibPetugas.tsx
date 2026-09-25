@@ -40,14 +40,20 @@ function IsiLembar({ lembar }: { lembar: ChecklistLembar }) {
   const jawaban = new Map(lembar.jawaban.map((j) => [`${j.itemId}|${j.sesi}`, j]))
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-garis">
-      <table className="w-full border-collapse text-[12.5px]">
+    // Tinggi dibatasi supaya pop-up tidak melebihi layar; baris kepala tetap menempel.
+    <div className="scrollbar-lembut max-h-[55vh] overflow-auto overscroll-contain rounded-xl border border-garis">
+      <table className="w-full border-separate border-spacing-0 text-[12.5px]">
         <thead>
-          <tr className="bg-[#F7FAF8] text-left text-[11.5px] text-teks-lembut">
-            <th className="w-8 px-3 py-2.5 font-semibold">No.</th>
-            <th className="px-3 py-2.5 font-semibold">Area / kegiatan</th>
+          <tr className="text-left text-[11.5px] text-teks-lembut">
+            <th className="sticky top-0 z-[1] w-8 border-b border-garis bg-[#F7FAF8] px-3 py-2.5 font-semibold">No.</th>
+            <th className="sticky top-0 z-[1] border-b border-garis bg-[#F7FAF8] px-3 py-2.5 font-semibold">
+              Area / kegiatan
+            </th>
             {kolom.map((s) => (
-              <th key={s} className="w-16 px-2 py-2.5 text-center font-semibold">
+              <th
+                key={s}
+                className="sticky top-0 z-[1] w-16 border-b border-garis bg-[#F7FAF8] px-2 py-2.5 text-center font-semibold"
+              >
                 {s === 'Harian' ? 'Status' : s}
               </th>
             ))}
@@ -59,7 +65,7 @@ function IsiLembar({ lembar }: { lembar: ChecklistLembar }) {
               .map((s) => ({ s, j: jawaban.get(`${i.id}|${s}`) }))
               .filter(({ j }) => j?.catatan)
             return (
-              <tr key={i.id} className="border-t border-garis align-top">
+              <tr key={i.id} className="align-top [&:last-child>td]:border-b-0 [&>td]:border-b [&>td]:border-garis">
                 <td className="num px-3 py-2.5 text-teks-lembut">{n + 1}</td>
                 <td className="px-3 py-2.5">
                   <span className="font-semibold text-ink">{i.teks}</span>
