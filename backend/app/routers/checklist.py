@@ -10,7 +10,7 @@ Daftar item disimpan di database, bukan di kode, supaya bisa diubah saat SOP
 direvisi. Jabatan yang itemnya belum disusun mengembalikan daftar kosong,
 bukan galat.
 """
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -31,6 +31,9 @@ router = APIRouter(prefix="/api/checklist", tags=["Checklist"])
 hanya_super = butuh_peran("superadmin")
 
 SESI_PENUH = ("Pagi", "Siang", "Sore")
+# Sesi Siang dan Sore baru boleh diisi mulai jam ini (WIB). Samakan dengan JAM_BUKA di
+# src/pages/user/KerjaWajib.tsx. Tanggal yang sudah lewat semua sesinya terbuka.
+JAM_BUKA = {"Harian": time(0), "Pagi": time(0), "Siang": time(11), "Sore": time(15)}
 
 
 def _sesi_item(item: ChecklistItem) -> tuple[str, ...]:
@@ -238,6 +241,8 @@ def simpan(isi: LembarMasuk, db: Session = Depends(ambil_db), user: User = Depen
             raise HTTPException(422, "Ada item yang tidak berlaku untuk jabatan petugas ini.")
         if j.sesi not in _sesi_item(item[j.item_id]):
             raise HTTPException(422, f"Item #{j.item_id} tidak memakai sesi {j.sesi}.")
+        if isi.tanggal == f.hari_ini() and f.sekarang().time() < JAM_BUKA[j.sesi]:
+            raise HTTPException(422, f"Sesi {j.sesi} baru dibuka pukul {f.jam_teks(JAM_BUKA[j.sesi])}.")
 
     lembar = _lembar(db, isi.petugas_id, isi.tanggal)
     if lembar is None:
@@ -260,6 +265,9 @@ def simpan(isi: LembarMasuk, db: Session = Depends(ambil_db), user: User = Depen
         total, terisi, _, _ = _hitung(list(item.values()), lembar.jawaban)
         if terisi < total:
             raise HTTPException(422, f"Masih ada {total - terisi} kotak yang belum diisi.")
+        tanpa_catatan = sum(1 for j in lembar.jawaban if j.status == "Tidak" and not j.catatan)
+        if tanpa_catatan:
+            raise HTTPException(422, f"{tanpa_catatan} jawaban ✗ belum diberi keterangan.")
         lembar.status = "Dikirim"
         lembar.dikirim_pada = f.sekarang()
 
