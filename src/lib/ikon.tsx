@@ -113,6 +113,12 @@ export const Ikon = {
       <path d="M12 3v12M7 11l5 5 5-5M4 20h16" />
     </Dasar>
   ),
+  Daftar: (p: Props) => (
+    <Dasar {...p}>
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6" />
+    </Dasar>
+  ),
   Centang: (p: Props) => (
     <Dasar {...p}>
       <path d="m5 13 4 4L19 7" />
