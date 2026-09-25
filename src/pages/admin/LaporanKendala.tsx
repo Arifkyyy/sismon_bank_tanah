@@ -11,7 +11,7 @@ import {
 import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
-import { unduhCsv } from '@/lib/csv'
+import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
@@ -97,11 +97,21 @@ export function LaporanKendalaAdmin() {
   }
 
   function unduh() {
-    unduhCsv(
-      `laporan-kendala-${jendela?.dari ?? 'semua'}`,
-      ['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Status'],
-      terlihat.map((k) => [k.nama, k.jabatan, k.tanggal, k.hari, k.jam, k.keterangan, k.status]),
-    )
+    unduhExcel({
+      namaBerkas: `laporan-kendala-${jendela?.dari ?? 'semua'}`,
+      judul: 'Laporan Kendala',
+      keterangan: [
+        `Periode: ${labelPeriode}`,
+        jabatan === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatan],
+        status === 'Semua' ? 'Semua status' : `Status ${status}`,
+        `${terlihat.length} laporan`,
+      ].join(' · '),
+      namaLembar: 'Laporan kendala',
+      kepala: ['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Status'],
+      baris: terlihat.map((k) => [
+        k.nama, JABATAN_PANJANG[k.jabatan], k.tanggal, k.hari, k.jam, k.keterangan, k.status,
+      ]),
+    })
   }
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
@@ -195,7 +205,7 @@ export function LaporanKendalaAdmin() {
               ))}
             </PilihRapi>
             <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
-              <Ikon.Unduh size={15} /> Unduh
+              <Ikon.Unduh size={15} /> Unduh Excel
             </Tombol>
           </div>
         </IsiKartu>
