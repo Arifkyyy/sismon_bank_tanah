@@ -67,7 +67,7 @@ tanggalnya sudah lewat otomatis tampil sebagai Selesai.
 | PUT | `/checklist/item/{id}` | super admin | ubah item |
 | PUT | `/checklist/item/urutan/{jabatan}` | super admin | `{ids: [...]}` urutan dari atas |
 | DELETE | `/checklist/item/{id}` | super admin | dihapus bila belum dipakai, kalau sudah hanya dinonaktifkan |
-| GET | `/checklist/lembar?petugasId=&tanggal=` | login | lembar + item + jawaban |
+| GET | `/checklist/lembar?petugas_id=&tanggal=` | login | lembar + item + jawaban |
 | PUT | `/checklist/lembar` | login | simpan seluruh lembar; `kirim: true` untuk mengunci |
 | GET | `/checklist?tanggal=&jabatan=` | admin | satu baris per petugas |
 | POST | `/checklist/{id}/buka-kunci` | admin | Dikirim → Draf |
