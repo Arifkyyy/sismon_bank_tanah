@@ -33,7 +33,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   const kendalaTerbuka = useApi<Kendala[]>('/api/kendala?batas=200', [])
   const { daftar: lembur, memuat: memuatLembur, galat: galatLembur, muat: muatLembur } = useLembur()
   // id penugasan berurutan dari backend: yang terbesar adalah yang paling baru dibuat.
-  const lemburTerbaru = [...lembur].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 5)
+  const lemburTerbaru = [...lembur].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 10)
 
   const bertugas = petugas.data.filter((p) => p.status === 'Aktif').length
   const belumSelesai = kendalaTerbuka.data.filter((k) => k.status !== 'Selesai')
@@ -53,7 +53,8 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
         <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
 
-      <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
+      {/* Dua kolom hampir sama lebar; daftar yang panjang digulir di dalam kartunya. */}
+      <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.1fr_1fr]">
         <Kartu>
           <KopKartu
             judul="Penugasan lembur terbaru"
@@ -72,7 +73,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
               {memuatLembur ? 'Memuat penugasan…' : 'Belum ada penugasan lembur yang dikirim.'}
             </p>
           ) : (
-            <ul className="m-0 list-none p-0">
+            <ul className="scrollbar-lembut m-0 max-h-[252px] list-none overflow-y-auto overscroll-contain p-0">
               {lemburTerbaru.map((l) => (
                 <li key={l.id} className="flex items-center gap-3.5 border-b border-garis px-5 py-3.5 last:border-b-0">
                   <Avatar nama={l.nama} jabatan={l.jabatan} ukuran={42} />
@@ -100,41 +101,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
         </Kartu>
       </div>
 
-      <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1fr_1.62fr]">
-        <Kartu>
-          <KopKartu
-            judul="Aktivitas terbaru"
-            sub="Lima catatan terakhir"
-            aksi={
-              <Link to={`${akar}/log-aktivitas`}>
-                <Tombol varian="hantu" kecil>
-                  Lihat semua
-                </Tombol>
-              </Link>
-            }
-          />
-          <StatusData
-            memuat={logbookHariIni.memuat}
-            galat={logbookHariIni.galat}
-            onUlang={logbookHariIni.muat}
-          />
-          <IsiKartu>
-            {logbookHariIni.data.length === 0 ? (
-              <p className="m-0 py-6 text-center text-[12.5px] text-teks-lembut">
-                Belum ada catatan masuk hari ini.
-              </p>
-            ) : (
-              <Linimasa
-                pos={logbookHariIni.data.slice(0, 5).map((l) => ({
-                  jam: `${l.jam} · ${l.hari}`,
-                  judul: `${l.nama} — ${l.jabatan}`,
-                  isi: l.keterangan,
-                }))}
-              />
-            )}
-          </IsiKartu>
-        </Kartu>
-
+      <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.1fr_1fr]">
         <Kartu>
           <KopKartu
             judul="Kendala yang perlu ditindak"
@@ -152,26 +119,26 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             galat={kendalaTerbuka.galat}
             onUlang={kendalaTerbuka.muat}
           />
-          <Tabel kepala={['Pelapor', 'Kendala', 'Waktu', 'Foto', 'Status']}>
+          <Tabel kepala={['Pelapor', 'Kendala', 'Foto', 'Status']} maksTinggi={276}>
             {belumSelesai.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
+                <td colSpan={4} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
                   {kendalaTerbuka.memuat
                     ? 'Memuat laporan kendala…'
                     : 'Tidak ada kendala yang perlu ditindak.'}
                 </td>
               </tr>
             ) : (
-              belumSelesai.slice(0, 4).map((k) => (
+              belumSelesai.slice(0, 10).map((k) => (
                 <Baris key={k.id}>
                   <td>
                     <SelOrang nama={k.nama} jabatan={k.jabatan} />
                   </td>
-                  <td className="max-w-[290px] whitespace-normal text-teks-lembut">{k.keterangan}</td>
-                  <td className="num whitespace-nowrap text-teks-lembut">
-                    {k.tanggal}
-                    <br />
-                    <span className="text-[11.5px]">{k.jam}</span>
+                  <td className="max-w-[240px] whitespace-normal text-[12.5px] text-teks-lembut">
+                    {k.keterangan}
+                    <span className="num mt-0.5 block text-[11px] text-teks-samar">
+                      {k.tanggal} · {k.jam}
+                    </span>
                   </td>
                   <td>
                     <FotoKecil
@@ -190,6 +157,40 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
               ))
             )}
           </Tabel>
+        </Kartu>
+
+        <Kartu>
+          <KopKartu
+            judul="Aktivitas terbaru"
+            sub="Catatan terbaru hari ini"
+            aksi={
+              <Link to={`${akar}/log-aktivitas`}>
+                <Tombol varian="hantu" kecil>
+                  Lihat semua
+                </Tombol>
+              </Link>
+            }
+          />
+          <StatusData
+            memuat={logbookHariIni.memuat}
+            galat={logbookHariIni.galat}
+            onUlang={logbookHariIni.muat}
+          />
+          <IsiKartu className="scrollbar-lembut max-h-[276px] overflow-y-auto overscroll-contain">
+            {logbookHariIni.data.length === 0 ? (
+              <p className="m-0 py-6 text-center text-[12.5px] text-teks-lembut">
+                Belum ada catatan masuk hari ini.
+              </p>
+            ) : (
+              <Linimasa
+                pos={logbookHariIni.data.slice(0, 10).map((l) => ({
+                  jam: `${l.jam} · ${l.hari}`,
+                  judul: `${l.nama} — ${l.jabatan}`,
+                  isi: l.keterangan,
+                }))}
+              />
+            )}
+          </IsiKartu>
         </Kartu>
       </div>
 
