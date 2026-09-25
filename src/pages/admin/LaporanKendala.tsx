@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { PratinjauFoto } from '@/components/Foto'
+import { Modal } from '@/components/Modal'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
-  AksiBaris, Baris, FotoKecil, InputRapi, IsiKartu, Kartu, KopKartu, Pil, PilihRapi,
+  AksiBaris, Baris, FotoKecil, InputRapi, IsiKartu, Kartu, Kolom, KopKartu, Pil, Pilihan, PilihRapi,
   SelOrang, Segmen, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
-import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { unduhCsv } from '@/lib/csv'
@@ -24,11 +24,8 @@ const BULAN_PILIHAN = daftarBulan()
 /** Status yang mungkin dimiliki satu laporan kendala. */
 const STATUS_KENDALA: Status[] = ['Baru', 'Diproses', 'Selesai']
 
-/** Satu langkah maju pada alur penanganan kendala. */
-const LANJUTAN: Partial<Record<Status, Status>> = {
-  Baru: 'Diproses',
-  Diproses: 'Selesai',
-}
+/** Pilihan di pop-up ubah status; 'Baru' hanya diberikan sistem saat laporan masuk. */
+const STATUS_TINDAK: Status[] = ['Diproses', 'Selesai']
 
 export function LaporanKendalaAdmin() {
   const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
@@ -41,7 +38,8 @@ export function LaporanKendalaAdmin() {
 
   const [sibuk, setSibuk] = useState<number | null>(null)
   const [galatAksi, setGalatAksi] = useState<string | null>(null)
-  const konfirmasi = useKonfirmasi()
+  const [diubah, setDiubah] = useState<Kendala | null>(null)
+  const [statusBaru, setStatusBaru] = useState<Status>('Diproses')
 
   const jendela = useMemo(
     () => jendelaPeriode(periode, tanggal, bulan, rentang),
@@ -64,27 +62,27 @@ export function LaporanKendalaAdmin() {
 
   const jumlah = (s: Status) => sePeriode.filter((k) => k.status === s).length
 
-  /** Tombol pena: majukan satu langkah setelah admin mengiyakan. */
-  async function majukan(k: Kendala) {
-    const berikut = LANJUTAN[k.status]
-    if (!k.id || !berikut) return
-    const ya = await konfirmasi({
-      judul: 'Ubah status laporan?',
-      pesan: (
-        <>
-          Laporan dari <b className="font-semibold text-ink">{k.nama}</b> diubah dari{' '}
-          <b className="font-semibold text-ink">{k.status}</b> menjadi{' '}
-          <b className="font-semibold text-ink">{berikut}</b>.
-        </>
-      ),
-      tombol: `Jadikan ${berikut}`,
-      ikon: <Ikon.Pena size={22} />,
-    })
-    if (!ya) return
-    setSibuk(k.id)
+  /** Tombol pena: buka pop-up pilihan status. */
+  function bukaUbah(k: Kendala) {
+    setDiubah(k)
+    // Laporan baru biasanya langsung diteruskan, jadi 'Diproses' yang dipilih lebih dulu.
+    setStatusBaru(k.status === 'Baru' ? 'Diproses' : k.status)
+    setGalatAksi(null)
+  }
+
+  function tutupUbah() {
+    if (sibuk !== null) return
+    setDiubah(null)
+    setGalatAksi(null)
+  }
+
+  async function simpanStatus() {
+    if (!diubah?.id || statusBaru === diubah.status) return
+    setSibuk(diubah.id)
     setGalatAksi(null)
     try {
-      await api(`/api/kendala/${k.id}/status`, 'PATCH', { status: berikut })
+      await api(`/api/kendala/${diubah.id}/status`, 'PATCH', { status: statusBaru })
+      setDiubah(null)
       muat()
       muatPeriode()
     } catch (e) {
@@ -213,7 +211,7 @@ export function LaporanKendalaAdmin() {
             </span>
           }
         />
-        <StatusData memuat={memuat} galat={galat ?? galatAksi} onUlang={muat} />
+        <StatusData memuat={memuat} galat={galat ?? (diubah ? null : galatAksi)} onUlang={muat} />
         <Tabel kepala={['Pelapor', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Foto', 'Keterangan', 'Status', 'Aksi']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
@@ -259,15 +257,7 @@ export function LaporanKendalaAdmin() {
                     >
                       <Ikon.Mata size={15} />
                     </TombolIkon>
-                    <TombolIkon
-                      label={
-                        LANJUTAN[k.status]
-                          ? `Ubah status jadi ${LANJUTAN[k.status]}`
-                          : 'Laporan sudah selesai'
-                      }
-                      onClick={() => majukan(k)}
-                      disabled={!LANJUTAN[k.status] || sibuk === k.id}
-                    >
+                    <TombolIkon label="Ubah status" onClick={() => bukaUbah(k)} disabled={sibuk === k.id}>
                       <Ikon.Pena size={15} />
                     </TombolIkon>
                   </AksiBaris>
@@ -277,6 +267,54 @@ export function LaporanKendalaAdmin() {
           )}
         </Tabel>
       </Kartu>
+      {diubah && (
+        <Modal
+          judul="Ubah status laporan"
+          sub={`${diubah.nama} · ${diubah.tanggal} · ${diubah.jam}`}
+          onTutup={tutupUbah}
+          aksi={
+            <>
+              <Tombol varian="hantu" onClick={tutupUbah} disabled={sibuk !== null}>
+                Batal
+              </Tombol>
+              <Tombol onClick={simpanStatus} disabled={statusBaru === diubah.status || sibuk !== null}>
+                <Ikon.Centang size={15} /> {sibuk !== null ? 'Menyimpan…' : 'Simpan status'}
+              </Tombol>
+            </>
+          }
+        >
+          <div className="mb-4 rounded-xl border border-garis bg-[#F7FAF8] px-3.5 py-3">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <span className="text-[11px] text-teks-samar">Keterangan kendala</span>
+              <Pil status={diubah.status} />
+            </div>
+            <p className="m-0 text-[12.5px] leading-relaxed text-ink">{diubah.keterangan}</p>
+          </div>
+          <Kolom
+            label="Status baru"
+            wajib
+            bantu={
+              statusBaru === diubah.status
+                ? `Laporan ini sudah berstatus ${diubah.status}.`
+                : statusBaru === 'Selesai'
+                  ? 'Pilih Selesai bila kendala sudah benar-benar tertangani.'
+                  : 'Kendala sedang ditangani atau diteruskan ke teknisi.'
+            }
+          >
+            <Pilihan autoFocus value={statusBaru} onChange={(e) => setStatusBaru(e.target.value as Status)}>
+              {STATUS_TINDAK.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </Pilihan>
+          </Kolom>
+          {galatAksi && (
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] leading-relaxed text-merah-teks">
+              <Ikon.Awas size={14} className="mt-px flex-none" />
+              <span>{galatAksi}</span>
+            </div>
+          )}
+        </Modal>
+      )}
       {pratinjau && (
         <PratinjauFoto foto={pratinjau.foto} judul={pratinjau.judul} onTutup={() => setPratinjau(null)} />
       )}
