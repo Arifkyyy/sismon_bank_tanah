@@ -5,6 +5,7 @@ import {
   AksiBaris, Baris, GridForm, Input, IsiKartu, KakiForm, KakiTabel, Kartu, Kolom, KopKartu,
   Peringatan, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
@@ -38,6 +39,7 @@ export function KelolaAkun() {
   const [sandiBaru, setSandiBaru] = useState<{ nama: string; hasil: HasilSandi } | null>(null)
   const [akanDihapus, setAkanDihapus] = useState<{ id: number; nama: string } | null>(null)
   const [ketikan, setKetikan] = useState('')
+  const konfirmasi = useKonfirmasi()
 
   const admin = useApi<AkunAdmin[]>('/api/akun/admin', [])
   const petugas = useApi<Petugas[]>(
@@ -86,7 +88,19 @@ export function KelolaAkun() {
   }
 
   async function resetSandi(id: number, nama: string) {
-    if (!window.confirm(`Atur ulang kata sandi ${nama}? Sandi lamanya langsung tidak berlaku.`)) return
+    const ya = await konfirmasi({
+      judul: 'Atur ulang kata sandi?',
+      pesan: (
+        <>
+          Kata sandi lama <b className="font-semibold text-ink">{nama}</b> langsung tidak berlaku. Sandi sementara
+          yang baru ditampilkan sekali setelah ini.
+        </>
+      ),
+      tombol: 'Atur ulang',
+      nada: 'peringatan',
+      ikon: <Ikon.Kunci size={22} />,
+    })
+    if (!ya) return
     let hasil: HasilSandi | null = null
     const berhasil = await jalankan(async () => {
       hasil = await api<HasilSandi>(`/api/akun/${id}/reset-sandi`, 'POST')
