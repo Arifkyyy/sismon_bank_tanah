@@ -11,6 +11,8 @@ interface NilaiAuth {
   /** Login ke backend. Melempar galat berisi pesan kalau gagal. Mengembalikan peran. */
   masuk: (email: string, sandi: string, ingat: boolean) => Promise<Peran>
   keluar: () => void
+  /** Mengganti data akun di sesi, mis. setelah profil diubah. */
+  perbaruiAkun: (akun: Akun) => void
 }
 
 interface Sesi {
@@ -56,9 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSesi(null)
   }, [])
 
+  const perbaruiAkun = useCallback((akun: Akun) => {
+    setSesi((s) => (s ? { ...s, akun } : s))
+  }, [])
+
   const nilai = useMemo<NilaiAuth>(
-    () => ({ peran: sesi?.peran ?? null, akun: sesi?.akun ?? null, memulihkan, masuk, keluar }),
-    [sesi, memulihkan, masuk, keluar],
+    () => ({
+      peran: sesi?.peran ?? null,
+      akun: sesi?.akun ?? null,
+      memulihkan,
+      masuk,
+      keluar,
+      perbaruiAkun,
+    }),
+    [sesi, memulihkan, masuk, keluar, perbaruiAkun],
   )
 
   return <Konteks.Provider value={nilai}>{children}</Konteks.Provider>

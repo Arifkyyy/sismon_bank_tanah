@@ -237,7 +237,7 @@ export function KerjaWajibPetugas() {
             rekap.map((r) => (
               <Baris key={r.petugasId}>
                 <td>
-                  <SelOrang nama={r.nama} jabatan={r.jabatan} />
+                  <SelOrang nama={r.nama} jabatan={r.jabatan} foto={r.fotoProfil} />
                 </td>
                 <td>
                   <TagJabatan jabatan={r.jabatan} />

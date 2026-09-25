@@ -177,7 +177,7 @@ export function DataUser({ peran }: { peran: Peran }) {
           terlihat.map((p) => (
             <Baris key={p.id}>
               <td>
-                <SelOrang nama={p.nama} jabatan={p.jabatan} />
+                <SelOrang nama={p.nama} jabatan={p.jabatan} foto={p.fotoProfil} />
               </td>
               <td>
                 <TagJabatan jabatan={p.jabatan} />
@@ -230,7 +230,7 @@ export function DataUser({ peran }: { peran: Peran }) {
           }
         >
           <div className="mb-3 flex items-center justify-between gap-3">
-            <SelOrang nama={dilihat.nama} jabatan={dilihat.jabatan} />
+            <SelOrang nama={dilihat.nama} jabatan={dilihat.jabatan} foto={dilihat.fotoProfil} />
             <Pil status={dilihat.status} />
           </div>
           <div className="mb-4">

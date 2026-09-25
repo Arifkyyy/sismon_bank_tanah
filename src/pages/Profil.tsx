@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { Modal } from '@/components/Modal'
 import {
   BarisData, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Tombol,
 } from '@/components/ui'
@@ -7,7 +8,155 @@ import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { keIso } from '@/lib/tanggal'
-import type { Kendala, Logbook } from '@/types'
+import type { Akun, Kendala, Logbook } from '@/types'
+
+/** Sisi terpanjang foto profil setelah diperkecil, dalam piksel. */
+const SISI_FOTO = 512
+
+/** Memperkecil gambar pilihan pengguna jadi data URL JPEG persegi (dipotong di tengah). */
+function kecilkanFoto(berkas: File): Promise<string> {
+  return new Promise((selesai, gagal) => {
+    const url = URL.createObjectURL(berkas)
+    const gambar = new Image()
+    gambar.onload = () => {
+      const sisi = Math.min(gambar.naturalWidth, gambar.naturalHeight)
+      const ukuran = Math.min(sisi, SISI_FOTO)
+      const kanvas = document.createElement('canvas')
+      kanvas.width = ukuran
+      kanvas.height = ukuran
+      kanvas
+        .getContext('2d')!
+        .drawImage(
+          gambar,
+          (gambar.naturalWidth - sisi) / 2,
+          (gambar.naturalHeight - sisi) / 2,
+          sisi,
+          sisi,
+          0,
+          0,
+          ukuran,
+          ukuran,
+        )
+      URL.revokeObjectURL(url)
+      selesai(kanvas.toDataURL('image/jpeg', 0.85))
+    }
+    gambar.onerror = () => {
+      URL.revokeObjectURL(url)
+      gagal(new Error('Berkas ini bukan gambar yang bisa dibuka.'))
+    }
+    gambar.src = url
+  })
+}
+
+function DialogUbahProfil({
+  akun,
+  jabatan,
+  onTutup,
+  onTersimpan,
+}: {
+  akun: Akun
+  jabatan: string
+  onTutup: () => void
+  onTersimpan: (akun: Akun) => void
+}) {
+  const [nama, setNama] = useState(akun.nama)
+  // undefined = foto tidak diubah, null = foto dihapus, teks = foto baru (data URL)
+  const [fotoBaru, setFotoBaru] = useState<string | null | undefined>(undefined)
+  const [galat, setGalat] = useState('')
+  const [menyimpan, setMenyimpan] = useState(false)
+  const pilihBerkas = useRef<HTMLInputElement>(null)
+
+  const pratinjau = fotoBaru === undefined ? akun.foto : fotoBaru
+
+  async function pilihFoto(berkas: File | undefined) {
+    if (!berkas) return
+    setGalat('')
+    try {
+      setFotoBaru(await kecilkanFoto(berkas))
+    } catch (e) {
+      setGalat(pesanGalat(e))
+    }
+  }
+
+  async function simpan() {
+    if (!nama.trim()) {
+      setGalat('Nama tidak boleh kosong.')
+      return
+    }
+    setMenyimpan(true)
+    setGalat('')
+    try {
+      const hasil = await api<Akun>('/api/auth/profil', 'PATCH', {
+        nama,
+        foto: fotoBaru || undefined,
+        hapusFoto: fotoBaru === null,
+      })
+      onTersimpan(hasil)
+    } catch (e) {
+      setGalat(pesanGalat(e))
+      setMenyimpan(false)
+    }
+  }
+
+  return (
+    <Modal
+      judul="Ubah profil"
+      sub="Jabatan hanya bisa diubah oleh admin"
+      onTutup={onTutup}
+      aksi={
+        <>
+          <Tombol varian="hantu" onClick={onTutup} disabled={menyimpan}>
+            Batal
+          </Tombol>
+          <Tombol onClick={simpan} disabled={menyimpan}>
+            {menyimpan ? 'Menyimpan…' : 'Simpan profil'}
+          </Tombol>
+        </>
+      }
+    >
+      <div className="mb-4 flex items-center gap-4">
+        <span className="grid h-[72px] w-[72px] flex-none place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-hijau-terang to-hijau text-[24px] font-extrabold text-white">
+          {pratinjau ? <img src={pratinjau} alt="" className="h-full w-full object-cover" /> : akun.inisial}
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <Tombol varian="hantu" kecil onClick={() => pilihBerkas.current?.click()} disabled={menyimpan}>
+            <Ikon.Foto size={14} /> {pratinjau ? 'Ganti foto' : 'Pasang foto'}
+          </Tombol>
+          {pratinjau && (
+            <Tombol varian="bahaya" kecil onClick={() => setFotoBaru(null)} disabled={menyimpan}>
+              <Ikon.Sampah size={14} /> Hapus foto
+            </Tombol>
+          )}
+        </div>
+        <input
+          ref={pilihBerkas}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            void pilihFoto(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
+      </div>
+
+      <div className="grid gap-3.5">
+        <Kolom label="Nama lengkap" wajib>
+          <Input value={nama} maxLength={120} onChange={(e) => setNama(e.target.value)} autoFocus />
+        </Kolom>
+        <Kolom label="Jabatan" bantu="Hubungi admin bila jabatan Anda keliru.">
+          <Input value={jabatan} disabled />
+        </Kolom>
+      </div>
+
+      {galat && (
+        <div className="mt-3.5 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12px] text-merah-teks">
+          {galat}
+        </div>
+      )}
+    </Modal>
+  )
+}
 
 /** Mengambil angka jam dari teks seperti '4 jam'. */
 function jamDari(total: string): number {
@@ -15,8 +164,9 @@ function jamDari(total: string): number {
 }
 
 export function Profil() {
-  const { akun, peran, keluar } = useAuth()
+  const { akun, peran, keluar, perbaruiAkun } = useAuth()
   const petugas = peran === 'user'
+  const [ubahProfil, setUbahProfil] = useState(false)
 
   const [sandiLama, setSandiLama] = useState('')
   const [sandiBaru, setSandiBaru] = useState('')
@@ -80,8 +230,8 @@ export function Profil() {
         <div className="tekstur-kontur absolute inset-0 opacity-50" />
         <div className="tekstur-petak absolute inset-0" />
 
-        <div className="relative z-[2] grid h-[86px] w-[86px] flex-none place-items-center rounded-3xl border-[1.5px] border-white/30 bg-white/15 text-[30px] font-extrabold text-white backdrop-blur">
-          {akun.inisial}
+        <div className="relative z-[2] grid h-[86px] w-[86px] flex-none place-items-center overflow-hidden rounded-3xl border-[1.5px] border-white/30 bg-white/15 text-[30px] font-extrabold text-white backdrop-blur">
+          {akun.foto ? <img src={akun.foto} alt="" className="h-full w-full object-cover" /> : akun.inisial}
         </div>
         <div className="relative z-[2] min-w-[240px] flex-1">
           <h2 className="m-0 mb-1 text-[23px] font-extrabold tracking-[-0.025em] text-white">{akun.nama}</h2>
@@ -102,7 +252,10 @@ export function Profil() {
             ))}
           </div>
         </div>
-        <Tombol className="relative z-[2] border border-white/25 bg-white/15 text-white shadow-none hover:bg-white/25">
+        <Tombol
+          onClick={() => setUbahProfil(true)}
+          className="relative z-[2] border border-white/25 bg-white/15 text-white shadow-none hover:bg-white/25"
+        >
           <Ikon.Pena size={15} /> Ubah profil
         </Tombol>
       </div>
@@ -209,6 +362,18 @@ export function Profil() {
           </Kartu>
         </div>
       </div>
+
+      {ubahProfil && (
+        <DialogUbahProfil
+          akun={akun}
+          jabatan={akun.peran}
+          onTutup={() => setUbahProfil(false)}
+          onTersimpan={(baru) => {
+            perbaruiAkun(baru)
+            setUbahProfil(false)
+          }}
+        />
+      )}
     </>
   )
 }

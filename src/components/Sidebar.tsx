@@ -209,7 +209,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
         </div>
         <div className={cn('flex items-center gap-3 rounded-[13px] bg-[rgba(4,40,20,.24)] p-2.5', ciut && 'lg:flex-col lg:gap-2')}>
           <span
-            className="grid h-9 w-9 flex-none place-items-center rounded-[11px] text-[13px] font-bold"
+            className="grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-[11px] text-[13px] font-bold"
             style={{
               background: akun?.emas
                 ? 'linear-gradient(135deg,#F2BE26,#DE7B2C)'
@@ -217,7 +217,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
               color: akun?.emas ? '#072932' : '#fff',
             }}
           >
-            {akun?.inisial}
+            {akun?.foto ? <img src={akun.foto} alt="" className="h-full w-full object-cover" /> : akun?.inisial}
           </span>
           <div className={cn('min-w-0', ciut && 'lg:hidden')}>
             <b className="block truncate text-[12.5px] font-semibold text-white">{akun?.nama}</b>

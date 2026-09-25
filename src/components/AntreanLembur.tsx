@@ -146,7 +146,7 @@ export function KartuAntreanLembur({
                     <div className="relative p-4 pl-[19px]">
                       <div className="flex items-start gap-3">
                         {d.nama ? (
-                          <Avatar nama={d.nama} jabatan={d.jabatan} ukuran={36} />
+                          <Avatar nama={d.nama} jabatan={d.jabatan} foto={d.fotoProfil} ukuran={36} />
                         ) : (
                           <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] border border-dashed border-garis-kuat text-teks-samar">
                             <Ikon.Orang size={16} />

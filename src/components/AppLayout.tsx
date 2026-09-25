@@ -145,8 +145,8 @@ export function AppLayout({ peran }: Props) {
                   menuAkun && 'bg-kertas',
                 )}
               >
-                <span className="grid h-10 w-10 flex-none place-items-center rounded-full text-[13.5px] font-bold" style={avatar}>
-                  {akun?.inisial}
+                <span className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full text-[13.5px] font-bold" style={avatar}>
+                  {akun?.foto ? <img src={akun.foto} alt="" className="h-full w-full object-cover" /> : akun?.inisial}
                 </span>
                 <span className="hidden min-w-0 text-left sm:block">
                   <b className="block truncate text-[13.5px] font-bold leading-tight text-ink">{akun?.nama}</b>

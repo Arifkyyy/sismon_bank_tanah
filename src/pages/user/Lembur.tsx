@@ -41,7 +41,7 @@ export function KartuLembur({
       />
       <div className="px-5 py-4.5">
         <div className="mb-4 flex items-center gap-3">
-          <Avatar nama={pembuat} emas={lembur.pembuatPeran === 'superadmin'} />
+          <Avatar nama={pembuat} emas={lembur.pembuatPeran === 'superadmin'} foto={lembur.pembuatFoto} />
           <div className="min-w-0 flex-1">
             <b className="block text-[13.5px] font-semibold text-ink">{pembuat}</b>
             <span className="text-[11.5px] text-teks-samar">

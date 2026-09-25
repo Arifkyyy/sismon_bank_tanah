@@ -115,15 +115,18 @@ export function Avatar({
   jabatan,
   ukuran = 34,
   emas,
+  foto,
 }: {
   nama: string
   jabatan?: Jabatan
   ukuran?: number
   emas?: boolean
+  /** URL foto profil; bila ada, dipakai menggantikan inisial */
+  foto?: string | null
 }) {
   return (
     <span
-      className="grid flex-none place-items-center rounded-[10px] font-bold text-white"
+      className="grid flex-none place-items-center overflow-hidden rounded-[10px] font-bold text-white"
       style={{
         width: ukuran,
         height: ukuran,
@@ -136,15 +139,23 @@ export function Avatar({
         color: emas ? '#072932' : undefined,
       }}
     >
-      {inisial(nama)}
+      {foto ? <img src={foto} alt="" className="h-full w-full object-cover" /> : inisial(nama)}
     </span>
   )
 }
 
-export function SelOrang({ nama, jabatan }: { nama: string; jabatan: Jabatan }) {
+export function SelOrang({
+  nama,
+  jabatan,
+  foto,
+}: {
+  nama: string
+  jabatan: Jabatan
+  foto?: string | null
+}) {
   return (
     <div className="flex items-center gap-3">
-      <Avatar nama={nama} jabatan={jabatan} />
+      <Avatar nama={nama} jabatan={jabatan} foto={foto} />
       <div>
         <b className="block whitespace-nowrap text-[13px] font-semibold text-ink">{nama}</b>
         <span className="block text-[11.5px] text-teks-samar">{jabatan}</span>

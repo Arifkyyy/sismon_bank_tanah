@@ -367,7 +367,7 @@ export function PengajuanLembur() {
             terlihat.map((l) => (
               <Baris key={l.id}>
                 <td>
-                  <SelOrang nama={l.nama} jabatan={l.jabatan} />
+                  <SelOrang nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} />
                 </td>
                 <td className="num whitespace-nowrap">{l.tanggal}</td>
                 <td className="num whitespace-nowrap">{l.rentang}</td>

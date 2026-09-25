@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import format as f
-from app.foto_util import url_foto
+from app.foto_util import url_foto, url_foto_profil
 from app.models import Kendala, Lembur, Logbook, User
 from app.schemas import AkunKeluar, DrafKeluar, KendalaKeluar, LemburKeluar, LogbookKeluar, PetugasKeluar
 
@@ -23,6 +23,7 @@ def akun(u: User) -> AkunKeluar:
         telepon=u.telepon,
         bergabung=f.tanggal_teks(f.ke_wib(u.dibuat_pada).date()) if u.dibuat_pada else "",
         emas=u.peran == "superadmin",
+        foto=url_foto_profil(u.foto_profil),
     )
 
 
@@ -31,6 +32,7 @@ def petugas(u: User) -> PetugasKeluar:
         id=u.id,
         nama=u.nama,
         jabatan=u.jabatan,
+        foto_profil=url_foto_profil(u.foto_profil),
         email=u.email,
         telepon=u.telepon,
         status=u.status,
@@ -75,6 +77,7 @@ def daftar_logbook(db: Session, baris: list[Logbook]) -> list[LogbookKeluar]:
                 id=b.id,
                 nama=b.petugas.nama,
                 jabatan=b.petugas.jabatan,
+                foto_profil=url_foto_profil(b.petugas.foto_profil),
                 tanggal=f.tanggal_teks(w.date()),
                 tanggal_iso=w.date().isoformat(),
                 hari=f.nama_hari(w.date()),
@@ -94,6 +97,7 @@ def kendala(k: Kendala) -> KendalaKeluar:
         id=k.id,
         nama=k.petugas.nama,
         jabatan=k.petugas.jabatan,
+        foto_profil=url_foto_profil(k.petugas.foto_profil),
         tanggal=f.tanggal_teks(w.date()),
         tanggal_iso=w.date().isoformat(),
         hari=f.nama_hari(w.date()),
@@ -111,6 +115,7 @@ def lembur(l: Lembur) -> LemburKeluar:
         id=str(l.id),
         nama=l.petugas.nama if l.petugas else "",
         jabatan=l.jabatan,
+        foto_profil=url_foto_profil(l.petugas.foto_profil) if l.petugas else None,
         tanggal=f.tanggal_teks(l.tanggal),
         tanggal_iso=l.tanggal.isoformat(),
         rentang=f"{f.jam_teks(l.jam_mulai)} – {f.jam_teks(l.jam_selesai)}",
@@ -123,6 +128,7 @@ def lembur(l: Lembur) -> LemburKeluar:
         dibuat_oleh=l.pembuat.nama if l.pembuat else None,
         pembuat_peran=l.pembuat.peran if l.pembuat else None,
         pembuat_unit=l.pembuat.unit if l.pembuat else None,
+        pembuat_foto=url_foto_profil(l.pembuat.foto_profil) if l.pembuat else None,
     )
 
 
@@ -131,6 +137,7 @@ def draf(l: Lembur) -> DrafKeluar:
         id=str(l.id),
         nama=l.petugas.nama if l.petugas else "",
         jabatan=l.jabatan,
+        foto_profil=url_foto_profil(l.petugas.foto_profil) if l.petugas else None,
         tanggal=l.tanggal.isoformat(),
         mulai=l.jam_mulai.strftime("%H:%M"),
         selesai=l.jam_selesai.strftime("%H:%M"),

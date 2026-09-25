@@ -54,6 +54,8 @@ class User(Base):
     nip: Mapped[str] = mapped_column(String(40), default="")
     unit: Mapped[str] = mapped_column(String(120), default="")
     telepon: Mapped[str] = mapped_column(String(30), default="")
+    # Lokasi relatif di folder uploads/, atau None bila belum memasang foto profil.
+    foto_profil: Mapped[str | None] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(20), default="Aktif")
     terakhir_masuk: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

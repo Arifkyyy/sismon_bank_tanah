@@ -30,6 +30,8 @@ export interface Akun {
   bergabung?: string
   /** true untuk super admin — avatarnya pakai gradasi emas */
   emas?: boolean
+  /** URL foto profil; kosong berarti avatar memakai inisial */
+  foto?: string | null
 }
 
 export interface Petugas {
@@ -37,6 +39,8 @@ export interface Petugas {
   id: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   email: string
   telepon: string
   status: Status
@@ -67,6 +71,8 @@ export interface Logbook {
   id?: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   tanggal: string
   /** tanggal yang sama dalam ISO '2026-09-15' */
   tanggalIso?: string
@@ -85,6 +91,8 @@ export interface Kendala {
   id?: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   tanggal: string
   tanggalIso?: string
   hari: string
@@ -103,6 +111,8 @@ export interface Lembur {
   id: string
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   /** untuk ditampilkan, mis. '16 Sep 2026' */
   tanggal: string
   /** tanggal yang sama dalam ISO '2026-09-16' — dipakai penyaring periode */
@@ -123,6 +133,7 @@ export interface Lembur {
   pembuatPeran?: 'admin' | 'superadmin' | null
   /** unit kerja pembuat, mis. 'Bagian Pengelolaan Gedung' */
   pembuatUnit?: string | null
+  pembuatFoto?: string | null
 }
 
 /**
@@ -135,6 +146,8 @@ export interface DrafLembur {
   /** boleh kosong selama masih draf */
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   /** ISO, mis. '2026-09-16' */
   tanggal: string
   /** 'HH:MM' */
@@ -166,6 +179,8 @@ export interface RekapPetugas {
   petugasId: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   hari: number
   logbook: number
   kendala: number
@@ -218,6 +233,7 @@ export interface AkunAdmin {
   /** kapan terakhir masuk, sudah berupa teks */
   masuk: string
   status: Status
+  fotoProfil?: string | null
 }
 
 /* --------------------------------------------------------- Kerja wajib */
@@ -250,6 +266,8 @@ export interface ChecklistLembar {
   petugasId: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   tanggal: string
   tanggalIso: string
   hari: string
@@ -272,6 +290,8 @@ export interface ChecklistRingkas {
   petugasId: number
   nama: string
   jabatan: Jabatan
+  /** URL foto profil petugas; kosong berarti avatar memakai inisial */
+  fotoProfil?: string | null
   tanggal: string
   tanggalIso: string
   status: 'Draf' | 'Dikirim' | 'Belum diisi'

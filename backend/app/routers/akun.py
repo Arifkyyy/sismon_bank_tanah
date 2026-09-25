@@ -7,7 +7,7 @@ from app import format as f
 from app.audit import catat
 from app.database import ambil_db
 from app.deps import butuh_peran
-from app.foto_util import hapus_berkas
+from app.foto_util import hapus_berkas, url_foto_profil
 from app.models import Foto, Kendala, Logbook, User
 from app.schemas import AkunAdminKeluar, AkunBaru, HasilAkunBaru, UbahStatusAkun
 from app.security import acak_sandi, sandi_sementara
@@ -35,6 +35,7 @@ def daftar_admin(db: Session = Depends(ambil_db), _: User = Depends(hanya_super)
             email=u.email,
             masuk=f.cap_waktu(u.terakhir_masuk) or "Belum pernah",
             status=u.status,
+            foto_profil=url_foto_profil(u.foto_profil),
         )
         for u in db.scalars(q)
     ]

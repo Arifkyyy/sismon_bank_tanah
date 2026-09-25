@@ -169,7 +169,7 @@ export function LogAktivitas() {
             terlihat.map((l) => (
               <Baris key={l.id}>
                 <td>
-                  <SelOrang nama={l.nama} jabatan={l.jabatan} />
+                  <SelOrang nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} />
                 </td>
                 <td>
                   <TagJabatan jabatan={l.jabatan} />

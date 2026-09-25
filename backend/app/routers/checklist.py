@@ -22,6 +22,7 @@ from app.audit import catat
 from app.config import pengaturan
 from app.database import ambil_db
 from app.deps import PENGAWAS, butuh_peran, user_saat_ini
+from app.foto_util import url_foto_profil
 from app.models import ChecklistHarian, ChecklistItem, ChecklistJawaban, User
 from app.schemas import (
     ItemKeluar, ItemMasuk, Jabatan, JawabanKeluar, LembarKeluar, LembarMasuk, RingkasKeluar, UrutanMasuk,
@@ -199,6 +200,7 @@ def lembar(
         petugas_id=p.id,
         nama=p.nama,
         jabatan=p.jabatan,
+        foto_profil=url_foto_profil(p.foto_profil),
         tanggal=f.tanggal_teks(tanggal),
         tanggal_iso=tanggal.isoformat(),
         hari=f.nama_hari(tanggal),
@@ -328,6 +330,7 @@ def rekap(
                 petugas_id=p.id,
                 nama=p.nama,
                 jabatan=p.jabatan,
+                foto_profil=url_foto_profil(p.foto_profil),
                 tanggal=f.tanggal_teks(tanggal),
                 tanggal_iso=tanggal.isoformat(),
                 status=l.status if l else "Belum diisi",
@@ -360,6 +363,7 @@ def buka_kunci(lembar_id: int, db: Session = Depends(ambil_db), admin: User = De
         petugas_id=p.id,
         nama=p.nama,
         jabatan=p.jabatan,
+        foto_profil=url_foto_profil(p.foto_profil),
         tanggal=f.tanggal_teks(l.tanggal),
         tanggal_iso=l.tanggal.isoformat(),
         status=l.status,

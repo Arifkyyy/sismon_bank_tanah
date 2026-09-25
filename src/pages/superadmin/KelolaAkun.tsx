@@ -213,7 +213,7 @@ export function KelolaAkun() {
               admin.data.map((a) => (
                 <Baris key={a.id}>
                   <td>
-                    <SelOrang nama={a.nama} jabatan="OB" />
+                    <SelOrang nama={a.nama} jabatan="OB" foto={a.fotoProfil} />
                   </td>
                   <td className="text-teks-lembut">{a.email}</td>
                   <td className="num whitespace-nowrap text-teks-lembut">{a.masuk}</td>
@@ -283,7 +283,7 @@ export function KelolaAkun() {
               petugas.data.map((p) => (
                 <Baris key={p.id}>
                   <td>
-                    <SelOrang nama={p.nama} jabatan={p.jabatan} />
+                    <SelOrang nama={p.nama} jabatan={p.jabatan} foto={p.fotoProfil} />
                   </td>
                   <td>
                     <TagJabatan jabatan={p.jabatan} />

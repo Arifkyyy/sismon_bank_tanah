@@ -39,6 +39,7 @@ class AkunKeluar(Skema):
     telepon: str = ""
     bergabung: str = ""
     emas: bool = False
+    foto: str | None = None  # URL foto profil
 
 
 class SesiKeluar(Skema):
@@ -48,6 +49,13 @@ class SesiKeluar(Skema):
 
 class HasilMasuk(SesiKeluar):
     token: str
+
+
+class UbahProfil(Skema):
+    """Jabatan, email, dan NIP sengaja tidak ada: hanya admin yang boleh mengubahnya."""
+    nama: str = Field(min_length=1, max_length=120)
+    foto: str | None = None  # data URL foto baru; None = tidak diganti
+    hapus_foto: bool = False
 
 
 class GantiSandi(Skema):
@@ -62,6 +70,7 @@ class PetugasKeluar(Skema):
     id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     email: str
     telepon: str
     status: StatusAkun
@@ -97,6 +106,7 @@ class AkunAdminKeluar(Skema):
     email: str
     masuk: str
     status: StatusAkun
+    foto_profil: str | None = None
 
 
 class AkunBaru(Skema):
@@ -137,6 +147,7 @@ class LogbookKeluar(Skema):
     id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     tanggal_iso: str
     hari: str
@@ -152,6 +163,7 @@ class KendalaKeluar(Skema):
     id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     tanggal_iso: str
     hari: str
@@ -175,6 +187,7 @@ class LemburKeluar(Skema):
     id: str
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     tanggal_iso: str
     rentang: str
@@ -188,6 +201,7 @@ class LemburKeluar(Skema):
     dibuat_oleh: str | None = None
     pembuat_peran: Literal["admin", "superadmin"] | None = None
     pembuat_unit: str | None = None
+    pembuat_foto: str | None = None
 
 
 class DrafKeluar(Skema):
@@ -195,6 +209,7 @@ class DrafKeluar(Skema):
     id: str
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     mulai: str
     selesai: str
@@ -220,6 +235,7 @@ class RekapKeluar(Skema):
     petugas_id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     hari: int
     logbook: int
     kendala: int
@@ -320,6 +336,7 @@ class LembarKeluar(Skema):
     petugas_id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     tanggal_iso: str
     hari: str
@@ -348,6 +365,7 @@ class RingkasKeluar(Skema):
     petugas_id: int
     nama: str
     jabatan: Jabatan
+    foto_profil: str | None = None
     tanggal: str
     tanggal_iso: str
     status: Literal["Draf", "Dikirim", "Belum diisi"]

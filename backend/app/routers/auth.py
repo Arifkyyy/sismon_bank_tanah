@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 from app import tampil
 from app.database import ambil_db
 from app.deps import user_saat_ini
+from app.foto_util import hapus_berkas, simpan_data_url
 from app.format import sekarang
 from app.models import User
-from app.schemas import GantiSandi, HasilMasuk, MasukMasuk, SesiKeluar
+from app.schemas import AkunKeluar, GantiSandi, HasilMasuk, MasukMasuk, SesiKeluar, UbahProfil
 from app.security import acak_sandi, buat_token, cocok_sandi
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -32,6 +33,26 @@ def masuk(isi: MasukMasuk, db: Session = Depends(ambil_db)):
 def saya(user: User = Depends(user_saat_ini)):
     """Dipanggil frontend saat halaman dibuka ulang, untuk memulihkan sesi dari token."""
     return SesiKeluar(peran=user.peran, akun=tampil.akun(user))
+
+
+@router.patch("/profil", response_model=AkunKeluar)
+def ubah_profil(isi: UbahProfil, user: User = Depends(user_saat_ini), db: Session = Depends(ambil_db)):
+    """Pemilik akun hanya boleh mengganti nama dan foto profilnya sendiri."""
+    nama = " ".join(isi.nama.split())
+    if not nama:
+        raise HTTPException(422, "Nama tidak boleh kosong.")
+    user.nama = nama
+
+    lama = user.foto_profil
+    if isi.foto:
+        user.foto_profil, _ = simpan_data_url(isi.foto)
+    elif isi.hapus_foto:
+        user.foto_profil = None
+    db.commit()
+    # Berkas lama baru dibuang setelah database tersimpan.
+    if lama and lama != user.foto_profil:
+        hapus_berkas(lama)
+    return tampil.akun(user)
 
 
 @router.post("/ganti-sandi", status_code=204)

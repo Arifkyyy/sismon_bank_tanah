@@ -48,3 +48,8 @@ def hapus_berkas(lokasi: str) -> None:
 
 def url_foto(lokasi: str) -> str:
     return f"{pengaturan.url_publik.rstrip('/')}/uploads/{lokasi}"
+
+
+def url_foto_profil(lokasi: str | None) -> str | None:
+    """URL foto profil pengguna, atau None bila ia belum memasangnya."""
+    return url_foto(lokasi) if lokasi else None

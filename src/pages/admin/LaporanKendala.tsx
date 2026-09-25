@@ -243,7 +243,7 @@ export function LaporanKendalaAdmin() {
             terlihat.map((k) => (
               <Baris key={k.id}>
                 <td>
-                  <SelOrang nama={k.nama} jabatan={k.jabatan} />
+                  <SelOrang nama={k.nama} jabatan={k.jabatan} foto={k.fotoProfil} />
                 </td>
                 <td>
                   <TagJabatan jabatan={k.jabatan} />

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app import format as f
 from app.database import ambil_db
 from app.deps import PENGAWAS, butuh_peran, user_saat_ini
+from app.foto_util import url_foto_profil
 from app.models import ChecklistHarian, Kendala, Lembur, Logbook, User
 from app.schemas import HariKeluar, Jabatan, RekapKeluar, SebaranKeluar
 
@@ -143,6 +144,7 @@ def rekap(
                 petugas_id=p.id,
                 nama=p.nama,
                 jabatan=p.jabatan,
+                foto_profil=url_foto_profil(p.foto_profil),
                 hari=n_hari,
                 logbook=n_log,
                 kendala=kendala.get(p.id, 0),
