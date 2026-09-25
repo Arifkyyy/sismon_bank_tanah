@@ -8,8 +8,9 @@ const pemantauan: GrupMenu = {
   judul: 'Pemantauan',
   item: [
     { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
-    { id: 'log', label: 'Log aktivitas', path: 'log-aktivitas', ikon: 'Buku', tanda: '12' },
-    { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas', tanda: '2' },
+    // `tanda` log dan kendala diisi Sidebar dari backend
+    { id: 'log', label: 'Log aktivitas', path: 'log-aktivitas', ikon: 'Buku' },
+    { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas' },
     { id: 'wajib', label: 'Kerja wajib petugas', path: 'kerja-wajib-petugas', ikon: 'Daftar' },
   ],
 }
