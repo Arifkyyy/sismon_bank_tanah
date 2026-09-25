@@ -12,9 +12,11 @@ import { LaporanKendalaAdmin } from '@/pages/admin/LaporanKendala'
 import { LogAktivitas } from '@/pages/admin/LogAktivitas'
 import { PengajuanLembur } from '@/pages/admin/PengajuanLembur'
 import { Rekapitulasi } from '@/pages/admin/Rekapitulasi'
+import { KerjaWajibPetugas } from '@/pages/admin/KerjaWajibPetugas'
 import { HapusDataFoto } from '@/pages/superadmin/HapusDataFoto'
 import { KelolaAkun } from '@/pages/superadmin/KelolaAkun'
 import { DashboardUser } from '@/pages/user/Dashboard'
+import { KerjaWajib } from '@/pages/user/KerjaWajib'
 import { LaporanKendalaUser } from '@/pages/user/LaporanKendala'
 import { LemburUser } from '@/pages/user/Lembur'
 import { LogbookUser } from '@/pages/user/Logbook'
@@ -52,6 +54,7 @@ export default function App() {
         <Route path="log-aktivitas" element={<LogAktivitas />} />
         <Route path="rekapitulasi" element={<Rekapitulasi />} />
         <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="kerja-wajib-petugas" element={<KerjaWajibPetugas />} />
         <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
         <Route path="profil" element={<Profil />} />
         <Route path="sistem-desain" element={<SistemDesain />} />
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="log-aktivitas" element={<LogAktivitas />} />
         <Route path="rekapitulasi" element={<Rekapitulasi />} />
         <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="kerja-wajib-petugas" element={<KerjaWajibPetugas />} />
         <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
         <Route path="kelola-akun" element={<KelolaAkun />} />
         <Route path="hapus-data-foto" element={<HapusDataFoto />} />
@@ -89,6 +93,7 @@ export default function App() {
       >
         <Route index element={<DashboardUser />} />
         <Route path="logbook" element={<LogbookUser />} />
+        <Route path="kerja-wajib" element={<KerjaWajib />} />
         <Route path="rekap-harian" element={<RekapHarian />} />
         <Route path="laporan-kendala" element={<LaporanKendalaUser />} />
         <Route path="lembur" element={<LemburUser />} />
