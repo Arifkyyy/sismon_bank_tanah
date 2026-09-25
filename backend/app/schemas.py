@@ -160,6 +160,8 @@ class KendalaKeluar(Skema):
     status: StatusKendala
     foto: Literal["a", "b", "c"]
     foto_url: list[str] = []
+    # kapan admin terakhir mengubah statusnya, mis. '15 Sep 2026 · 10.24'
+    diperbarui_pada: str | None = None
 
 
 class UbahStatusKendala(Skema):
@@ -181,6 +183,8 @@ class LemburKeluar(Skema):
     status: Literal["Menunggu", "Diterima", "Ditolak", "Selesai"]
     alasan: str | None = None
     dijawab_pada: str | None = None
+    # kapan admin mengirim penugasan ke petugas
+    dikirim_pada: str | None = None
     dibuat_oleh: str | None = None
     pembuat_peran: Literal["admin", "superadmin"] | None = None
     pembuat_unit: str | None = None
