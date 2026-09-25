@@ -4,9 +4,12 @@ import { AKAR, MENU } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
 import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
+import { query } from '@/lib/api'
+import { keIso } from '@/lib/tanggal'
+import { useApi } from '@/lib/useApi'
 import type { NamaIkon } from '@/lib/ikon'
 import { cn } from '@/lib/util'
-import type { Peran } from '@/types'
+import type { Kendala, Logbook, Peran } from '@/types'
 
 interface Props {
   peran: Peran
@@ -22,6 +25,27 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
   // petugas yang dipilih admin, bukan total seluruh petugas.
   const { menunggu } = useLemburSaya()
   const lokasi = useLocation()
+
+  // Angka notifikasi admin: logbook yang masuk hari ini dan kendala yang belum ditinjau.
+  const pengawas = peran !== 'user'
+  const logHariIni = useApi<Logbook[]>(
+    pengawas ? `/api/logbook${query({ tanggal: keIso(new Date()), batas: 1000 })}` : null,
+    [],
+  )
+  const kendalaBaru = useApi<Kendala[]>(pengawas ? '/api/kendala?status=Baru&batas=1000' : null, [])
+  const muatLog = logHariIni.muat
+  const muatKendala = kendalaBaru.muat
+  // Diperbarui tiap pindah halaman (mis. setelah mengubah status kendala) dan tiap menit.
+  useEffect(() => {
+    muatLog()
+    muatKendala()
+    const t = window.setInterval(() => {
+      muatLog()
+      muatKendala()
+    }, 60_000)
+    return () => window.clearInterval(t)
+  }, [lokasi.pathname, muatLog, muatKendala])
+  const angka = (n: number) => (n > 0 ? (n > 99 ? '99+' : String(n)) : undefined)
   const navRef = useRef<HTMLElement>(null)
   const sisiRef = useRef<HTMLElement>(null)
   const [penanda, setPenanda] = useState({ y: 0, tinggi: 42, tampil: false })
@@ -122,8 +146,12 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
               const Glif = Ikon[item.ikon as NamaIkon]
               const tanda =
                 peran === 'user' && item.id === 'lembur'
-                  ? menunggu.length > 0 && String(menunggu.length)
-                  : item.tanda
+                  ? angka(menunggu.length)
+                  : pengawas && item.id === 'log'
+                    ? angka(logHariIni.data.length)
+                    : pengawas && item.id === 'kendala'
+                      ? angka(kendalaBaru.data.length)
+                      : item.tanda
               return (
                 <NavLink
                   key={item.id}
