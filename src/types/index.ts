@@ -215,3 +215,65 @@ export interface AkunAdmin {
   masuk: string
   status: Status
 }
+
+/* --------------------------------------------------------- Kerja wajib */
+
+export type Sesi = 'Harian' | 'Pagi' | 'Siang' | 'Sore'
+/** 'harian' = satu kotak per hari; 'sesi' = kotak Pagi, Siang, Sore */
+export type ModeChecklist = 'harian' | 'sesi'
+
+/** Satu baris pemeriksaan pada SOP jabatan. */
+export interface ChecklistItem {
+  id: number
+  jabatan: Jabatan
+  urutan: number
+  teks: string
+  mode: ModeChecklist
+  aktif: boolean
+}
+
+export interface ChecklistJawaban {
+  itemId: number
+  sesi: Sesi
+  status: 'Ya' | 'Tidak'
+  catatan: string
+}
+
+/** Lembar kerja wajib satu petugas pada satu tanggal. */
+export interface ChecklistLembar {
+  /** null bila petugas belum pernah menyimpan apa pun pada tanggal itu */
+  id: number | null
+  petugasId: number
+  nama: string
+  jabatan: Jabatan
+  tanggal: string
+  tanggalIso: string
+  hari: string
+  status: 'Draf' | 'Dikirim'
+  dikirimPada: string | null
+  /** false bila sudah dikirim atau tanggalnya di luar batas pengisian */
+  bisaDiisi: boolean
+  item: ChecklistItem[]
+  jawaban: ChecklistJawaban[]
+  totalKotak: number
+  terisi: number
+  /** jumlah kotak yang dijawab 'Tidak' */
+  tidak: number
+  persen: number
+}
+
+/** Satu baris tabel Kerja wajib petugas di halaman admin. */
+export interface ChecklistRingkas {
+  id: number | null
+  petugasId: number
+  nama: string
+  jabatan: Jabatan
+  tanggal: string
+  tanggalIso: string
+  status: 'Draf' | 'Dikirim' | 'Belum diisi'
+  totalKotak: number
+  terisi: number
+  tidak: number
+  persen: number
+  dikirimPada: string | null
+}
