@@ -9,7 +9,7 @@ import {
 import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
-import { unduhCsv } from '@/lib/csv'
+import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
@@ -42,11 +42,20 @@ export function LogAktivitas() {
   const { data: terlihat, memuat, galat, muat } = useApi<Logbook[]>(alamat, [])
 
   function unduh() {
-    unduhCsv(
-      `log-aktivitas-${jendela?.dari ?? 'semua'}`,
-      ['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Lembur'],
-      terlihat.map((l) => [l.nama, l.jabatan, l.tanggal, l.hari, l.jam, l.keterangan, l.lembur]),
-    )
+    unduhExcel({
+      namaBerkas: `log-aktivitas-${jendela?.dari ?? 'semua'}`,
+      judul: 'Log Aktivitas Petugas',
+      keterangan: [
+        `Periode: ${labelPeriode}`,
+        jabatan === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatan],
+        `${terlihat.length} catatan`,
+      ].join(' · '),
+      namaLembar: 'Log aktivitas',
+      kepala: ['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Lembur'],
+      baris: terlihat.map((l) => [
+        l.nama, JABATAN_PANJANG[l.jabatan], l.tanggal, l.hari, l.jam, l.keterangan, l.lembur,
+      ]),
+    })
   }
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
