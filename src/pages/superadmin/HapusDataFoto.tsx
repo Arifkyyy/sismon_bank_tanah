@@ -5,6 +5,7 @@ import {
   PilihRapi, Tombol,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
@@ -27,6 +28,7 @@ function enamBulanLalu(): string {
 }
 
 export function HapusDataFoto() {
+  const konfirmasi = useKonfirmasi()
   const [dipilih, setDipilih] = useState<Set<number>>(new Set())
   const [sumber, setSumber] = useState('Semua')
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
@@ -80,7 +82,13 @@ export function HapusDataFoto() {
   async function hapusTerpilih() {
     const ids = [...dipilih]
     if (ids.length === 0) return
-    if (!window.confirm(`Hapus ${ids.length} foto? Berkasnya tidak bisa dikembalikan.`)) return
+    const ya = await konfirmasi({
+      judul: `Hapus ${ids.length} foto?`,
+      pesan: 'Berkas foto terhapus permanen dari server dan tidak bisa dikembalikan.',
+      tombol: 'Hapus foto',
+      nada: 'bahaya',
+    })
+    if (!ya) return
     if (await jalankan(() => api('/api/foto/hapus', 'POST', { ids }))) setDipilih(new Set())
   }
 
