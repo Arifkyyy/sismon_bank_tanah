@@ -308,7 +308,8 @@ export function KerjaWajib() {
           </div>
         )}
 
-        <ol className="m-0 grid list-none gap-3 p-0">
+        {/* Daftar digulir di dalam kartu; sesi, progres, dan tombol kirim tetap terlihat. */}
+        <ol className="scrollbar-lembut m-0 grid max-h-[60vh] list-none gap-3 overflow-y-auto overscroll-contain p-0 pr-1.5 lg:max-h-[520px]">
           {itemTab.map((i, nomorItem) => {
             const v = isian[kunci(i.id, tabAktif)]
             const wajibCatatan = v?.status === 'Tidak'
