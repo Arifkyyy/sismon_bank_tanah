@@ -94,6 +94,8 @@ export interface Kendala {
   foto: 'a' | 'b' | 'c'
   /** foto asli hasil kamera (data URL); mengalahkan `foto` bila ada isinya */
   fotoUrl?: string[]
+  /** kapan admin terakhir mengubah statusnya, mis. '15 Sep 2026 · 10.24' */
+  diperbaruiPada?: string | null
 }
 
 export interface Lembur {
@@ -114,6 +116,8 @@ export interface Lembur {
   alasan?: string
   /** kapan petugas menjawab, mis. '15 Sep 2026 · 10.24' */
   dijawabPada?: string
+  /** kapan admin mengirim penugasan ini, mis. '14 Sep 2026 · 16.05' */
+  dikirimPada?: string | null
   /** nama admin yang membuat penugasan */
   dibuatOleh?: string | null
   pembuatPeran?: 'admin' | 'superadmin' | null
