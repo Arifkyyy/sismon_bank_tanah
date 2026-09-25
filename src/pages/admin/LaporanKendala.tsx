@@ -8,6 +8,7 @@ import {
   SelOrang, Segmen, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { unduhCsv } from '@/lib/csv'
@@ -40,6 +41,7 @@ export function LaporanKendalaAdmin() {
 
   const [sibuk, setSibuk] = useState<number | null>(null)
   const [galatAksi, setGalatAksi] = useState<string | null>(null)
+  const konfirmasi = useKonfirmasi()
 
   const jendela = useMemo(
     () => jendelaPeriode(periode, tanggal, bulan, rentang),
@@ -66,7 +68,19 @@ export function LaporanKendalaAdmin() {
   async function majukan(k: Kendala) {
     const berikut = LANJUTAN[k.status]
     if (!k.id || !berikut) return
-    if (!window.confirm(`Ubah status laporan ${k.nama} dari ${k.status} menjadi ${berikut}?`)) return
+    const ya = await konfirmasi({
+      judul: 'Ubah status laporan?',
+      pesan: (
+        <>
+          Laporan dari <b className="font-semibold text-ink">{k.nama}</b> diubah dari{' '}
+          <b className="font-semibold text-ink">{k.status}</b> menjadi{' '}
+          <b className="font-semibold text-ink">{berikut}</b>.
+        </>
+      ),
+      tombol: `Jadikan ${berikut}`,
+      ikon: <Ikon.Pena size={22} />,
+    })
+    if (!ya) return
     setSibuk(k.id)
     setGalatAksi(null)
     try {
