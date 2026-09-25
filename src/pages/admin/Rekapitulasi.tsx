@@ -8,7 +8,7 @@ import {
 import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
-import { unduhCsv } from '@/lib/csv'
+import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
 import { daftarBulan, formatRentang } from '@/lib/tanggal'
@@ -67,13 +67,20 @@ export function Rekapitulasi() {
         : 'Seluruh periode'
 
   function unduh() {
-    unduhCsv(
-      `rekapitulasi-${jendela?.dari ?? 'semua'}`,
-      ['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan', 'Checklist'],
-      terlihat.map((r) => [
-        r.nama, r.jabatan, r.hari, r.logbook, r.kendala, r.lembur, r.patuh, r.checklist,
+    unduhExcel({
+      namaBerkas: `rekapitulasi-${jendela?.dari ?? 'semua'}`,
+      judul: 'Rekapitulasi Petugas',
+      keterangan: [
+        `Periode: ${labelPeriode}`,
+        jabatan === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatan],
+        `${terlihat.length} petugas`,
+      ].join(' · '),
+      namaLembar: 'Rekapitulasi',
+      kepala: ['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan', 'Checklist'],
+      baris: terlihat.map((r) => [
+        r.nama, JABATAN_PANJANG[r.jabatan], r.hari, r.logbook, r.kendala, r.lembur, r.patuh, r.checklist,
       ]),
-    )
+    })
   }
 
   return (
