@@ -45,10 +45,10 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard nama="Petugas bertugas hari ini" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
-        <StatCard nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
-        <StatCard nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
-        <StatCard nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
+        <StatCard gaya="pekat" nama="Petugas bertugas hari ini" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
+        <StatCard gaya="pekat" nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
+        <StatCard gaya="pekat" nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
+        <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.62fr_1fr]">
