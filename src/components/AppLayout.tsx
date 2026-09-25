@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AKAR, JUDUL } from '@/config/menu'
+import { Notifikasi } from '@/components/Notifikasi'
 import { Sidebar } from '@/components/Sidebar'
 import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
@@ -130,14 +131,7 @@ export function AppLayout({ peran }: Props) {
           </div>
 
           <div className="ml-auto flex flex-none items-center gap-1 lg:gap-3">
-            <button
-              type="button"
-              aria-label="Notifikasi"
-              className="relative grid h-10 w-10 place-items-center rounded-full text-teks-lembut hover:bg-kertas hover:text-ink"
-            >
-              <Ikon.Lonceng size={20} />
-              <i className="absolute right-[9px] top-[9px] h-2 w-2 rounded-full border-2 border-white bg-tanah" />
-            </button>
+            <Notifikasi peran={peran} />
 
             {/* Kartu akun + menu singkat */}
             <div className="relative" ref={akunRef}>
