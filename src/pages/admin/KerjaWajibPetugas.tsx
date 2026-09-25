@@ -6,6 +6,7 @@ import {
   AksiBaris, Baris, InputRapi, Kartu, KopKartu, Pil, PilihRapi, SelOrang, Tabel, TagJabatan, Tombol,
   TombolIkon,
 } from '@/components/ui'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
@@ -103,6 +104,7 @@ export function KerjaWajibPetugas() {
   const [dilihat, setDilihat] = useState<ChecklistRingkas | null>(null)
   const [sibuk, setSibuk] = useState(false)
   const [galatAksi, setGalatAksi] = useState<string | null>(null)
+  const konfirmasi = useKonfirmasi()
 
   const { data: rekap, memuat, galat, muat } = useApi<ChecklistRingkas[]>(
     `/api/checklist${query({ tanggal, jabatan: jabatan === 'Semua' ? '' : jabatan })}`,
@@ -128,7 +130,19 @@ export function KerjaWajibPetugas() {
 
   async function bukaKunci(r: ChecklistRingkas) {
     if (!r.id) return
-    if (!window.confirm(`Buka kunci kerja wajib ${r.nama}? Petugas bisa mengubah dan mengirim ulang isiannya.`)) return
+    const ya = await konfirmasi({
+      judul: 'Buka kunci kerja wajib?',
+      pesan: (
+        <>
+          Lembar milik <b className="font-semibold text-ink">{r.nama}</b> kembali menjadi draf, sehingga petugas
+          bisa mengubah dan mengirim ulang isiannya.
+        </>
+      ),
+      tombol: 'Buka kunci',
+      nada: 'peringatan',
+      ikon: <Ikon.Kunci size={22} />,
+    })
+    if (!ya) return
     setSibuk(true)
     setGalatAksi(null)
     try {
