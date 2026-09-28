@@ -4,6 +4,8 @@ Penugasan lembur.
 Alur: admin membuat Draf → mengirim (Menunggu) → petugas menerima atau
 menolak dengan alasan (Diterima/Ditolak). Diterima + tanggal lewat = Selesai.
 """
+from datetime import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -11,6 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 from app import format as f
 from app import tampil
 from app.audit import catat
+from app.config import pengaturan
 from app.database import ambil_db
 from app.deps import PENGAWAS, butuh_peran, user_saat_ini
 from app.models import Lembur, User
@@ -30,7 +33,16 @@ def _ambil(db: Session, lembur_id: str) -> Lembur:
     return l
 
 
+def _periksa_lama(mulai: time, selesai: time) -> None:
+    """Jam selesai sebelum jam mulai dianggap lewat tengah malam, jadi dibatasi."""
+    if f.menit_lembur(mulai, selesai) > pengaturan.maks_jam_lembur * 60:
+        raise HTTPException(
+            422, f"Lembur paling lama {pengaturan.maks_jam_lembur} jam. Periksa jam mulai dan jam selesai."
+        )
+
+
 def _isi_draf(db: Session, l: Lembur, isi: DrafMasuk) -> None:
+    _periksa_lama(isi.mulai, isi.selesai)
     if isi.petugas_id is not None:
         p = db.get(User, isi.petugas_id)
         if not p or p.peran != "user":
@@ -139,6 +151,8 @@ def kirim_draf(lembur_id: str, db: Session = Depends(ambil_db), admin: User = De
         kurang.append("keterangan minimal 20 karakter")
     if kurang:
         raise HTTPException(422, "Draf belum lengkap: " + ", ".join(kurang))
+    # Draf lama bisa dibuat sebelum batas lama lembur berlaku.
+    _periksa_lama(l.jam_mulai, l.jam_selesai)
     l.status = "Menunggu"
     l.dikirim_pada = f.sekarang()
     catat(db, admin, "kirim_lembur", f"Lembur #{l.id} untuk {l.petugas.nama} tanggal {l.tanggal}")

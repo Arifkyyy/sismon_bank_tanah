@@ -76,9 +76,9 @@ export function Rekapitulasi() {
         `${terlihat.length} petugas`,
       ].join(' · '),
       namaLembar: 'Rekapitulasi',
-      kepala: ['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan', 'Checklist'],
+      kepala: ['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Kepatuhan'],
       baris: terlihat.map((r) => [
-        r.nama, JABATAN_PANJANG[r.jabatan], r.hari, r.logbook, r.kendala, r.lembur, r.patuh, r.checklist,
+        r.nama, JABATAN_PANJANG[r.jabatan], r.hari, r.logbook, r.kendala, r.lembur, r.patuh,
       ]),
     })
   }

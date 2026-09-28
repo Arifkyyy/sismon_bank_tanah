@@ -19,15 +19,24 @@ export function formatJam(jam: string): string {
 }
 
 /**
+ * Lama lembur dalam menit (sama dengan menit_lembur di backend); NaN bila jamnya
+ * belum lengkap. Rentang yang melewati tengah malam dihitung ke hari berikutnya.
+ */
+export function menitLembur(mulai: string, selesai: string): number {
+  const [jm, mm] = mulai.split(':').map(Number)
+  const [js, ms] = selesai.split(':').map(Number)
+  if ([jm, mm, js, ms].some(Number.isNaN)) return NaN
+  const menit = js * 60 + ms - (jm * 60 + mm)
+  return menit <= 0 ? menit + 24 * 60 : menit
+}
+
+/**
  * Selisih dua jam 'HH:MM' sebagai teks, mis. '4 jam' atau '3 jam 30 menit'.
  * Rentang yang melewati tengah malam dihitung ke hari berikutnya.
  */
 export function lamaLembur(mulai: string, selesai: string): string {
-  const [jm, mm] = mulai.split(':').map(Number)
-  const [js, ms] = selesai.split(':').map(Number)
-  if ([jm, mm, js, ms].some(Number.isNaN)) return '—'
-  let menit = js * 60 + ms - (jm * 60 + mm)
-  if (menit <= 0) menit += 24 * 60 // lewat tengah malam
+  const menit = menitLembur(mulai, selesai)
+  if (Number.isNaN(menit)) return '—'
   const jam = Math.floor(menit / 60)
   const sisa = menit % 60
   if (jam === 0) return `${sisa} menit`

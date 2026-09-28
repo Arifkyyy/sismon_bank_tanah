@@ -9,7 +9,7 @@ import { query } from '@/lib/api'
 import { BULAN_PENDEK, keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
-import type { ChecklistLembar, ChecklistRingkas, Kendala, Peran } from '@/types'
+import type { Kendala, Peran } from '@/types'
 
 type Nada = 'hijau' | 'emas' | 'tanah' | 'merah'
 
@@ -83,7 +83,6 @@ export function Notifikasi({ peran }: { peran: Peran }) {
   const lokasi = useLocation()
   const akar = AKAR[peran]
   const pengawas = peran !== 'user'
-  const hariIni = keIso(new Date())
 
   const [buka, setBuka] = useState(false)
   const kotakRef = useRef<HTMLDivElement>(null)
@@ -98,18 +97,11 @@ export function Notifikasi({ peran }: { peran: Peran }) {
     `/api/kendala${query(pengawas ? { status: 'Baru', batas: 50 } : { batas: 30 })}`,
     [],
   )
-  const wajibAdmin = useApi<ChecklistRingkas[]>(pengawas ? `/api/checklist${query({ tanggal: hariIni })}` : null, [])
-  const wajibSaya = useApi<ChecklistLembar | null>(pengawas ? null : '/api/checklist/lembar', null)
-
   const muatKendala = kendala.muat
-  const muatWajibAdmin = wajibAdmin.muat
-  const muatWajibSaya = wajibSaya.muat
   const muatSemua = useCallback(() => {
     muatLembur()
     muatKendala()
-    if (pengawas) muatWajibAdmin()
-    else muatWajibSaya()
-  }, [pengawas, muatLembur, muatKendala, muatWajibAdmin, muatWajibSaya])
+  }, [muatLembur, muatKendala])
 
   // Diperbarui tiap pindah halaman dan tiap menit.
   useEffect(() => {
@@ -160,18 +152,6 @@ export function Notifikasi({ peran }: { peran: Peran }) {
           nada: tolak ? 'merah' : 'hijau',
         })
       }
-      for (const r of wajibAdmin.data) {
-        if (r.status !== 'Dikirim') continue
-        hasil.push({
-          kunci: `wajib-${r.id}-${r.dikirimPada}`,
-          judul: `${r.nama} mengirim kerja wajib`,
-          isi: `${r.terisi} dari ${r.totalKotak} kotak terisi${r.tidak ? ` · ${r.tidak} temuan ✗` : ''}`,
-          waktu: dariCap(r.dikirimPada),
-          tautan: `${akar}/kerja-wajib-petugas`,
-          ikon: 'Daftar',
-          nada: r.tidak ? 'emas' : 'hijau',
-        })
-      }
     } else {
       for (const l of lembur) {
         if (l.status !== 'Menunggu') continue
@@ -199,23 +179,11 @@ export function Notifikasi({ peran }: { peran: Peran }) {
           nada: selesai ? 'hijau' : 'emas',
         })
       }
-      const w = wajibSaya.data
-      if (w && w.item.length > 0 && w.status !== 'Dikirim') {
-        hasil.push({
-          kunci: `wajib-${w.tanggalIso}`,
-          judul: 'Kerja wajib hari ini belum dikirim',
-          isi: `${w.terisi} dari ${w.totalKotak} kotak sudah terisi`,
-          waktu: null,
-          tautan: `${akar}/kerja-wajib`,
-          ikon: 'Daftar',
-          nada: 'emas',
-        })
-      }
     }
 
     // Pengingat tanpa waktu di paling atas, sisanya yang terbaru lebih dulu.
     return hasil.sort((a, b) => (b.waktu?.getTime() ?? Infinity) - (a.waktu?.getTime() ?? Infinity))
-  }, [pengawas, akar, kendala.data, lembur, wajibAdmin.data, wajibSaya.data])
+  }, [pengawas, akar, kendala.data, lembur])
 
   const belum = semua.filter((n) => !dibaca.has(n.kunci)).length
 

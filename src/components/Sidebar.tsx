@@ -26,7 +26,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
   const { menunggu } = useLemburSaya()
   const lokasi = useLocation()
 
-  // Angka notifikasi admin: logbook yang masuk hari ini dan kendala yang belum ditinjau.
+  // Angka notifikasi admin: logbook hari ini yang belum dilihat dan kendala yang belum ditinjau.
   const pengawas = peran !== 'user'
   const logHariIni = useApi<Logbook[]>(
     pengawas ? `/api/logbook${query({ tanggal: keIso(new Date()), batas: 1000 })}` : null,
@@ -45,6 +45,34 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
     }, 60_000)
     return () => window.clearInterval(t)
   }, [lokasi.pathname, muatLog, muatKendala])
+
+  /**
+   * Angka Log aktivitas hanya menghitung logbook yang belum dilihat: yang
+   * disimpan id logbook terbaru saat admin membuka halamannya. Sama seperti
+   * lonceng, tandanya disimpan per akun di browser.
+   */
+  const kunciLog = `bt-log-dilihat-${akun?.email ?? peran}`
+  const [logDilihat, setLogDilihat] = useState(0)
+  useEffect(() => {
+    try {
+      setLogDilihat(Number(localStorage.getItem(kunciLog)) || 0)
+    } catch {
+      setLogDilihat(0)
+    }
+  }, [kunciLog])
+  const idLogTerbaru = logHariIni.data.reduce((maks, l) => Math.max(maks, l.id ?? 0), 0)
+  const diLogAktivitas = pengawas && lokasi.pathname === `${AKAR[peran]}/log-aktivitas`
+  useEffect(() => {
+    if (!diLogAktivitas || idLogTerbaru <= logDilihat) return
+    setLogDilihat(idLogTerbaru)
+    try {
+      localStorage.setItem(kunciLog, String(idLogTerbaru))
+    } catch {
+      // penyimpanan browser tidak tersedia — tanda dilihat hanya bertahan selama halaman terbuka
+    }
+  }, [diLogAktivitas, idLogTerbaru, logDilihat, kunciLog])
+  const logBelumDilihat = logHariIni.data.filter((l) => (l.id ?? 0) > logDilihat).length
+
   const angka = (n: number) => (n > 0 ? (n > 99 ? '99+' : String(n)) : undefined)
   const navRef = useRef<HTMLElement>(null)
   const sisiRef = useRef<HTMLElement>(null)
@@ -148,7 +176,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
                 peran === 'user' && item.id === 'lembur'
                   ? angka(menunggu.length)
                   : pengawas && item.id === 'log'
-                    ? angka(logHariIni.data.length)
+                    ? angka(logBelumDilihat)
                     : pengawas && item.id === 'kendala'
                       ? angka(kendalaBaru.data.length)
                       : item.tanda

@@ -19,6 +19,10 @@ class Pengaturan(BaseSettings):
     maks_foto: int = 5
     maks_ukuran_foto_mb: int = 5
 
+    # Lama lembur paling panjang dalam satu penugasan (jam).
+    # Sama dengan MAKS_JAM_LEMBUR di frontend (src/components/AntreanLembur.tsx).
+    maks_jam_lembur: int = 12
+
     # Berapa hari ke belakang checklist masih boleh diisi.
     # 0 = hanya hari ini; 1 = hari ini dan kemarin.
     checklist_mundur_hari: int = 1

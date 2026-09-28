@@ -1,7 +1,6 @@
 # Sistem Monitoring Petugas — Badan Bank Tanah
 
-Aplikasi web untuk memantau logbook harian, kerja wajib (checklist SOP),
-laporan kendala, dan lembur petugas **Security**, **Office Boy**,
+Aplikasi web untuk memantau logbook harian, laporan kendala, dan lembur petugas **Security**, **Office Boy**,
 **Customer Service**, dan **Messenger**.
 
 | Bagian | Teknologi | Letak |
@@ -74,9 +73,9 @@ perannya:
 
 | Peran | Halaman |
 | --- | --- |
-| **Admin** | Dashboard, Log aktivitas, Laporan kendala, Kerja wajib petugas, Data user, Rekapitulasi, Pengajuan lembur, Profil |
+| **Admin** | Dashboard, Log aktivitas, Laporan kendala, Data user, Rekapitulasi, Pengajuan lembur, Profil |
 | **Super Admin** | Semua halaman admin + Kelola akun + Hapus data foto |
-| **Petugas** | Dashboard, Aktivitas (logbook), Kerja wajib, Laporan kendala, Rekap harian, Lembur, Profil |
+| **Petugas** | Dashboard, Aktivitas (logbook), Laporan kendala, Rekap harian, Lembur, Profil |
 
 Semua peran juga bisa membuka halaman **Sistem desain** (`…/sistem-desain`).
 Isinya palet warna, skala huruf, dan komponen, jadi bisa dipakai sebagai

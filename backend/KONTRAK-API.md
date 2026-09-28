@@ -53,7 +53,7 @@ mencatat atas nama petugas mana pun. Aturan yang sama berlaku untuk `/kendala`.
 | POST | `/lembur/{id}/terima` | petugas | |
 | POST | `/lembur/{id}/tolak` | petugas | `{alasan}` minimal 5 karakter |
 | GET | `/lembur/draf` | admin | antrean draf |
-| POST | `/lembur/draf` | admin | `{petugasId, jabatan, tanggal, mulai, selesai, keterangan}` |
+| POST | `/lembur/draf` | admin | `{petugasId, jabatan, tanggal, mulai, selesai, keterangan}`; lama lembur maks. `MAKS_JAM_LEMBUR` jam (bawaan 12), selesai < mulai = lewat tengah malam |
 | PUT | `/lembur/draf/{id}` | admin | |
 | DELETE | `/lembur/draf/{id}` | admin | |
 | POST | `/lembur/draf/{id}/kirim` | admin | draf → Menunggu |

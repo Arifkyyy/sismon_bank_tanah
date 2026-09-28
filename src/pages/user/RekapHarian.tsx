@@ -7,9 +7,11 @@ import {
   Baris, FotoKecil, InputRapi, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, Segmen, Tabel, Tombol,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
+import { useAuth } from '@/context/AuthContext'
 import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
+import { cetakPdf } from '@/lib/cetak'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
@@ -58,6 +60,7 @@ function jamDari(total: string): number {
 }
 
 export function RekapHarian() {
+  const { akun } = useAuth()
   const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
   const [tanggal, setTanggal] = useState(() => keIso(new Date()))
@@ -159,6 +162,31 @@ export function RekapHarian() {
       labelPeriode = 'Seluruh periode'
   }
 
+  /** Isi PDF sama dengan kartu dan tabel di layar; foto tidak ikut dicetak. */
+  function unduhPdf() {
+    cetakPdf({
+      judul: 'Rekap Harian Petugas',
+      keterangan: [
+        `${akun?.nama ?? ''} · ${akun?.peran ?? ''}`,
+        `Periode: ${labelPeriode} · ${saringan}`,
+      ],
+      ringkasan: [
+        ['Catatan', String(jumlahCatatan)],
+        ['Kendala dilaporkan', String(jumlahKendala)],
+        ['Jam kerja tercatat', `${jamKerja} jam`],
+        ['Jam lembur', `${jamLembur} jam`],
+      ],
+      kepala: ['Tanggal', 'Jam', 'Jenis', 'Keterangan', 'Status'],
+      baris: rincian.map((r) => [
+        r.tanggalIso ? formatTanggal(r.tanggalIso).tanggal : '',
+        r.jam,
+        r.jenis,
+        r.keterangan,
+        r.status,
+      ]),
+    })
+  }
+
   return (
     <>
       <Kartu className="mb-4.5">
@@ -204,7 +232,7 @@ export function RekapHarian() {
               <option>Aktivitas saja</option>
               <option>Kendala saja</option>
             </PilihRapi>
-            <Tombol varian="hantu" kecil>
+            <Tombol varian="hantu" kecil onClick={unduhPdf} disabled={memuat || rincian.length === 0}>
               <Ikon.Unduh size={15} /> Unduh PDF
             </Tombol>
           </div>

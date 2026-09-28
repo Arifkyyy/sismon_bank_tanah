@@ -34,8 +34,7 @@ export function DataUser({ peran }: { peran: Peran }) {
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
   const [status, setStatus] = useState<Status | 'Semua'>('Semua')
 
-  // Jabatan disaring backend. Status disaring di sini karena GET /api/petugas
-  // belum menyediakan parameternya.
+  
   const { data: petugas, memuat, galat, muat } = useApi<Petugas[]>(
     `/api/petugas${query({ jabatan: jabatan === 'Semua' ? '' : jabatan })}`,
     [],
@@ -45,7 +44,7 @@ export function DataUser({ peran }: { peran: Peran }) {
   const [dilihat, setDilihat] = useState<Petugas | null>(null)
   const detail = useApi<DetailPetugas | null>(dilihat ? `/api/petugas/${dilihat.id}/detail` : null, null)
 
-  // Kosongkan ringkasan supaya milik petugas sebelumnya tidak sempat terlihat.
+ 
   function tutupDetail() {
     setDilihat(null)
     detail.setData(null)
@@ -72,7 +71,7 @@ export function DataUser({ peran }: { peran: Peran }) {
     setForm((f) => (f ? { ...f, [kunci]: nilai } : f))
   }
 
-  // Khusus super admin; backend juga menolak DELETE /api/akun dari admin biasa.
+  
   const [akanDihapus, setAkanDihapus] = useState<Petugas | null>(null)
   const [ketikan, setKetikan] = useState('')
 
@@ -234,7 +233,7 @@ export function DataUser({ peran }: { peran: Peran }) {
             <Pil status={dilihat.status} />
           </div>
           <div className="mb-4">
-            <BarisData label="Email kantor">{dilihat.email || '—'}</BarisData>
+            <BarisData label="email kantor">{dilihat.email || '—'}</BarisData>
             <BarisData label="Nomor telepon">
               <span className="num">{dilihat.telepon || '—'}</span>
             </BarisData>
@@ -296,7 +295,7 @@ export function DataUser({ peran }: { peran: Peran }) {
               </Tombol>
             </>
           }
-        >
+        >E
           <p className="m-0 mb-3.5 text-[12.5px] leading-relaxed text-teks-lembut">
             Seluruh logbook, laporan kendala, riwayat lembur, dan foto bukti milik{' '}
             <b className="font-semibold text-ink">{akanDihapus.nama}</b> ikut terhapus dan tidak bisa

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { KartuAntreanLembur, kekuranganDraf } from '@/components/AntreanLembur'
+import { KartuAntreanLembur, kekuranganDraf, MAKS_JAM_LEMBUR } from '@/components/AntreanLembur'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import {
@@ -9,7 +9,7 @@ import {
 import { StatusData } from '@/components/StatusData'
 import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
-import { daftarBulan, formatRentang, formatTanggal, keIso, lamaLembur } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
 import type { DrafLembur, Jabatan, Status } from '@/types'
 
@@ -59,6 +59,8 @@ export function PengajuanLembur() {
     const terpilih = petugas.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
     return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
   }, [petugas, form.jabatan, form.nama])
+
+  const terlaluLama = menitLembur(form.mulai, form.selesai) > MAKS_JAM_LEMBUR * 60
 
   /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
   function gantiJabatan(label: string) {
@@ -220,7 +222,14 @@ export function PengajuanLembur() {
                 />
               </Kolom>
 
-              <Kolom label="Total lama lembur" bantu="Terisi otomatis dari rentang jam.">
+              <Kolom
+                label="Total lama lembur"
+                bantu={
+                  terlaluLama
+                    ? `Melebihi batas ${MAKS_JAM_LEMBUR} jam. Periksa jam mulai dan jam selesai.`
+                    : 'Terisi otomatis dari rentang jam.'
+                }
+              >
                 <Input readOnly value={lamaLembur(form.mulai, form.selesai)} />
               </Kolom>
 
