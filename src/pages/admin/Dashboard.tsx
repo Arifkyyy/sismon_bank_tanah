@@ -15,7 +15,7 @@ import { keIso } from '@/lib/tanggal'
 import { JABATAN_PANJANG } from '@/lib/util'
 import type { Kendala, Logbook, Peran, Petugas } from '@/types'
 
-/** Mengambil angka jam dari teks seperti '4 jam'. */
+
 function jamDari(total: string): number {
   return Number.parseFloat(total.replace(',', '.')) || 0
 }
@@ -32,7 +32,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   const logbookHariIni = useApi<Logbook[]>(`/api/logbook${query({ tanggal: hariIniIso })}`, [])
   const kendalaTerbuka = useApi<Kendala[]>('/api/kendala?batas=200', [])
   const { daftar: lembur, memuat: memuatLembur, galat: galatLembur, muat: muatLembur } = useLembur()
-  // id penugasan berurutan dari backend: yang terbesar adalah yang paling baru dibuat.
+  
   const lemburTerbaru = [...lembur].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 10)
 
   const bertugas = petugas.data.filter((p) => p.status === 'Aktif').length
@@ -47,13 +47,13 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard gaya="pekat" nama="Jumlah Petugas Yang Aktif" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
+        <StatCard gaya="pekat" nama="Jumlah petugas yang aktif" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
         <StatCard gaya="pekat" nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
         <StatCard gaya="pekat" nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
         <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
 
-      {/* Dua kolom hampir sama lebar; daftar yang panjang digulir di dalam kartunya. */}
+      
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.1fr_1fr]">
         <Kartu>
           <KopKartu
@@ -76,7 +76,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             <ul className="scrollbar-lembut m-0 max-h-[252px] list-none overflow-y-auto overscroll-contain p-0">
               {lemburTerbaru.map((l) => (
                 <li key={l.id} className="flex items-center gap-3.5 border-b border-garis px-5 py-3.5 last:border-b-0">
-                  <Avatar nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} ukuran={42} />
+                  <Avatar nama={l.nama} jabatan={l.jabatan} ukuran={42} />
                   <div className="min-w-0 flex-1">
                     <span className="num block text-[11.5px] text-teks-samar">
                       {l.tanggal} · {l.rentang}
@@ -132,7 +132,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
               belumSelesai.slice(0, 10).map((k) => (
                 <Baris key={k.id}>
                   <td>
-                    <SelOrang nama={k.nama} jabatan={k.jabatan} foto={k.fotoProfil} />
+                    <SelOrang nama={k.nama} jabatan={k.jabatan} />
                   </td>
                   <td className="max-w-[240px] whitespace-normal text-[12.5px] text-teks-lembut">
                     {k.keterangan}

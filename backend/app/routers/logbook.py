@@ -35,7 +35,7 @@ def daftar(
 
 @router.post("", response_model=LogbookKeluar, status_code=201)
 def kirim(isi: CatatanMasuk, db: Session = Depends(ambil_db), user: User = Depends(user_saat_ini)):
-    periksa_petugas(db, isi.petugas_id)
+    periksa_petugas(db, isi.petugas_id, user)
     periksa_isi(isi)
     catatan = Logbook(
         petugas_id=isi.petugas_id,

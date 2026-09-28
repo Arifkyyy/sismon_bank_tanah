@@ -1,54 +1,37 @@
-import { useState } from 'react'
-import { Modal } from '@/components/Modal'
-import { StatCard } from '@/components/StatCard'
-import { Avatar, AreaTeks, Kolom, Pil, Tombol } from '@/components/ui'
-import { useLemburSaya } from '@/context/LemburContext'
-import { Ikon } from '@/lib/ikon'
-import { cn } from '@/lib/util'
-import type { Lembur } from '@/types'
+import { useState } from 'react';
+import { Modal } from '@/components/Modal';
+import { StatCard } from '@/components/StatCard';
+import { Avatar, AreaTeks, Kolom, Pil, Tombol } from '@/components/ui';
+import { useLemburSaya } from '@/context/LemburContext';
+import { Ikon } from '@/lib/ikon';
+import { cn } from '@/lib/util';
+import type { Lembur } from '@/types';
 
 /** Mengambil angka jam dari teks seperti '4 jam'. */
 function jamDari(total: string): number {
-  return Number.parseFloat(total.replace(',', '.')) || 0
+  return Number.parseFloat(total.replace(',', '.')) || 0;
 }
 
 /** Tarif contoh untuk perkiraan uang lembur. */
-const TARIF_PER_JAM = 45000
+const TARIF_PER_JAM = 20000;
 
 /** Kartu satu penugasan lembur, dipakai juga di dashboard petugas. */
-export function KartuLembur({
-  lembur,
-  onTerima,
-  onTolak,
-}: {
-  lembur: Lembur
-  onTerima?: (id: string) => void
-  onTolak?: (l: Lembur) => void
-}) {
-  const menunggu = lembur.status === 'Menunggu'
-  const ditolak = lembur.status === 'Ditolak'
-  const bisaDijawab = menunggu && Boolean(onTerima && onTolak)
+export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onTerima?: (id: string) => void; onTolak?: (l: Lembur) => void }) {
+  const menunggu = lembur.status === 'Menunggu';
+  const ditolak = lembur.status === 'Ditolak';
+  const bisaDijawab = menunggu && Boolean(onTerima && onTolak);
   // Akun pembuat bisa sudah dihapus; backend lalu mengirim null.
-  const pembuat = lembur.dibuatOleh ?? 'Admin'
+  const pembuat = lembur.dibuatOleh ?? 'Admin';
 
   return (
     <div className="overflow-hidden rounded-kartu border border-garis bg-white shadow-kartu">
-      <div
-        className={cn(
-          'h-1',
-          menunggu ? 'bg-gradient-to-r from-emas to-tanah' : ditolak ? 'bg-garis-kuat' : 'bg-hijau',
-        )}
-      />
+      <div className={cn('h-1', menunggu ? 'bg-gradient-to-r from-emas to-tanah' : ditolak ? 'bg-garis-kuat' : 'bg-hijau')} />
       <div className="px-5 py-4.5">
         <div className="mb-4 flex items-center gap-3">
           <Avatar nama={pembuat} emas={lembur.pembuatPeran === 'superadmin'} foto={lembur.pembuatFoto} />
           <div className="min-w-0 flex-1">
             <b className="block text-[13.5px] font-semibold text-ink">{pembuat}</b>
-            <span className="text-[11.5px] text-teks-samar">
-              {[lembur.pembuatPeran === 'superadmin' ? 'Super Admin' : 'Admin', lembur.pembuatUnit]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
+            <span className="text-[11.5px] text-teks-samar">{[lembur.pembuatPeran === 'superadmin' ? 'Super Admin' : 'Admin', lembur.pembuatUnit].filter(Boolean).join(' · ')}</span>
           </div>
           <Pil status={lembur.status} />
         </div>
@@ -85,9 +68,7 @@ export function KartuLembur({
             </Tombol>
           </div>
         ) : menunggu ? (
-          <p className="m-0 mt-3.5 text-xs text-teks-samar">
-            Jawab penugasan ini di halaman Lembur.
-          </p>
+          <p className="m-0 mt-3.5 text-xs text-teks-samar">Jawab penugasan ini di halaman Lembur.</p>
         ) : (
           <p className="m-0 mt-3.5 text-xs text-teks-samar">
             Anda {ditolak ? 'menolak' : 'menerima'} penugasan ini
@@ -96,59 +77,41 @@ export function KartuLembur({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export function LemburUser() {
   // Hanya penugasan yang ditujukan kepada petugas yang sedang masuk.
-  const { menunggu, riwayat, terima, tolak } = useLemburSaya()
-  const [ditolakkan, setDitolakkan] = useState<Lembur | null>(null)
-  const [alasan, setAlasan] = useState('')
-  const [galat, setGalat] = useState('')
+  const { menunggu, riwayat, terima, tolak } = useLemburSaya();
+  const [ditolakkan, setDitolakkan] = useState<Lembur | null>(null);
+  const [alasan, setAlasan] = useState('');
+  const [galat, setGalat] = useState('');
 
-  const diterima = riwayat.filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
-  const totalJam = diterima.reduce((n, l) => n + jamDari(l.total), 0)
+  const diterima = riwayat.filter((l) => l.status === 'Diterima' || l.status === 'Selesai');
+  const totalJam = diterima.reduce((n, l) => n + jamDari(l.total), 0);
 
   function bukaTolak(l: Lembur) {
-    setDitolakkan(l)
-    setAlasan('')
-    setGalat('')
+    setDitolakkan(l);
+    setAlasan('');
+    setGalat('');
   }
 
   function kirimPenolakan() {
     // Admin memakai alasan ini untuk mencari pengganti, jadi tidak boleh kosong.
     if (alasan.trim().length < 10) {
-      setGalat('Tulis alasan minimal 10 karakter agar admin paham situasinya.')
-      return
+      setGalat('Tulis alasan minimal 10 karakter agar admin paham situasinya.');
+      return;
     }
-    if (ditolakkan) tolak(ditolakkan.id, alasan.trim())
-    setDitolakkan(null)
+    if (ditolakkan) tolak(ditolakkan.id, alasan.trim());
+    setDitolakkan(null);
   }
 
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <StatCard
-          gaya="pekat"
-          nama="Menunggu jawaban Anda"
-          angka={String(menunggu.length)}
-          ikon={<Ikon.Jam size={17} />}
-          ket={menunggu.length ? 'Batas menjawab hari ini pukul 16.00' : 'Semua penugasan sudah dijawab'}
-        />
-        <StatCard
-          gaya="pekat"
-          nama="Lembur diterima bulan ini"
-          angka={String(diterima.length)}
-          ikon={<Ikon.Centang size={17} />}
-          ket={`Total ${totalJam} jam`}
-        />
-        <StatCard
-          gaya="pekat"
-          nama="Perkiraan uang lembur"
-          angka={`Rp ${(totalJam * TARIF_PER_JAM).toLocaleString('id-ID')}`}
-          ikon={<Ikon.Rekap size={17} />}
-          ket="Dihitung dari tarif per jam"
-        />
+        <StatCard gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? 'Batas menjawab hari ini pukul 16.00' : 'Semua penugasan sudah dijawab'} />
+        <StatCard gaya="pekat" nama="Lembur diterima bulan ini" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam`} />
+        <StatCard gaya="pekat" nama="Perkiraan uang lembur" angka={`Rp ${(totalJam * TARIF_PER_JAM).toLocaleString('id-ID')}`} ikon={<Ikon.Rekap size={17} />} ket="Dihitung dari tarif per jam" />
       </div>
 
       <div className="mb-3.5 mt-6 flex items-center gap-3">
@@ -167,9 +130,7 @@ export function LemburUser() {
             <Ikon.Centang size={20} />
           </span>
           <b className="block text-[13.5px] font-semibold text-ink">Tidak ada penugasan menunggu</b>
-          <span className="mt-0.5 block text-[12px] text-teks-lembut">
-            Jawaban Anda langsung terkirim ke admin dan tercatat di riwayat di bawah.
-          </span>
+          <span className="mt-0.5 block text-[12px] text-teks-lembut">Jawaban Anda langsung terkirim ke admin dan tercatat di riwayat di bawah.</span>
         </div>
       )}
 
@@ -187,9 +148,7 @@ export function LemburUser() {
             <Ikon.Jam size={20} />
           </span>
           <b className="block text-[13.5px] font-semibold text-ink">Belum ada penugasan yang dijawab</b>
-          <span className="mt-0.5 block text-[12px] text-teks-lembut">
-            Penugasan yang Anda terima atau tolak akan tercatat di sini.
-          </span>
+          <span className="mt-0.5 block text-[12px] text-teks-lembut">Penugasan yang Anda terima atau tolak akan tercatat di sini.</span>
         </div>
       )}
 
@@ -209,20 +168,14 @@ export function LemburUser() {
             </>
           }
         >
-          <p className="m-0 mb-3.5 text-[12.5px] leading-relaxed text-teks-lembut">
-            {ditolakkan.keterangan}
-          </p>
-          <Kolom
-            label="Alasan menolak"
-            wajib
-            bantu="Alasan ini terlihat oleh admin supaya bisa segera mencari pengganti."
-          >
+          <p className="m-0 mb-3.5 text-[12.5px] leading-relaxed text-teks-lembut">{ditolakkan.keterangan}</p>
+          <Kolom label="Alasan menolak" wajib bantu="Alasan ini terlihat oleh admin supaya bisa segera mencari pengganti.">
             <AreaTeks
               autoFocus
               value={alasan}
               onChange={(e) => {
-                setAlasan(e.target.value)
-                if (galat) setGalat('')
+                setAlasan(e.target.value);
+                if (galat) setGalat('');
               }}
               placeholder="Contoh: sedang sakit, atau ada tugas lain di jam yang sama."
               className="min-h-[110px]"
@@ -237,5 +190,5 @@ export function LemburUser() {
         </Modal>
       )}
     </>
-  )
+  );
 }

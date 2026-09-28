@@ -35,7 +35,9 @@ jadi pesannya bisa langsung ditampilkan ke pengguna.
 | POST | `/logbook` | login | `{petugasId, tanggal, jam, keterangan, foto[]}` |
 
 `foto` berisi data URL hasil kamera (`data:image/jpeg;base64,...`), maksimal 5 foto,
-tiap foto maksimal 5 MB. Keterangan minimal 20 karakter.
+tiap foto maksimal 5 MB. Keterangan minimal 20 karakter. Petugas hanya boleh
+mengisi `petugasId` dengan id akunnya sendiri (selain itu 403); admin boleh
+mencatat atas nama petugas mana pun. Aturan yang sama berlaku untuk `/kendala`.
 
 ### Laporan kendala
 | Metode | Alamat | Hak akses | Keterangan |

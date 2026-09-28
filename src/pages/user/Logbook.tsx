@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { LinimasaRiwayat, type PosRiwayat } from '@/components/Riwayat'
@@ -11,14 +11,12 @@ import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { keIso } from '@/lib/tanggal'
-import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
-import type { Jabatan, Logbook, Petugas } from '@/types'
+import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
+import type { Logbook, Petugas } from '@/types'
 
 /** Formulir kosong; tanggalnya hari ini karena catatan diisi di hari yang sama. */
 function formKosong() {
   return {
-    jabatan: 'Security' as Jabatan,
-    nama: '',
     tanggal: keIso(new Date()),
     jam: '',
     keterangan: '',
@@ -57,31 +55,10 @@ export function LogbookUser() {
   }))
 
   /**
-   * Nama yang muncul hanya dari jabatan yang sedang dipilih — daftarnya jadi
-   * pendek dan petugas tidak perlu mencari namanya di antara semua jabatan.
-   * Petugas nonaktif disembunyikan, kecuali ia memang nama pada draf yang
-   * sedang dikoreksi, supaya pilihan tidak berubah diam-diam saat draf dibuka.
+   * Nama dan jabatan selalu milik akun yang sedang masuk — petugas tidak bisa
+   * mencatat atas nama orang lain. Backend menolaknya juga.
    */
-  const kandidat = useMemo(() => {
-    const cocok = petugas.filter((p) => p.jabatan === form.jabatan && p.status !== 'Nonaktif')
-    const terpilih = petugas.find((p) => p.nama === form.nama && p.jabatan === form.jabatan)
-    return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
-  }, [petugas, form.jabatan, form.nama])
-
-  /**
-   * Begitu daftar petugas tiba, formulir langsung diarahkan ke akun yang sedang
-   * masuk — petugas tidak perlu mencari namanya sendiri.
-   */
-  useEffect(() => {
-    const saya = petugas.find((p) => p.nama === akun?.nama)
-    if (!saya) return
-    setForm((f) => (f.nama === '' ? { ...f, nama: saya.nama, jabatan: saya.jabatan } : f))
-  }, [petugas, akun?.nama])
-
-  /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
-  function gantiJabatan(label: string) {
-    setForm((f) => ({ ...f, jabatan: jabatanDariLabel(label), nama: '' }))
-  }
+  const saya = petugas.find((p) => p.id === akun?.id)
 
   function tambahFoto(foto: string) {
     setForm((f) => ({ ...f, foto: [...f.foto, foto].slice(0, MAKS_FOTO) }))
@@ -92,10 +69,11 @@ export function LogbookUser() {
   }
 
   function simpanDraf() {
+    const pemilik = { nama: saya?.nama ?? '', jabatan: saya?.jabatan ?? ('' as const) }
     if (editId) {
-      setPending((list) => list.map((p) => (p.id === editId ? { ...p, ...form } : p)))
+      setPending((list) => list.map((p) => (p.id === editId ? { ...p, ...form, ...pemilik } : p)))
     } else {
-      setPending((list) => [...list, { id: crypto.randomUUID(), ...form }])
+      setPending((list) => [...list, { id: crypto.randomUUID(), ...form, ...pemilik }])
     }
     setEditId(null)
     setForm(formKosong())
@@ -105,8 +83,6 @@ export function LogbookUser() {
   function editDraf(p: Draf) {
     setEditId(p.id)
     setForm({
-      jabatan: p.jabatan || 'Security',
-      nama: p.nama,
       tanggal: p.tanggal,
       jam: p.jam,
       keterangan: p.keterangan,
@@ -131,15 +107,14 @@ export function LogbookUser() {
   async function kirimDraf(id: string) {
     const p = pending.find((x) => x.id === id)
     if (!p) return
-    const orang = petugas.find((x) => x.nama === p.nama)
-    if (!orang) {
-      setGalatKirim(`Petugas "${p.nama}" tidak ada di data petugas.`)
+    if (!saya) {
+      setGalatKirim('Akun Anda tidak ditemukan di data petugas. Hubungi admin.')
       return
     }
     setGalatKirim(null)
     try {
       await api('/api/logbook', 'POST', {
-        petugasId: orang.id,
+        petugasId: saya.id,
         tanggal: p.tanggal,
         jam: p.jam,
         keterangan: p.keterangan,
@@ -172,31 +147,14 @@ export function LogbookUser() {
               <Kolom label="Jabatan" wajib>
                 <Segmen
                   lebar
+                  terkunci
                   opsi={DAFTAR_JABATAN.map((j) => JABATAN_PANJANG[j])}
-                  nilai={JABATAN_PANJANG[form.jabatan]}
-                  onPilih={gantiJabatan}
+                  nilai={saya ? JABATAN_PANJANG[saya.jabatan] : ''}
                 />
               </Kolom>
-              <Kolom
-                label="Nama petugas"
-                wajib
-                bantu={`Hanya petugas berjabatan ${JABATAN_PANJANG[form.jabatan]} yang muncul di daftar ini.`}
-              >
-                <Pilihan
-                  value={form.nama}
-                  onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))}
-                >
-                  <option value="">Pilih nama petugas</option>
-                  {kandidat.map((p) => (
-                    <option key={p.nama} value={p.nama}>
-                      {p.nama}
-                    </option>
-                  ))}
-                  {kandidat.length === 0 && (
-                    <option disabled value="">
-                      Tidak ada petugas {JABATAN_PANJANG[form.jabatan]} yang aktif
-                    </option>
-                  )}
+              <Kolom label="Nama petugas" wajib bantu="Terisi otomatis sesuai akun yang sedang masuk.">
+                <Pilihan disabled value={saya?.nama ?? ''}>
+                  <option value={saya?.nama ?? ''}>{saya?.nama ?? 'Memuat data akun…'}</option>
                 </Pilihan>
               </Kolom>
               <Kolom label="Tanggal" wajib>

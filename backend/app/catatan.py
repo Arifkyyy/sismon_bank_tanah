@@ -12,7 +12,10 @@ from app.models import Foto, Kendala, Logbook, User
 from app.schemas import CatatanMasuk
 
 
-def periksa_petugas(db: Session, petugas_id: int) -> User:
+def periksa_petugas(db: Session, petugas_id: int, pengirim: User) -> User:
+    # Petugas hanya boleh mencatat atas namanya sendiri; admin boleh mewakili.
+    if pengirim.peran == "user" and petugas_id != pengirim.id:
+        raise HTTPException(403, "Anda hanya bisa mengirim catatan atas nama sendiri.")
     p = db.get(User, petugas_id)
     if not p or p.peran != "user":
         raise HTTPException(422, "Petugas tidak ditemukan.")

@@ -1,100 +1,168 @@
 # Sistem Monitoring Petugas — Badan Bank Tanah
 
-Aplikasi web untuk memantau logbook harian, laporan kendala, dan lembur petugas
-**Security**, **Office Boy**, **Customer Service**, dan **Messenger**.
+Aplikasi web untuk memantau logbook harian, kerja wajib (checklist SOP),
+laporan kendala, dan lembur petugas **Security**, **Office Boy**,
+**Customer Service**, dan **Messenger**.
 
-Dibangun dengan **React 18 + TypeScript + Vite + Tailwind CSS**.
+| Bagian | Teknologi | Letak |
+| --- | --- | --- |
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + React Router | folder ini (`src/`) |
+| Backend | FastAPI + SQLAlchemy + Alembic + PostgreSQL, login JWT | `backend/` |
+
+Dokumentasi backend ada di **[backend/README.md](backend/README.md)**. Cara
+memasangnya ada di **[backend/PANDUAN.md](backend/PANDUAN.md)**, dan daftar
+endpoint ada di **[backend/KONTRAK-API.md](backend/KONTRAK-API.md)**.
 
 ---
 
 ## Cara menjalankan
 
-Butuh Node.js versi 18 atau lebih baru.
+Butuh **Node.js 18+**, **Python 3.10+**, dan **PostgreSQL**. Jalankan backend
+dan frontend di dua terminal terpisah.
 
-```bash
-npm install     # pasang semua paket (sekali saja)
-npm run dev     # jalankan di http://localhost:5173
+**1. Backend** (port 8000). Langkah lengkapnya ada di `backend/PANDUAN.md`:
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env     # lalu sesuaikan DATABASE_URL dan JWT_SECRET
+alembic upgrade head       # buat tabel
+python seed.py             # akun awal + data contoh
+uvicorn app.main:app --reload
 ```
 
-Perintah lain:
+Untuk mencoba API langsung, buka `http://localhost:8000/docs`.
+
+**2. Frontend** (port 5173):
 
 ```bash
-npm run build     # bangun versi produksi ke folder dist/
+npm install
+npm run dev
+```
+
+Alamat backend dibaca dari `VITE_API_URL` di berkas `.env` di root proyek
+(bawaannya `http://localhost:8000`).
+
+> Port 5173 dikunci (`strictPort` di `vite.config.ts`). Kalau port itu sudah
+> dipakai, Vite berhenti dan tidak pindah ke 5174, karena port lain akan
+> ditolak oleh `CORS_ORIGINS` di backend.
+
+Perintah frontend lainnya:
+
+```bash
+npm run build     # periksa TypeScript lalu bangun versi produksi ke dist/
 npm run preview   # lihat hasil build
 npm run lint      # periksa kesalahan TypeScript
 ```
 
-## Cara mencoba tiap peran
+## Akun untuk mencoba
 
-Di halaman login ada tiga tombol pratinjau: **Super Admin**, **Admin**, dan
-**Petugas**. Ada juga bar melayang di bawah layar untuk berpindah peran cepat
-tanpa login ulang.
+`python seed.py` membuat akun contoh untuk tiap peran (Super Admin, Admin, dan
+Petugas OB/CS/Messenger). Daftar email dan kata sandinya ada di
+`backend/PANDUAN.md`. Setelah login, pengguna diarahkan ke halaman sesuai
+perannya:
 
-> Bar melayang itu komponen `src/components/PreviewBar.tsx`. **Hapus baris
-> `<PreviewBar />` di `src/App.tsx`** sebelum aplikasi dipakai sungguhan —
-> di produksi peran ditentukan hasil login, bukan tombol.
+| Peran | Akar rute |
+| --- | --- |
+| Super Admin | `/super-admin` |
+| Admin | `/admin` |
+| Petugas | `/petugas` |
 
 ## Halaman yang tersedia
 
 | Peran | Halaman |
 | --- | --- |
-| **Admin** | Dashboard, Data user, Log aktivitas, Rekapitulasi, Laporan kendala, Pengajuan lembur, Profil |
-| **Super Admin** | Semua halaman admin + Kelola akun (tambah/hapus admin & petugas) + Hapus data foto |
-| **Petugas** | Dashboard, Logbook, Rekap harian, Laporan kendala, Lembur, Profil |
+| **Admin** | Dashboard, Log aktivitas, Laporan kendala, Kerja wajib petugas, Data user, Rekapitulasi, Pengajuan lembur, Profil |
+| **Super Admin** | Semua halaman admin + Kelola akun + Hapus data foto |
+| **Petugas** | Dashboard, Aktivitas (logbook), Kerja wajib, Laporan kendala, Rekap harian, Lembur, Profil |
 
-Ada juga halaman **Sistem desain** (`/admin/sistem-desain`) berisi palet warna,
-skala huruf, dan komponen — berguna sebagai rujukan saat menambah halaman baru.
+Semua peran juga bisa membuka halaman **Sistem desain** (`…/sistem-desain`).
+Isinya palet warna, skala huruf, dan komponen, jadi bisa dipakai sebagai
+rujukan saat menambah halaman baru.
 
-## Susunan folder
+Lonceng di topbar menampilkan notifikasi dari kendala, lembur, dan kerja
+wajib. Angka penanda di sidebar juga diambil dari backend.
+
+## Susunan folder frontend
 
 ```
 src/
-├── components/     komponen yang dipakai berulang
-│   ├── ui.tsx          tombol, kartu, tabel, pil status, input
-│   ├── Sidebar.tsx     sidebar + penanda menu yang meluncur
-│   ├── AppLayout.tsx   rangka aplikasi (sidebar + topbar + isi)
-│   ├── StatCard.tsx    kartu statistik
-│   ├── Bagan.tsx       bagan batang & donat
-│   ├── Linimasa.tsx    daftar kejadian berurutan
-│   ├── Kamera.tsx      bingkai ambil foto
-│   └── PreviewBar.tsx  bar pindah peran (hapus di produksi)
-├── config/menu.ts  daftar menu & judul halaman tiap peran
-├── context/        AuthContext — menyimpan peran yang sedang masuk
-├── data/mock.ts    SELURUH data contoh ada di sini
-├── lib/            ikon SVG dan fungsi bantu
-├── pages/          satu berkas per halaman
-└── types/          tipe TypeScript bersama
+├── main.tsx, App.tsx   titik masuk dan rute per peran (dijaga oleh <Penjaga>)
+├── components/         komponen yang dipakai berulang
+│   ├── ui.tsx              tombol, kartu, tabel, pil status, input
+│   ├── AppLayout.tsx       rangka aplikasi (sidebar + topbar + isi)
+│   ├── Sidebar.tsx         sidebar + penanda menu yang meluncur
+│   ├── Notifikasi.tsx      panel lonceng notifikasi
+│   ├── Kamera.tsx          kamera langsung (getUserMedia) + cap waktu
+│   ├── FotoBukti.tsx       kumpulan foto bukti sebuah catatan (maks. 5)
+│   ├── Foto.tsx            PratinjauFoto: pop-up untuk melihat foto
+│   ├── Modal.tsx           kerangka pop-up
+│   ├── Bagan.tsx           bagan batang & donat
+│   ├── StatCard.tsx        kartu statistik
+│   ├── StatusData.tsx      tampilan memuat / galat / kosong
+│   └── …                   Linimasa, Riwayat, RentangTanggal, Draf, AntreanLembur
+├── config/menu.ts      daftar menu, akar rute, dan judul halaman tiap peran
+├── context/
+│   ├── AuthContext.tsx     sesi login (masuk, keluar, pulihkan sesi)
+│   ├── KonfirmasiContext   useKonfirmasi(): pop-up konfirmasi
+│   └── LemburContext.tsx   data lembur bersama
+├── lib/
+│   ├── api.ts              satu-satunya pintu ke backend
+│   ├── useApi.ts           hook untuk mengambil data + status memuat/galat
+│   ├── excel.ts            pembuat berkas .xlsx tanpa pustaka tambahan
+│   ├── tanggal.ts, periode.ts   format tanggal & rentang periode (WIB)
+│   └── ikon.tsx, util.ts
+├── pages/              satu berkas per halaman
+│   ├── Login, Profil, SistemDesain
+│   ├── admin/ · superadmin/ · user/
+└── types/index.ts      tipe data bersama (bentuknya sama dengan respons API)
 ```
 
-## Menyambungkan ke backend
+## Cara frontend berbicara dengan backend
 
-Semua data contoh terkumpul di satu berkas: **`src/data/mock.ts`**.
-Ganti isinya dengan pemanggilan API — komponennya tidak perlu diubah karena
-tipe datanya sudah dikunci di `src/types/index.ts`.
+Semua panggilan lewat fungsi `api()` di **`src/lib/api.ts`**:
 
-Untuk login sungguhan, ubah fungsi `masuk` di `src/context/AuthContext.tsx`
-supaya memanggil API dan menyimpan token.
+- Token login dikirim otomatis di header `Authorization`.
+- Kalau **"Ingat perangkat ini"** dicentang, token disimpan di `localStorage`.
+  Kalau tidak, token disimpan di `sessionStorage` dan hilang saat browser
+  ditutup.
+- Kalau backend menjawab **401**, sesi dihapus dan `AuthContext` mengembalikan
+  pengguna ke halaman login.
+- Pesan galat dari backend sudah berbahasa Indonesia (lihat
+  `backend/app/main.py`), jadi bisa langsung ditampilkan ke pengguna lewat
+  `GalatApi`.
+
+Saat halaman dimuat ulang, `AuthContext` memulihkan sesi lewat
+`GET /api/auth/saya` sebelum rute dijaga. Dengan begitu, pengguna yang sudah
+login tidak terlempar ke halaman login.
+
+## Aturan tampilan
+
+- **Konfirmasi** memakai pop-up `useKonfirmasi()`, bukan `window.confirm` atau
+  `alert`.
+- **Melihat foto** memakai pop-up `PratinjauFoto`, bukan tab baru.
 
 ## Catatan penting soal foto
 
-Di halaman **Logbook** dan **Laporan kendala** tidak ada tombol unggah dari
-galeri, dan ini disengaja: foto bukti harus diambil saat itu juga.
+Halaman **Aktivitas** (logbook) dan **Laporan kendala** sengaja tidak punya
+tombol unggah dari galeri, karena foto bukti harus diambil saat itu juga.
 
-Komponen `src/components/Kamera.tsx` saat ini masih berupa bingkai tampilan.
-Untuk membuatnya berfungsi, ganti isi bingkai dengan elemen `<video>`:
+`src/components/Kamera.tsx` membuka kamera perangkat lewat `getUserMedia`,
+menggambar frame ke `<canvas>` saat tombol rana ditekan, lalu menempelkan cap
+waktu langsung ke gambar sebelum dikirim. Satu catatan boleh berisi paling
+banyak **5 foto** (`MAKS_FOTO`, sama dengan batas di backend). Backend
+menyimpan foto di `backend/uploads/`, dan foto bisa dibuka lewat
+`http://localhost:8000/uploads/…`.
 
-```ts
-const stream = await navigator.mediaDevices.getUserMedia({
-  video: { facingMode: 'user' },
-})
-```
-
-lalu gambar frame-nya ke `<canvas>` saat tombol rana ditekan, dan tempelkan cap
-waktu serta lokasi sebelum dikirim ke server.
+> `getUserMedia` hanya berjalan di `localhost` atau HTTPS. Di server produksi,
+> aplikasi wajib dipasang dengan HTTPS.
 
 ## Warna dan huruf
 
-Palet diambil dari logo Badan Bank Tanah, didaftarkan di `tailwind.config.ts`:
+Palet diambil dari logo Badan Bank Tanah dan didaftarkan di
+`tailwind.config.ts`:
 
 | Token Tailwind | Nilai | Dipakai untuk |
 | --- | --- | --- |
@@ -106,15 +174,15 @@ Palet diambil dari logo Badan Bank Tanah, didaftarkan di `tailwind.config.ts`:
 | `merah` | `#C4443B` | **hanya** tindakan menghapus |
 | `kertas` | `#F1F5F2` | latar halaman & penanda menu aktif |
 
-Huruf: **Plus Jakarta Sans** untuk seluruh isi, **Inter** untuk kop sidebar
+Huruf: **Plus Jakarta Sans** untuk seluruh isi dan **Inter** untuk kop sidebar
 (`font-inter`). Keduanya dimuat dari Google Fonts di `index.html`.
 
 ## Cara kerja penanda menu yang meluncur
 
-Ada di `src/components/Sidebar.tsx`. Ringkasnya:
+Kodenya ada di `src/components/Sidebar.tsx`. Ringkasnya:
 
-1. Posisi menu aktif diukur dengan `getBoundingClientRect()`, lalu penandanya
-   digeser memakai `transform: translateY(...)` — bukan `top`, supaya
+1. Posisi menu aktif diukur dengan `getBoundingClientRect()`. Penandanya lalu
+   digeser memakai `transform: translateY(...)`, bukan `top`, supaya
    animasinya diproses kartu grafis dan tetap mulus di HP kelas bawah.
 2. Warnanya sama persis dengan latar halaman (`bg-kertas`), jadi terlihat
    seperti halaman yang "menggigit" masuk ke sidebar.

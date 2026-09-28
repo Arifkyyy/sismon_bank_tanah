@@ -148,17 +148,20 @@ export function SelOrang({
   nama,
   jabatan,
   foto,
+  keterangan,
 }: {
   nama: string
   jabatan: Jabatan
   foto?: string | null
+  /** teks di bawah nama; bawaannya jabatan */
+  keterangan?: string
 }) {
   return (
     <div className="flex items-center gap-3">
       <Avatar nama={nama} jabatan={jabatan} foto={foto} />
       <div>
         <b className="block whitespace-nowrap text-[13px] font-semibold text-ink">{nama}</b>
-        <span className="block text-[11.5px] text-teks-samar">{jabatan}</span>
+        <span className="block text-[11.5px] text-teks-samar">{keterangan ?? jabatan}</span>
       </div>
     </div>
   )
@@ -369,11 +372,14 @@ export function Segmen({
   nilai,
   onPilih,
   lebar,
+  terkunci,
 }: {
   opsi: string[]
   nilai: string
-  onPilih: (v: string) => void
+  onPilih?: (v: string) => void
   lebar?: boolean
+  /** hanya menampilkan pilihan; tidak bisa diganti */
+  terkunci?: boolean
 }) {
   return (
     <div className={cn('inline-flex rounded-xl bg-[#EBF1ED] p-1', lebar && 'w-full')}>
@@ -382,11 +388,14 @@ export function Segmen({
           key={o}
           type="button"
           aria-pressed={o === nilai}
-          onClick={() => onPilih(o)}
+          disabled={terkunci}
+          onClick={() => onPilih?.(o)}
           className={cn(
-            'whitespace-nowrap rounded-[9px] px-4 py-[7px] text-[12.5px] font-semibold transition',
+            'whitespace-nowrap rounded-[9px] px-4 py-[7px] text-[12.5px] font-semibold transition disabled:cursor-not-allowed',
             lebar && 'flex-1',
-            o === nilai ? 'bg-white text-ink shadow-sm' : 'text-teks-lembut hover:text-ink',
+            o === nilai
+              ? 'bg-white text-ink shadow-sm'
+              : cn('text-teks-lembut', !terkunci && 'hover:text-ink'),
           )}
         >
           {o}
