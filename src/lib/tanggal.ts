@@ -34,6 +34,11 @@ export function menitLembur(mulai: string, selesai: string): number {
  * Selisih dua jam 'HH:MM' sebagai teks, mis. '4 jam' atau '3 jam 30 menit'.
  * Rentang yang melewati tengah malam dihitung ke hari berikutnya.
  */
+/** Jumlah jam dari beberapa penugasan, dibulatkan satu angka di belakang koma. */
+export function jumlahJamLembur(daftar: { menit: number }[]): number {
+  return Math.round(daftar.reduce((n, l) => n + l.menit, 0) / 6) / 10
+}
+
 export function lamaLembur(mulai: string, selesai: string): string {
   const menit = menitLembur(mulai, selesai)
   if (Number.isNaN(menit)) return '—'

@@ -39,7 +39,7 @@ def tujuh_hari(db: Session = Depends(ambil_db), user: User = Depends(user_saat_i
     jumlah_log = {tgl: n for tgl, n in db.execute(q_log)}
     menit = defaultdict(int)
     for l in db.scalars(q_lembur):
-        menit[l.tanggal] += f.menit_lembur(l.jam_mulai, l.jam_selesai)
+        menit[l.tanggal] += f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung)
 
     hasil = []
     for i in range(7):
@@ -116,12 +116,20 @@ def rekap(
         ).all()
     )
     menit = defaultdict(int)
+    upah = defaultdict(int)
+    upah_dibayar = defaultdict(int)
     for l in db.scalars(
         select(Lembur).where(
             Lembur.status == "Diterima", Lembur.petugas_id.in_(ids), Lembur.tanggal.between(dari, sampai)
         )
     ):
-        menit[l.petugas_id] += f.menit_lembur(l.jam_mulai, l.jam_selesai)
+        m = f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung)
+        menit[l.petugas_id] += m
+        # Rumus sama dengan tampil.lembur(): dibulatkan per penugasan.
+        rp = round((l.tarif_per_jam or 0) * m / 60)
+        upah[l.petugas_id] += rp
+        if l.dibayar_pada:
+            upah_dibayar[l.petugas_id] += rp
 
     checklist = dict(
         db.execute(
@@ -148,9 +156,11 @@ def rekap(
                 hari=n_hari,
                 logbook=n_log,
                 kendala=kendala.get(p.id, 0),
-                lembur=f"{jam_lembur:g} jam".replace(".", ","),
+                lembur=f"{round(jam_lembur, 1):g} jam".replace(".", ","),
                 patuh=f"{min(round(n_hari / jumlah_hari * 100), 100)}%",
                 checklist=f"{checklist.get(p.id, 0)}/{jumlah_hari} hari",
+                upah=upah[p.id],
+                upah_dibayar=upah_dibayar[p.id],
             )
         )
     return hasil

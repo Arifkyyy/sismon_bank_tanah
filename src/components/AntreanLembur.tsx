@@ -1,6 +1,6 @@
 import { Avatar, IsiKartu, Kartu, KopKartu, Pil, TagJabatan, Tombol, TombolIkon } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
-import { formatJam, formatTanggal, lamaLembur, menitLembur } from '@/lib/tanggal'
+import { formatJam, formatTanggal, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { DrafLembur, Petugas } from '@/types'
 
@@ -12,6 +12,8 @@ export function kekuranganDraf(d: DrafLembur): string[] {
   const kurang: string[] = []
   if (!d.nama) kurang.push('nama petugas')
   if (!d.tanggal) kurang.push('tanggal')
+  // Sama dengan backend: petugas tidak bisa menerima penugasan yang tanggalnya lewat.
+  else if (d.tanggal < keIso(new Date())) kurang.push('tanggal (sudah lewat)')
   if (!d.mulai || !d.selesai) kurang.push('rentang jam')
   else if (menitLembur(d.mulai, d.selesai) > MAKS_JAM_LEMBUR * 60)
     kurang.push(`rentang jam (maks. ${MAKS_JAM_LEMBUR} jam)`)

@@ -98,6 +98,8 @@ def hapus(akun_id: int, db: Session = Depends(ambil_db), pelaku: User = Depends(
         .outerjoin(Kendala, Foto.kendala_id == Kendala.id)
         .where((Logbook.petugas_id == u.id) | (Kendala.petugas_id == u.id))
     ).all()
+    if u.foto_profil:
+        lokasi = [*lokasi, u.foto_profil]
     catat(db, pelaku, "hapus_akun", f"{u.peran} {u.email}")
     db.delete(u)
     db.commit()

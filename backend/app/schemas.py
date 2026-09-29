@@ -192,6 +192,8 @@ class LemburKeluar(Skema):
     tanggal_iso: str
     rentang: str
     total: str
+    # lama lembur dalam menit (aktual bila dikoreksi) — untuk dijumlahkan frontend
+    menit: int
     keterangan: str
     status: Literal["Menunggu", "Diterima", "Ditolak", "Selesai"]
     alasan: str | None = None
@@ -202,6 +204,32 @@ class LemburKeluar(Skema):
     pembuat_peran: Literal["admin", "superadmin"] | None = None
     pembuat_unit: str | None = None
     pembuat_foto: str | None = None
+    # tarif yang dikunci saat dikirim, dan tarif × lama lembur (rupiah)
+    tarif_per_jam: int | None = None
+    upah: int | None = None
+    # Jam yang benar-benar dikerjakan bila dikoreksi admin, mis. '18.00 – 21.30'.
+    # Bila ada, `total` dan `upah` sudah dihitung dari jam ini.
+    rentang_aktual: str | None = None
+    mulai_aktual: str | None = None
+    selesai_aktual: str | None = None
+    dibayar_pada: str | None = None
+    dibayar_oleh: str | None = None
+
+
+class JamAktualMasuk(Skema):
+    """Kosongkan keduanya (null) untuk kembali ke jam rencana."""
+    mulai: time | None = None
+    selesai: time | None = None
+
+
+class TarifLemburKeluar(Skema):
+    tarif_per_jam: int
+    diubah_pada: str | None = None
+    diubah_oleh: str | None = None
+
+
+class TarifLemburMasuk(Skema):
+    tarif_per_jam: int = Field(ge=1000, le=1_000_000)
 
 
 class DrafKeluar(Skema):
@@ -243,6 +271,9 @@ class RekapKeluar(Skema):
     patuh: str
     # Lembar checklist yang sudah dikirim, mis. '12/14 hari'
     checklist: str
+    # Uang lembur (rupiah) dari penugasan yang diterima dalam periode
+    upah: int = 0
+    upah_dibayar: int = 0
 
 
 class HariKeluar(Skema):

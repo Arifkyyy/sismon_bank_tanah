@@ -119,7 +119,10 @@ export interface Lembur {
   tanggalIso: string
   /** contoh: '18.00 – 22.00' */
   rentang: string
+  /** untuk ditampilkan, mis. '3 jam 30 menit' */
   total: string
+  /** lama lembur dalam menit — pakai ini untuk menjumlahkan, bukan `total` */
+  menit: number
   keterangan: string
   status: Status
   /** wajib diisi petugas saat menolak; ikut terlihat oleh admin */
@@ -134,6 +137,27 @@ export interface Lembur {
   /** unit kerja pembuat, mis. 'Bagian Pengelolaan Gedung' */
   pembuatUnit?: string | null
   pembuatFoto?: string | null
+  /** tarif per jam (rupiah) yang dikunci saat penugasan dikirim */
+  tarifPerJam?: number | null
+  /** tarif × lama lembur, dalam rupiah */
+  upah?: number | null
+  /** jam yang benar-benar dikerjakan bila dikoreksi admin, mis. '18.00 – 21.30';
+   *  bila ada, `total` dan `upah` sudah dihitung dari jam ini */
+  rentangAktual?: string | null
+  /** jam aktual dalam format input ('18:00'), untuk mengisi formulir koreksi */
+  mulaiAktual?: string | null
+  selesaiAktual?: string | null
+  /** kapan admin menandai dibayar; kosong = belum dibayar */
+  dibayarPada?: string | null
+  dibayarOleh?: string | null
+}
+
+/** Tarif lembur yang berlaku sekarang; diubah admin di Pengajuan lembur. */
+export interface TarifLembur {
+  tarifPerJam: number
+  /** kapan terakhir diubah, mis. '29 Sep 2026 · 10.24'; kosong = belum pernah */
+  diubahPada?: string | null
+  diubahOleh?: string | null
 }
 
 /**
@@ -188,6 +212,9 @@ export interface RekapPetugas {
   lembur: string
   /** sudah berupa persen, mis. '93%' */
   patuh: string
+  /** uang lembur (rupiah) dari penugasan yang diterima dalam periode */
+  upah: number
+  upahDibayar: number
 }
 
 /** Satu batang pada bagan tujuh hari — GET /api/statistik/tujuh-hari. */

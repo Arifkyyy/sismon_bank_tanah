@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import pengaturan
 from app.routers import akun, auth, checklist, foto, kendala, lembur, logbook, petugas, statistik
+from app.routers import pengaturan as rute_pengaturan
 
 app = FastAPI(
     title="API Sistem Monitoring Petugas — Badan Bank Tanah",
@@ -62,7 +63,7 @@ async def salah_isi(_: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={"detail": pesan[:1].upper() + pesan[1:] + "."})
 
 
-for r in (auth, petugas, logbook, kendala, lembur, checklist, statistik, foto, akun):
+for r in (auth, petugas, logbook, kendala, lembur, rute_pengaturan, checklist, statistik, foto, akun):
     app.include_router(r.router)
 
 # Foto bukti bisa dibuka lewat http://localhost:8000/uploads/2026/09/xxxx.jpg

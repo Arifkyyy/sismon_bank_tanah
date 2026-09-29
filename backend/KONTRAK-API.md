@@ -49,17 +49,29 @@ mencatat atas nama petugas mana pun. Aturan yang sama berlaku untuk `/kendala`.
 ### Lembur
 | Metode | Alamat | Hak akses | Keterangan |
 | --- | --- | --- | --- |
-| GET | `/lembur` | login | admin: semua; petugas: miliknya |
+| GET | `/lembur?dari=&sampai=&jabatan=` | login | admin: semua; petugas: miliknya |
 | POST | `/lembur/{id}/terima` | petugas | |
 | POST | `/lembur/{id}/tolak` | petugas | `{alasan}` minimal 5 karakter |
 | GET | `/lembur/draf` | admin | antrean draf |
 | POST | `/lembur/draf` | admin | `{petugasId, jabatan, tanggal, mulai, selesai, keterangan}`; lama lembur maks. `MAKS_JAM_LEMBUR` jam (bawaan 12), selesai < mulai = lewat tengah malam |
 | PUT | `/lembur/draf/{id}` | admin | |
 | DELETE | `/lembur/draf/{id}` | admin | |
-| POST | `/lembur/draf/{id}/kirim` | admin | draf → Menunggu |
+| POST | `/lembur/draf/{id}/kirim` | admin | draf → Menunggu; tarif per jam saat itu dikunci ke penugasan |
+| PUT | `/lembur/{id}/jam-aktual` | admin | `{mulai, selesai}` jam yang benar-benar dikerjakan (null keduanya = kembali ke rencana); ditolak bila sudah dibayar |
+| POST | `/lembur/{id}/bayar` | admin | tandai dibayar; hanya Diterima yang tanggalnya sudah lewat |
+| DELETE | `/lembur/{id}/bayar` | admin | batalkan tanda bayar |
+| GET | `/pengaturan/tarif-lembur` | login | `{tarifPerJam, diubahPada, diubahOleh}` |
+| PUT | `/pengaturan/tarif-lembur` | admin | `{tarifPerJam}` Rp1.000–Rp1.000.000; dicatat di log audit |
 
 Status `Selesai` tidak disimpan di database. Penugasan berstatus Diterima yang
 tanggalnya sudah lewat otomatis tampil sebagai Selesai.
+
+Setiap penugasan terkirim membawa `tarifPerJam` dan `upah` (tarif × lama
+lembur, rupiah). Mengubah tarif tidak mengubah penugasan yang sudah terkirim.
+Bila admin mengoreksi jam aktual (`rentangAktual`), `total`, `upah`, rekap, dan
+jam lembur di logbook dihitung dari jam aktual itu. `dibayarPada` kosong =
+belum dibayar. Rekap per petugas (`/statistik/rekap`) membawa `upah` dan
+`upahDibayar`.
 
 ### Checklist harian
 | Metode | Alamat | Hak akses | Keterangan |

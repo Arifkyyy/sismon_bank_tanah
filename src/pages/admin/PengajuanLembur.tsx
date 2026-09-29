@@ -6,12 +6,17 @@ import {
   AreaTeks, Baris, GridForm, Input, InputRapi, IsiKartu, KakiForm, Kartu, Kolom,
   KopKartu, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, Tombol,
 } from '@/components/ui'
+import { cetakRekapLembur, ModalJamAktual, SelUangLembur } from '@/components/LemburSelesai'
 import { StatusData } from '@/components/StatusData'
+import { TombolTarifLembur } from '@/components/TarifLembur'
+import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { useLembur } from '@/context/LemburContext'
+import { api, pesanGalat, query } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
 import { daftarBulan, formatRentang, formatTanggal, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
+import { useApi } from '@/lib/useApi'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
-import type { DrafLembur, Jabatan, Status } from '@/types'
+import type { DrafLembur, Jabatan, Lembur, Status } from '@/types'
 
 /** Formulir kosong; tanggalnya hari ini supaya tidak pernah basi. */
 function formKosong() {
@@ -47,6 +52,10 @@ export function PengajuanLembur() {
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatanSaring, setJabatanSaring] = useState<Jabatan | 'Semua'>('Semua')
+  const [dikoreksi, setDikoreksi] = useState<Lembur | null>(null)
+  const [galatTabel, setGalatTabel] = useState<string | null>(null)
+  const [sibukId, setSibukId] = useState<string | null>(null)
+  const konfirmasi = useKonfirmasi()
 
   /**
    * Nama petugas hanya boleh berasal dari jabatan yang dipilih — Security tidak
@@ -96,6 +105,7 @@ export function PengajuanLembur() {
   async function kirimDraf(id: string) {
     const draf = pending.find((p) => p.id === id)
     if (!(await kirimPending(id))) return
+    void tersaring.muat()
     // Penyaring ikut pindah ke tanggal dan jabatan penugasannya: tabel disaring
     // harian per jabatan, jadi tanpa ini penugasan yang baru dikirim seolah hilang.
     if (draf) {
@@ -118,6 +128,7 @@ export function PengajuanLembur() {
     for (const d of siap) {
       if (!(await kirimPending(d.id))) break
     }
+    void tersaring.muat()
     if (editId && siap.some((d) => d.id === editId)) batalEdit()
   }
 
@@ -127,30 +138,73 @@ export function PengajuanLembur() {
   }
 
   /**
-   * Tabel penugasan disaring per periode dan jabatan — bawaannya harian, jadi
-   * admin tidak langsung dihadapkan seluruh riwayat. Perbandingan tanggal
-   * memakai `tanggalIso` ('2026-09-16') supaya aman diurutkan sebagai teks.
+   * Tabel penugasan disaring server per periode dan jabatan — bawaannya
+   * harian, jadi admin tidak langsung dihadapkan seluruh riwayat.
    */
-  const terlihat = useMemo(() => {
-    function dalamPeriode(iso: string): boolean {
-      switch (periode) {
-        case 'Harian':
-          return iso === tanggal
-        case 'Bulanan':
-          return iso.startsWith(bulan)
-        default:
-          return !!rentang && iso >= rentang.mulai && iso <= rentang.sampai
-      }
-    }
+  let dari: string | null = null
+  let sampai: string | null = null
+  if (periode === 'Harian') {
+    dari = sampai = tanggal
+  } else if (periode === 'Bulanan') {
+    const [y, m] = bulan.split('-').map(Number)
+    dari = `${bulan}-01`
+    sampai = keIso(new Date(y, m, 0)) // hari ke-0 bulan berikutnya = akhir bulan ini
+  } else if (rentang) {
+    dari = rentang.mulai
+    sampai = rentang.sampai
+  }
+  const tersaring = useApi<Lembur[]>(
+    dari && sampai
+      ? `/api/lembur${query({ dari, sampai, jabatan: jabatanSaring === 'Semua' ? undefined : jabatanSaring })}`
+      : null,
+    [],
+  )
+  // Terbaru di atas; penugasan pada tanggal sama tetap berurutan seperti aslinya.
+  const terlihat = useMemo(
+    () => (dari ? [...tersaring.data].sort((a, b) => b.tanggalIso.localeCompare(a.tanggalIso)) : []),
+    [dari, tersaring.data],
+  )
+  const totalUpah = terlihat.reduce(
+    (n, l) => n + (l.status === 'Diterima' || l.status === 'Selesai' ? (l.upah ?? 0) : 0),
+    0,
+  )
 
-    const cocok = daftar.filter(
-      (l) =>
-        dalamPeriode(l.tanggalIso) &&
-        (jabatanSaring === 'Semua' || l.jabatan === jabatanSaring),
-    )
-    // Terbaru di atas; penugasan pada tanggal sama tetap berurutan seperti aslinya.
-    return [...cocok].sort((a, b) => b.tanggalIso.localeCompare(a.tanggalIso))
-  }, [daftar, periode, tanggal, bulan, rentang, jabatanSaring])
+  /** Aksi pada satu baris tabel; galatnya tampil di kartu tabel, bukan di formulir. */
+  async function aksiBaris(l: Lembur, jalan: () => Promise<unknown>): Promise<string | null> {
+    setGalatTabel(null)
+    setSibukId(l.id)
+    try {
+      await jalan()
+      void tersaring.muat()
+      muat()
+      return null
+    } catch (e) {
+      const g = pesanGalat(e)
+      setGalatTabel(g)
+      return g
+    } finally {
+      setSibukId(null)
+    }
+  }
+
+  async function bayar(l: Lembur) {
+    const ya = await konfirmasi({
+      judul: 'Tandai lembur sudah dibayar?',
+      pesan: `${l.nama} · ${l.tanggal} · ${l.total} · Rp ${(l.upah ?? 0).toLocaleString('id-ID')}. Jam lembur tidak bisa dikoreksi lagi sampai tanda bayar dibatalkan.`,
+      tombol: 'Tandai dibayar',
+    })
+    if (ya) await aksiBaris(l, () => api(`/api/lembur/${l.id}/bayar`, 'POST'))
+  }
+
+  async function batalBayar(l: Lembur) {
+    const ya = await konfirmasi({
+      judul: 'Batalkan tanda bayar?',
+      pesan: `Lembur ${l.nama} tanggal ${l.tanggal} akan kembali tercatat belum dibayar.`,
+      tombol: 'Batalkan tanda bayar',
+      nada: 'bahaya',
+    })
+    if (ya) await aksiBaris(l, () => api(`/api/lembur/${l.id}/bayar`, 'DELETE'))
+  }
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
   let labelPeriode: string
@@ -176,7 +230,12 @@ export function PengajuanLembur() {
           <KopKartu
             judul="Buat penugasan lembur"
             sub="Disimpan ke Data Pending dulu — petugas belum menerima apa pun"
-            aksi={editId ? <Pil status="Diproses">Mengedit draf</Pil> : undefined}
+            aksi={
+              <>
+                {editId && <Pil status="Diproses">Mengedit draf</Pil>}
+                <TombolTarifLembur />
+              </>
+            }
           />
           <IsiKartu>
             <GridForm>
@@ -217,6 +276,7 @@ export function PengajuanLembur() {
               <Kolom label="Tanggal lembur" wajib>
                 <Input
                   type="date"
+                  min={keIso(new Date())}
                   value={form.tanggal}
                   onChange={(e) => setForm((f) => ({ ...f, tanggal: e.target.value }))}
                 />
@@ -299,7 +359,28 @@ export function PengajuanLembur() {
         <KopKartu
           judul="Penugasan yang sudah dikirim"
           sub={`${labelPeriode}${jabatanSaring === 'Semua' ? '' : ` · ${JABATAN_PANJANG[jabatanSaring]}`} · jawaban petugas muncul di kolom status`}
-          aksi={<Pil status="Menunggu">{menunggu.length} belum dijawab</Pil>}
+          aksi={
+            <>
+              <Pil status="Menunggu">{menunggu.length} belum dijawab</Pil>
+              <Tombol
+                varian="hantu"
+                kecil
+                disabled={tersaring.memuat || terlihat.length === 0}
+                onClick={() =>
+                  cetakRekapLembur(
+                    terlihat,
+                    [
+                      `Periode: ${labelPeriode}`,
+                      `Jabatan: ${jabatanSaring === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatanSaring]}`,
+                    ],
+                    true,
+                  )
+                }
+              >
+                <Ikon.Unduh size={15} /> Unduh PDF
+              </Tombol>
+            </>
+          }
         />
 
         <IsiKartu className="flex flex-wrap items-center gap-2 border-b border-garis py-4">
@@ -350,15 +431,28 @@ export function PengajuanLembur() {
           </PilihRapi>
 
           <span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">
-            {terlihat.length} penugasan
+            {terlihat.length} penugasan · Rp {totalUpah.toLocaleString('id-ID')}
           </span>
         </IsiKartu>
 
-        <StatusData memuat={memuat} galat={galat} onUlang={muat} />
-        <Tabel kepala={['Petugas', 'Tanggal', 'Rentang jam', 'Total', 'Keterangan', 'Status']} maksTinggi={560}>
+        {galatTabel && (
+          <div className="mx-5 mt-3 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3 py-2 text-[11.5px] leading-relaxed text-merah-teks">
+            <Ikon.Awas size={14} className="mt-px flex-none" />
+            <span>{galatTabel}</span>
+          </div>
+        )}
+        <StatusData
+          memuat={memuat || tersaring.memuat}
+          galat={galat ?? tersaring.galat}
+          onUlang={() => {
+            muat()
+            void tersaring.muat()
+          }}
+        />
+        <Tabel kepala={['Petugas', 'Tanggal', 'Rentang jam', 'Total', 'Keterangan', 'Status', 'Uang lembur']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-5 py-12 text-center">
+              <td colSpan={7} className="px-5 py-12 text-center">
                 <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
                   <Ikon.Kalender size={19} />
                 </span>
@@ -379,7 +473,12 @@ export function PengajuanLembur() {
                   <SelOrang nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} />
                 </td>
                 <td className="num whitespace-nowrap">{l.tanggal}</td>
-                <td className="num whitespace-nowrap">{l.rentang}</td>
+                <td className="num whitespace-nowrap">
+                  {l.rentangAktual ?? l.rentang}
+                  {l.rentangAktual && (
+                    <span className="mt-0.5 block text-[11px] text-teks-samar">Rencana {l.rentang}</span>
+                  )}
+                </td>
                 <td className="num whitespace-nowrap">{l.total}</td>
                 <td className="max-w-[420px] whitespace-normal text-teks-lembut">
                   {l.keterangan}
@@ -397,11 +496,30 @@ export function PengajuanLembur() {
                     </span>
                   )}
                 </td>
+                <td>
+                  <SelUangLembur
+                    lembur={l}
+                    sibuk={sibukId === l.id}
+                    onKoreksi={setDikoreksi}
+                    onBayar={bayar}
+                    onBatalBayar={batalBayar}
+                  />
+                </td>
               </Baris>
             ))
           )}
         </Tabel>
       </Kartu>
+
+      {dikoreksi && (
+        <ModalJamAktual
+          lembur={dikoreksi}
+          onTutup={() => setDikoreksi(null)}
+          onSimpan={(mulai, selesai) =>
+            aksiBaris(dikoreksi, () => api(`/api/lembur/${dikoreksi.id}/jam-aktual`, 'PUT', { mulai, selesai }))
+          }
+        />
+      )}
     </>
   )
 }

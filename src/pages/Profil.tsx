@@ -7,8 +7,8 @@ import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { keIso } from '@/lib/tanggal'
-import type { Akun, Kendala, Logbook } from '@/types'
+import { jumlahJamLembur, keIso } from '@/lib/tanggal'
+import type { Akun, Kendala, Lembur, Logbook } from '@/types'
 
 /** Sisi terpanjang foto profil setelah diperkecil, dalam piksel. */
 const SISI_FOTO = 512
@@ -158,10 +158,6 @@ function DialogUbahProfil({
   )
 }
 
-/** Mengambil angka jam dari teks seperti '4 jam'. */
-function jamDari(total: string): number {
-  return Number.parseFloat(total.replace(',', '.')) || 0
-}
 
 export function Profil() {
   const { akun, peran, keluar, perbaruiAkun } = useAuth()
@@ -181,17 +177,9 @@ export function Profil() {
   // Untuk admin, backend mengembalikan seluruh petugas; untuk petugas, miliknya.
   const { data: logbook } = useApi<Logbook[]>(`/api/logbook${jendela}`, [])
   const { data: kendala } = useApi<Kendala[]>(`/api/kendala${jendela}`, [])
-  const { data: lembur } = useApi<{ tanggalIso: string; total: string; status: string }[]>(
-    '/api/lembur',
-    [],
-  )
+  const { data: lemburBulanIni } = useApi<Lembur[]>(`/api/lembur${jendela}`, [])
 
-  const lemburBulanIni = lembur.filter(
-    (l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso,
-  )
-  const jamLembur = lemburBulanIni
-    .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
-    .reduce((n, l) => n + jamDari(l.total), 0)
+  const jamLembur = jumlahJamLembur(lemburBulanIni.filter((l) => l.status === 'Diterima' || l.status === 'Selesai'))
   const kendalaSelesai = kendala.filter((k) => k.status === 'Selesai').length
   // Kepatuhan = bagian hari berjalan yang punya catatan.
   const hariTercatat = new Set(logbook.map((l) => l.tanggalIso)).size

@@ -11,14 +11,10 @@ import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { keIso } from '@/lib/tanggal'
+import { jumlahJamLembur, keIso } from '@/lib/tanggal'
 import { JABATAN_PANJANG } from '@/lib/util'
 import type { Kendala, Logbook, Peran, Petugas } from '@/types'
 
-
-function jamDari(total: string): number {
-  return Number.parseFloat(total.replace(',', '.')) || 0
-}
 
 export function DashboardAdmin({ peran }: { peran: Peran }) {
   const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
@@ -30,19 +26,31 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
 
   const petugas = useApi<Petugas[]>('/api/petugas', [])
   const logbookHariIni = useApi<Logbook[]>(`/api/logbook${query({ tanggal: hariIniIso })}`, [])
-  const kendalaTerbuka = useApi<Kendala[]>('/api/kendala?batas=200', [])
+  // Diambil per status supaya kendala lama yang belum selesai tidak tergeser
+  // oleh banyaknya laporan yang sudah selesai.
+  const kendalaBaru = useApi<Kendala[]>(`/api/kendala${query({ status: 'Baru', batas: 1000 })}`, [])
+  const kendalaDiproses = useApi<Kendala[]>(`/api/kendala${query({ status: 'Diproses', batas: 1000 })}`, [])
   const { daftar: lembur, memuat: memuatLembur, galat: galatLembur, muat: muatLembur } = useLembur()
   
   const lemburTerbaru = [...lembur].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 10)
 
   const bertugas = petugas.data.filter((p) => p.status === 'Aktif').length
-  const belumSelesai = kendalaTerbuka.data.filter((k) => k.status !== 'Selesai')
-  const jumlahBaru = belumSelesai.filter((k) => k.status === 'Baru').length
-  const jumlahDiproses = belumSelesai.filter((k) => k.status === 'Diproses').length
-  const jamLemburBulanIni = lembur
+  const jumlahBaru = kendalaBaru.data.length
+  const jumlahDiproses = kendalaDiproses.data.length
+  // Terbaru di atas, sama seperti urutan dari server.
+  const belumSelesai = [...kendalaBaru.data, ...kendalaDiproses.data].sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+  const kendalaTerbuka = {
+    memuat: kendalaBaru.memuat || kendalaDiproses.memuat,
+    galat: kendalaBaru.galat ?? kendalaDiproses.galat,
+    muat: () => {
+      void kendalaBaru.muat()
+      void kendalaDiproses.muat()
+    },
+  }
+  const lemburBulanIni = lembur
     .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
     .filter((l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso)
-    .reduce((n, l) => n + jamDari(l.total), 0)
+  const jamLemburBulanIni = jumlahJamLembur(lemburBulanIni)
 
   return (
     <>

@@ -10,13 +10,9 @@ import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { formatTanggal, keIso } from '@/lib/tanggal'
+import { formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal'
 import type { Kendala, Logbook } from '@/types'
 
-/** Mengambil angka jam dari teks seperti '4 jam'. */
-function jamDari(total: string): number {
-  return Number.parseFloat(total.replace(',', '.')) || 0
-}
 
 export function DashboardUser() {
   const akar = AKAR.user
@@ -43,10 +39,11 @@ export function DashboardUser() {
 
   // Hari berbeda yang punya minimal satu catatan pada bulan berjalan.
   const hariTercatat = new Set(bulanIni.data.map((l) => l.tanggalIso)).size
-  const jamLemburBulanIni = riwayat
-    .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
-    .filter((l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso)
-    .reduce((n, l) => n + jamDari(l.total), 0)
+  const jamLemburBulanIni = jumlahJamLembur(
+    riwayat
+      .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
+      .filter((l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso),
+  )
   const kendalaBelumSelesai = kendalaBulanIni.data.filter((k) => k.status !== 'Selesai').length
 
   const namaDepan = akun?.nama.split(' ')[0] ?? ''

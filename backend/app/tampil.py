@@ -61,7 +61,7 @@ def menit_lembur_per_hari(db: Session, petugas_ids: set[int], tanggal: set[date]
     )
     total: dict[tuple[int, date], int] = defaultdict(int)
     for l in baris:
-        total[(l.petugas_id, l.tanggal)] += f.menit_lembur(l.jam_mulai, l.jam_selesai)
+        total[(l.petugas_id, l.tanggal)] += f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung)
     return total
 
 
@@ -119,7 +119,8 @@ def lembur(l: Lembur) -> LemburKeluar:
         tanggal=f.tanggal_teks(l.tanggal),
         tanggal_iso=l.tanggal.isoformat(),
         rentang=f"{f.jam_teks(l.jam_mulai)} – {f.jam_teks(l.jam_selesai)}",
-        total=f.lama_teks(f.menit_lembur(l.jam_mulai, l.jam_selesai)),
+        total=f.lama_teks(f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung)),
+        menit=f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung),
         keterangan=l.keterangan,
         status=status_lembur(l),
         alasan=l.alasan_tolak,
@@ -129,6 +130,21 @@ def lembur(l: Lembur) -> LemburKeluar:
         pembuat_peran=l.pembuat.peran if l.pembuat else None,
         pembuat_unit=l.pembuat.unit if l.pembuat else None,
         pembuat_foto=url_foto_profil(l.pembuat.foto_profil) if l.pembuat else None,
+        tarif_per_jam=l.tarif_per_jam,
+        upah=(
+            round(l.tarif_per_jam * f.menit_lembur(l.mulai_dihitung, l.selesai_dihitung) / 60)
+            if l.tarif_per_jam is not None
+            else None
+        ),
+        rentang_aktual=(
+            f"{f.jam_teks(l.jam_mulai_aktual)} – {f.jam_teks(l.jam_selesai_aktual)}"
+            if l.jam_mulai_aktual and l.jam_selesai_aktual
+            else None
+        ),
+        mulai_aktual=l.jam_mulai_aktual.strftime("%H:%M") if l.jam_mulai_aktual else None,
+        selesai_aktual=l.jam_selesai_aktual.strftime("%H:%M") if l.jam_selesai_aktual else None,
+        dibayar_pada=f.cap_waktu(l.dibayar_pada),
+        dibayar_oleh=l.pembayar.nama if l.pembayar else None,
     )
 
 

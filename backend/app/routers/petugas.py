@@ -15,9 +15,12 @@ router = APIRouter(prefix="/api/petugas", tags=["Petugas"])
 
 
 @router.get("", response_model=list[PetugasKeluar])
-def daftar(jabatan: Jabatan | None = None, db: Session = Depends(ambil_db), _: User = Depends(user_saat_ini)):
-    # Semua peran boleh membaca: halaman Logbook petugas butuh daftar nama.
+def daftar(jabatan: Jabatan | None = None, db: Session = Depends(ambil_db), user: User = Depends(user_saat_ini)):
+    # Petugas hanya menerima datanya sendiri (dipakai Logbook/Laporan kendala untuk
+    # mengisi nama); email, telepon, dan NIP petugas lain tidak ikut terkirim.
     q = select(User).where(User.peran == "user").order_by(User.jabatan, User.nama)
+    if user.peran == "user":
+        q = q.where(User.id == user.id)
     if jabatan:
         q = q.where(User.jabatan == jabatan)
     return [tampil.petugas(u) for u in db.scalars(q)]
@@ -45,7 +48,10 @@ def detail(petugas_id: int, db: Session = Depends(ambil_db), _: User = Depends(b
     terakhir = db.scalar(select(func.max(Logbook.waktu)).where(Logbook.petugas_id == u.id))
     # Hanya lembur yang diterima petugas; yang masih menunggu atau ditolak tidak dihitung.
     lembur = db.execute(
-        select(Lembur.jam_mulai, Lembur.jam_selesai).where(
+        select(
+            func.coalesce(Lembur.jam_mulai_aktual, Lembur.jam_mulai),
+            func.coalesce(Lembur.jam_selesai_aktual, Lembur.jam_selesai),
+        ).where(
             Lembur.petugas_id == u.id, Lembur.status == "Diterima", Lembur.tanggal >= awal_bulan
         )
     ).all()

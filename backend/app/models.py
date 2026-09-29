@@ -125,12 +125,30 @@ class Lembur(Base):
     keterangan: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="Draf")
     alasan_tolak: Mapped[str | None] = mapped_column(Text)
+    # Tarif per jam yang dikunci saat penugasan dikirim; draf masih None.
+    tarif_per_jam: Mapped[int | None] = mapped_column(Integer)
+    # Jam yang benar-benar dikerjakan, dikoreksi admin; None = sesuai rencana.
+    jam_mulai_aktual: Mapped[time | None] = mapped_column(Time)
+    jam_selesai_aktual: Mapped[time | None] = mapped_column(Time)
+    # None = belum dibayar.
+    dibayar_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dibayar_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     dikirim_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dijawab_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     petugas: Mapped[User | None] = relationship(foreign_keys=[petugas_id])
     pembuat: Mapped[User | None] = relationship(foreign_keys=[dibuat_oleh])
+    pembayar: Mapped[User | None] = relationship(foreign_keys=[dibayar_oleh])
+
+    @property
+    def mulai_dihitung(self) -> time:
+        """Jam yang dipakai menghitung upah: aktual bila sudah dikoreksi."""
+        return self.jam_mulai_aktual or self.jam_mulai
+
+    @property
+    def selesai_dihitung(self) -> time:
+        return self.jam_selesai_aktual or self.jam_selesai
 
 
 class Foto(Base):
@@ -156,6 +174,21 @@ class Foto(Base):
 
     logbook: Mapped[Logbook | None] = relationship(back_populates="foto")
     kendala: Mapped[Kendala | None] = relationship(back_populates="foto")
+
+
+class PengaturanAplikasi(Base):
+    """Nilai yang bisa diubah admin dari aplikasi, mis. tarif_lembur_per_jam."""
+
+    __tablename__ = "pengaturan"
+
+    kunci: Mapped[str] = mapped_column(String(60), primary_key=True)
+    nilai: Mapped[str] = mapped_column(String(200))
+    diubah_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    diubah_pada: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    pengubah: Mapped[User | None] = relationship()
 
 
 class LogAudit(Base):

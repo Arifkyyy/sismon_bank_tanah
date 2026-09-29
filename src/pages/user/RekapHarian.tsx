@@ -15,7 +15,7 @@ import { cetakPdf } from '@/lib/cetak'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
-import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { Kendala, Logbook, Status } from '@/types'
 
@@ -52,11 +52,6 @@ interface Rincian {
 function keMenit(jam: string): number {
   const [j, m] = jam.split(/[.:]/).map(Number)
   return (j || 0) * 60 + (m || 0)
-}
-
-/** Mengambil angka jam dari teks seperti '4 jam'. */
-function jamDari(total: string): number {
-  return Number.parseFloat(total.replace(',', '.')) || 0
 }
 
 export function RekapHarian() {
@@ -139,10 +134,11 @@ export function RekapHarian() {
 
   // Lembur yang sudah disetujui dan jatuh di dalam periode yang dipilih.
   const { riwayat } = useLemburSaya()
-  const jamLembur = riwayat
-    .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
-    .filter((l) => !jendela?.dari || (l.tanggalIso >= jendela.dari && l.tanggalIso <= (jendela.sampai ?? '9999')))
-    .reduce((n, l) => n + jamDari(l.total), 0)
+  const jamLembur = jumlahJamLembur(
+    riwayat
+      .filter((l) => l.status === 'Diterima' || l.status === 'Selesai')
+      .filter((l) => !jendela?.dari || (l.tanggalIso >= jendela.dari && l.tanggalIso <= (jendela.sampai ?? '9999'))),
+  )
 
   // Keterangan periode aktif, dipakai ulang di subjudul kartu.
   let labelPeriode: string
