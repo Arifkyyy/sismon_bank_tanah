@@ -15,9 +15,13 @@ import type { FotoArsip, Jabatan, StatistikFoto } from '@/types'
 
 const VARIAN = ['a', 'b', 'c'] as const
 
-/** Byte → 'GB' dengan satu angka di belakang koma, gaya Indonesia. */
-function keGb(byte: number): string {
-  return (byte / 1024 ** 3).toFixed(1).replace('.', ',')
+/**
+ * Byte → angka satu desimal gaya Indonesia beserta satuannya. Satuannya turun
+ * ke MB/KB supaya penyimpanan yang masih kecil tidak tampil "0,0 GB".
+ */
+function keUkuran(byte: number): { angka: string; satuan: string } {
+  const [pembagi, satuan] = byte >= 1024 ** 3 ? [1024 ** 3, 'GB'] : byte >= 1024 ** 2 ? [1024 ** 2, 'MB'] : [1024, 'KB']
+  return { angka: (byte / pembagi).toFixed(1).replace('.', ','), satuan }
 }
 
 /** Tanggal bawaan hapus massal: enam bulan sebelum hari ini. */
@@ -113,7 +117,7 @@ export function HapusDataFoto() {
 
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
         <StatCard nama="Total foto tersimpan" angka={statistik.data.total.toLocaleString('id-ID')} nada="ink" ikon={<Ikon.Foto size={17} />} ket="Seluruh arsip" />
-        <StatCard nama="Ruang penyimpanan terpakai" angka={keGb(statistik.data.ukuranByte)} satuan="GB" nada="emas" ikon={<Ikon.Rekap size={17} />} ket="Dihitung dari ukuran berkas" />
+        <StatCard nama="Ruang penyimpanan terpakai" angka={keUkuran(statistik.data.ukuranByte).angka} satuan={keUkuran(statistik.data.ukuranByte).satuan} nada="emas" ikon={<Ikon.Rekap size={17} />} ket="Dihitung dari ukuran berkas" />
         <StatCard nama="Foto lebih dari 6 bulan" angka={statistik.data.lebihEnamBulan.toLocaleString('id-ID')} nada="tanah" ikon={<Ikon.Jam size={17} />} ket="Aman dihapus sesuai kebijakan arsip" />
       </div>
 
