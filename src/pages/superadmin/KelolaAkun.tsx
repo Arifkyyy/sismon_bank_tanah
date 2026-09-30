@@ -213,7 +213,7 @@ export function KelolaAkun() {
               admin.data.map((a) => (
                 <Baris key={a.id}>
                   <td>
-                
+                    {/* jabatan="OB" hanya untuk warna hijau avatar; admin tidak berjabatan */}
                     <SelOrang nama={a.nama} jabatan="OB" keterangan="Admin" foto={a.fotoProfil} />
                   </td>
                   <td className="text-teks-lembut">{a.email}</td>

@@ -106,8 +106,7 @@ export function PengajuanLembur() {
     const draf = pending.find((p) => p.id === id)
     if (!(await kirimPending(id))) return
     void tersaring.muat()
-    // Penyaring ikut pindah ke tanggal dan jabatan penugasannya: tabel disaring
-    // harian per jabatan, jadi tanpa ini penugasan yang baru dikirim seolah hilang.
+
     if (draf) {
       setPeriode('Harian')
       setTanggal(draf.tanggal)
@@ -116,15 +115,10 @@ export function PengajuanLembur() {
     if (editId === id) batalEdit()
   }
 
-  /**
-   * Mengirim seluruh draf yang sudah lengkap; yang masih kurang ditinggal.
-   * Penyaring tidak digeser di sini karena draf bisa jatuh di beberapa tanggal
-   * sekaligus — tidak ada satu hari yang benar untuk ditampilkan.
-   */
+  
   async function kirimSemuaDraf() {
     const siap = pending.filter((d) => kekuranganDraf(d).length === 0)
-    // Berurutan, bukan paralel: kalau satu ditolak server, sisanya tidak ikut
-    // terkirim diam-diam dan pesan galatnya tetap terbaca.
+    
     for (const d of siap) {
       if (!(await kirimPending(d.id))) break
     }
@@ -137,10 +131,7 @@ export function PengajuanLembur() {
     setForm(formKosong())
   }
 
-  /**
-   * Tabel penugasan disaring server per periode dan jabatan — bawaannya
-   * harian, jadi admin tidak langsung dihadapkan seluruh riwayat.
-   */
+  
   let dari: string | null = null
   let sampai: string | null = null
   if (periode === 'Harian') {
@@ -148,7 +139,7 @@ export function PengajuanLembur() {
   } else if (periode === 'Bulanan') {
     const [y, m] = bulan.split('-').map(Number)
     dari = `${bulan}-01`
-    sampai = keIso(new Date(y, m, 0)) // hari ke-0 bulan berikutnya = akhir bulan ini
+    sampai = keIso(new Date(y, m, 0)) 
   } else if (rentang) {
     dari = rentang.mulai
     sampai = rentang.sampai
@@ -159,7 +150,7 @@ export function PengajuanLembur() {
       : null,
     [],
   )
-  // Terbaru di atas; penugasan pada tanggal sama tetap berurutan seperti aslinya.
+  
   const terlihat = useMemo(
     () => (dari ? [...tersaring.data].sort((a, b) => b.tanggalIso.localeCompare(a.tanggalIso)) : []),
     [dari, tersaring.data],
@@ -169,7 +160,7 @@ export function PengajuanLembur() {
     0,
   )
 
-  /** Aksi pada satu baris tabel; galatnya tampil di kartu tabel, bukan di formulir. */
+  
   async function aksiBaris(l: Lembur, jalan: () => Promise<unknown>): Promise<string | null> {
     setGalatTabel(null)
     setSibukId(l.id)
@@ -206,7 +197,7 @@ export function PengajuanLembur() {
     if (ya) await aksiBaris(l, () => api(`/api/lembur/${l.id}/bayar`, 'DELETE'))
   }
 
-  // Keterangan periode aktif, dipakai ulang di subjudul kartu.
+ 
   let labelPeriode: string
   switch (periode) {
     case 'Harian': {
