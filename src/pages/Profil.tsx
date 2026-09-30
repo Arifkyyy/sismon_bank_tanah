@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Modal } from '@/components/Modal'
 import {
-  BarisData, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Tombol,
+  BarisData, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Tombol,
 } from '@/components/ui'
 import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
@@ -181,10 +181,6 @@ export function Profil() {
 
   const jamLembur = jumlahJamLembur(lemburBulanIni.filter((l) => l.status === 'Diterima' || l.status === 'Selesai'))
   const kendalaSelesai = kendala.filter((k) => k.status === 'Selesai').length
-  // Kepatuhan = bagian hari berjalan yang punya catatan.
-  const hariTercatat = new Set(logbook.map((l) => l.tanggalIso)).size
-  const hariBerjalan = Number(hariIniIso.slice(8, 10))
-  const patuh = hariBerjalan ? Math.round((hariTercatat / hariBerjalan) * 100) : 0
 
   async function gantiSandi() {
     if (sandiBaru.length < 8) {
@@ -331,13 +327,6 @@ export function Profil() {
               <BarisData label={petugas ? 'Jam lembur' : 'Penugasan lembur dibuat'}>
                 <span className="num">{petugas ? `${jamLembur} jam` : lemburBulanIni.length}</span>
               </BarisData>
-              {petugas && (
-                <BarisData label="Kepatuhan">
-                  <Pil status={patuh >= 96 ? 'Selesai' : patuh >= 70 ? 'Diproses' : 'Ditolak'}>
-                    {patuh}%
-                  </Pil>
-                </BarisData>
-              )}
             </IsiKartu>
           </Kartu>
 

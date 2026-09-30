@@ -46,7 +46,7 @@ backend/
 | `log_audit` | jejak hapus foto, buat/hapus akun, ubah status |
 
 Yang **tidak** disimpan karena selalu dihitung ulang: nama hari, total jam
-lembur, persentase kepatuhan, dan seluruh angka di kartu statistik. Dengan
+lembur, dan seluruh angka di kartu statistik. Dengan
 begitu angkanya tidak pernah berbeda dengan data aslinya.
 
 ## Checklist harian

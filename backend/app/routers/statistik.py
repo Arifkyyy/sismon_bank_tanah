@@ -74,7 +74,6 @@ def rekap(
     """
     Rekap per petugas dalam satu periode.
     - hari   : jumlah hari yang punya minimal satu logbook
-    - patuh  : hari / jumlah hari dalam periode (dibulatkan)
     Tanpa dari/sampai = seluruh periode (sejak logbook pertama).
     """
     sampai = sampai or f.hari_ini()
@@ -157,7 +156,6 @@ def rekap(
                 logbook=n_log,
                 kendala=kendala.get(p.id, 0),
                 lembur=f"{round(jam_lembur, 1):g} jam".replace(".", ","),
-                patuh=f"{min(round(n_hari / jumlah_hari * 100), 100)}%",
                 checklist=f"{checklist.get(p.id, 0)}/{jumlah_hari} hari",
                 upah=upah[p.id],
                 upah_dibayar=upah_dibayar[p.id],

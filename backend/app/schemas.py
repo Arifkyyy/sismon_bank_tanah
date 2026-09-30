@@ -268,7 +268,6 @@ class RekapKeluar(Skema):
     logbook: int
     kendala: int
     lembur: str
-    patuh: str
     # Lembar checklist yang sudah dikirim, mis. '12/14 hari'
     checklist: str
     # Uang lembur (rupiah) dari penugasan yang diterima dalam periode

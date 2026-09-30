@@ -1,14 +1,3 @@
-/**
- * Satu-satunya pintu frontend ke backend.
- *
- * - Alamat backend dibaca dari VITE_API_URL di berkas .env.
- * - Token login disimpan di localStorage ("Ingat perangkat ini" dicentang)
- *   atau sessionStorage (hilang saat browser ditutup).
- * - Setiap panggilan otomatis membawa token di header Authorization.
- * - Kalau backend menjawab 401 (token habis/salah), sesi dihapus dan
- *   AuthContext diberi tahu lewat event 'sesi-habis' supaya kembali ke login.
- */
-
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
 const KUNCI_TOKEN = 'sismon_token'
@@ -26,7 +15,7 @@ export function simpanToken(token: string, ingat: boolean) {
   try {
     ;(ingat ? localStorage : sessionStorage).setItem(KUNCI_TOKEN, token)
   } catch {
-    /* browser menolak penyimpanan: sesi hanya bertahan sampai halaman dimuat ulang */
+    
   }
 }
 
@@ -35,11 +24,11 @@ export function hapusToken() {
     localStorage.removeItem(KUNCI_TOKEN)
     sessionStorage.removeItem(KUNCI_TOKEN)
   } catch {
-    /* abaikan */
+   
   }
 }
 
-/** Galat dari backend, pesannya sudah siap ditampilkan ke pengguna. */
+
 export class GalatApi extends Error {
   constructor(
     message: string,
@@ -97,7 +86,7 @@ export function query(isi: Record<string, string | number | undefined | null>): 
   return s ? `?${s}` : ''
 }
 
-/** Pesan galat apa pun → teks untuk ditampilkan. */
+
 export function pesanGalat(e: unknown): string {
   return e instanceof Error ? e.message : 'Terjadi kesalahan.'
 }

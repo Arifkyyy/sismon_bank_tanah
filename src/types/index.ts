@@ -210,8 +210,6 @@ export interface RekapPetugas {
   kendala: number
   /** sudah berupa teks, mis. '12 jam' */
   lembur: string
-  /** sudah berupa persen, mis. '93%' */
-  patuh: string
   /** uang lembur (rupiah) dari penugasan yang diterima dalam periode */
   upah: number
   upahDibayar: number

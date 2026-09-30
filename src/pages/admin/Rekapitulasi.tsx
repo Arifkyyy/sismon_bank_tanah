@@ -3,7 +3,7 @@ import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
-  Baris, IsiKartu, Kartu, KopKartu, Pil, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
+  Baris, IsiKartu, Kartu, KopKartu, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
@@ -14,14 +14,6 @@ import { useApi } from '@/lib/useApi'
 import { daftarBulan, formatRentang } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Jabatan, RekapPetugas } from '@/types'
-
-/** Kepatuhan di bawah 70% ditandai merah, 70–95% emas, sisanya hijau. */
-function statusPatuh(patuh: string) {
-  const n = Number.parseInt(patuh, 10)
-  if (n >= 96) return 'Selesai' as const
-  if (n >= 70) return 'Diproses' as const
-  return 'Ditolak' as const
-}
 
 const BULAN_PILIHAN = daftarBulan()
 
@@ -53,9 +45,6 @@ export function Rekapitulasi() {
   const totalKendala = terlihat.reduce((n, r) => n + r.kendala, 0)
   const totalJam = terlihat.reduce((n, r) => n + jamDari(r.lembur), 0)
   const totalUpah = terlihat.reduce((n, r) => n + r.upah, 0)
-  const rataPatuh = terlihat.length
-    ? Math.round(terlihat.reduce((n, r) => n + (Number.parseInt(r.patuh, 10) || 0), 0) / terlihat.length)
-    : 0
 
   // Dipakai sebagai keterangan periode di kartu dan kartu statistik.
   const labelPeriode =
@@ -79,11 +68,11 @@ export function Rekapitulasi() {
       namaLembar: 'Rekapitulasi',
       kepala: [
         'Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur',
-        'Uang lembur (Rp)', 'Sudah dibayar (Rp)', 'Belum dibayar (Rp)', 'Kepatuhan',
+        'Uang lembur (Rp)', 'Sudah dibayar (Rp)', 'Belum dibayar (Rp)',
       ],
       baris: terlihat.map((r) => [
         r.nama, JABATAN_PANJANG[r.jabatan], r.hari, r.logbook, r.kendala, r.lembur,
-        r.upah, r.upahDibayar, r.upah - r.upahDibayar, r.patuh,
+        r.upah, r.upahDibayar, r.upah - r.upahDibayar,
       ]),
     })
   }
@@ -136,9 +125,8 @@ export function Rekapitulasi() {
         </IsiKartu>
       </Kartu>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
         <StatCard nama="Total logbook" angka={totalLogbook.toLocaleString('id-ID')} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard nama="Kehadiran tercatat" angka={String(rataPatuh)} satuan="%" ikon={<Ikon.Centang size={17} />} ket="Rata-rata kepatuhan petugas" />
         <StatCard nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={`Uang lembur Rp ${totalUpah.toLocaleString('id-ID')}`} />
         <StatCard nama="Kendala dilaporkan" angka={String(totalKendala)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`Dari ${terlihat.length} petugas`} />
       </div>
@@ -154,10 +142,10 @@ export function Rekapitulasi() {
           }
         />
         <StatusData memuat={memuat} galat={galat} onUlang={muat} />
-        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Uang lembur', 'Kepatuhan']} maksTinggi={560}>
+        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Uang lembur']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
-              <td colSpan={8} className="px-5 py-12 text-center">
+              <td colSpan={7} className="px-5 py-12 text-center">
                 <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
                   <Ikon.Orang size={19} />
                 </span>
@@ -191,9 +179,6 @@ export function Rekapitulasi() {
                       Rp {(r.upah - r.upahDibayar).toLocaleString('id-ID')} belum dibayar
                     </span>
                   )}
-                </td>
-                <td>
-                  <Pil status={statusPatuh(r.patuh)}>{r.patuh}</Pil>
                 </td>
               </Baris>
             ))
