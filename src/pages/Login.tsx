@@ -5,7 +5,8 @@ import { AKAR } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { pesanGalat } from '@/lib/api'
-import { Tombol } from '@/components/ui'
+import { Modal } from '@/components/Modal'
+import { Catatan, Tombol } from '@/components/ui'
 
 export function Login() {
   const { masuk } = useAuth()
@@ -16,6 +17,7 @@ export function Login() {
   const [ingat, setIngat] = useState(false)
   const [galat, setGalat] = useState('')
   const [mengirim, setMengirim] = useState(false)
+  const [lupa, setLupa] = useState(false)
 
   async function kirim(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -154,9 +156,9 @@ export function Login() {
               />{' '}
               Ingat perangkat ini
             </label>
-            <a href="#" onClick={(e) => e.preventDefault()} className="font-semibold text-hijau no-underline">
+            <button type="button" onClick={() => setLupa(true)} className="font-semibold text-hijau hover:underline">
               Lupa kata sandi?
-            </a>
+            </button>
           </div>
 
           {galat && (
@@ -171,6 +173,30 @@ export function Login() {
           </Tombol>
         </form>
       </div>
+
+      {lupa && (
+        <Modal
+          judul="Lupa kata sandi"
+          sub="Kata sandi diatur ulang oleh Super Admin"
+          onTutup={() => setLupa(false)}
+          aksi={
+            <Tombol kecil onClick={() => setLupa(false)}>
+              Mengerti
+            </Tombol>
+          }
+        >
+          {/* Belum ada server email, jadi atur ulang sandi lewat Kelola akun milik super admin. */}
+          <ol className="m-0 list-decimal space-y-2 pl-5 text-[13px] leading-relaxed text-teks">
+            <li>Hubungi Super Admin dan sebutkan email kantor Anda.</li>
+            <li>Super Admin mengatur ulang kata sandi Anda dan memberikan kata sandi sementara.</li>
+            <li>Masuk dengan kata sandi sementara itu, lalu segera ganti lewat menu Profil.</li>
+          </ol>
+          <Catatan>
+            Demi keamanan, jangan kirim kata sandi lewat grup chat. Super Admin yang lupa kata sandinya
+            sendiri dapat menghubungi pengelola sistem.
+          </Catatan>
+        </Modal>
+      )}
     </div>
   )
 }
