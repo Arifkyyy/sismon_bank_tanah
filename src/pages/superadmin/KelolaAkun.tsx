@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/Modal'
 import { StatusData } from '@/components/StatusData'
 import {
-  AksiBaris, Baris, GridForm, Input, IsiKartu, KakiForm, KakiTabel, Kartu, Kolom, KopKartu,
+  AksiBaris, Baris, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu,
   Peringatan, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, TagJabatan, Tombol, TombolIkon,
 } from '@/components/ui'
 import { useKonfirmasi } from '@/context/KonfirmasiContext'
@@ -12,7 +12,7 @@ import { useApi } from '@/lib/useApi'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
 import type { AkunAdmin, Jabatan, Petugas, Status } from '@/types'
 
-/** Jawaban POST /api/akun dan /api/akun/{id}/reset-sandi. */
+
 interface HasilSandi {
   id: number
   email: string
@@ -35,7 +35,7 @@ export function KelolaAkun() {
   const [jabatanSaring, setJabatanSaring] = useState<Jabatan | 'Semua'>('Semua')
   const [galatAksi, setGalatAksi] = useState<string | null>(null)
   const [sibuk, setSibuk] = useState(false)
-  // Sandi sementara hanya ditampilkan sekali, tidak bisa diminta ulang.
+  
   const [sandiBaru, setSandiBaru] = useState<{ nama: string; hasil: HasilSandi } | null>(null)
   const [akanDihapus, setAkanDihapus] = useState<{ id: number; nama: string } | null>(null)
   const [ketikan, setKetikan] = useState('')
@@ -49,7 +49,7 @@ export function KelolaAkun() {
 
   const buatPetugas = form.jenis === 'Akun petugas'
 
-  /** Pembungkus satu aksi: kunci tombol, simpan pesan galat, muat ulang daftar. */
+ 
   async function jalankan(aksi: () => Promise<unknown>) {
     setSibuk(true)
     setGalatAksi(null)
@@ -213,7 +213,7 @@ export function KelolaAkun() {
               admin.data.map((a) => (
                 <Baris key={a.id}>
                   <td>
-                    {/* jabatan="OB" hanya untuk warna hijau avatar; admin tidak berjabatan */}
+                
                     <SelOrang nama={a.nama} jabatan="OB" keterangan="Admin" foto={a.fotoProfil} />
                   </td>
                   <td className="text-teks-lembut">{a.email}</td>
@@ -326,11 +326,8 @@ export function KelolaAkun() {
               ))
             )}
           </Tabel>
-          <KakiTabel
-            dari={petugas.data.length ? 1 : 0}
-            ke={petugas.data.length}
-            total={petugas.data.length}
-          />
+          
+          
         </Kartu>
 
         <Kartu className="border-[#F0CFCB]">

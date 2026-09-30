@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { StatCard } from '@/components/StatCard'
 import {
-  GridForm, Input, IsiKartu, KakiForm, KakiTabel, Kartu, Kolom, KopKartu, Peringatan,
+  GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Peringatan,
   PilihRapi, Tombol,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
@@ -15,16 +15,13 @@ import type { FotoArsip, Jabatan, StatistikFoto } from '@/types'
 
 const VARIAN = ['a', 'b', 'c'] as const
 
-/**
- * Byte → angka satu desimal gaya Indonesia beserta satuannya. Satuannya turun
- * ke MB/KB supaya penyimpanan yang masih kecil tidak tampil "0,0 GB".
- */
+
 function keUkuran(byte: number): { angka: string; satuan: string } {
   const [pembagi, satuan] = byte >= 1024 ** 3 ? [1024 ** 3, 'GB'] : byte >= 1024 ** 2 ? [1024 ** 2, 'MB'] : [1024, 'KB']
   return { angka: (byte / pembagi).toFixed(1).replace('.', ','), satuan }
 }
 
-/** Tanggal bawaan hapus massal: enam bulan sebelum hari ini. */
+
 function enamBulanLalu(): string {
   const t = new Date()
   t.setMonth(t.getMonth() - 6)
@@ -176,8 +173,6 @@ export function HapusDataFoto() {
             </div>
           </div>
 
-          {/* Arsip foto bisa puluhan ribu berkas, jadi petaknya digulir di dalam
-              kartu supaya tombol hapus massal tetap terlihat tanpa menggulir halaman */}
           <div className="scrollbar-lembut -mx-1 grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3.5 px-1 py-1 lg:max-h-[440px] lg:overflow-y-auto lg:overscroll-contain">
             {arsip.data.length === 0 ? (
               <p className="col-span-full py-10 text-center text-[12.5px] text-teks-lembut">
@@ -227,11 +222,6 @@ export function HapusDataFoto() {
             )}
           </div>
         </IsiKartu>
-        <KakiTabel
-          dari={arsip.data.length ? 1 : 0}
-          ke={arsip.data.length}
-          total={statistik.data.total}
-        />
       </Kartu>
 
       <Kartu className="mt-4.5 border-[#F0CFCB]">
