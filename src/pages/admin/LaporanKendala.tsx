@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PratinjauFoto } from '@/components/Foto'
 import { Modal } from '@/components/Modal'
+import { PilihPetugas } from '@/components/PilihPetugas'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
@@ -17,7 +18,7 @@ import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
 import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Jabatan, Kendala, Status } from '@/types'
+import type { Jabatan, Kendala, Petugas, Status } from '@/types'
 
 const BULAN_PILIHAN = daftarBulan()
 
@@ -35,6 +36,13 @@ export function LaporanKendalaAdmin() {
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
   const [status, setStatus] = useState<Status | 'Semua'>('Semua')
+  const [petugas, setPetugas] = useState<Petugas | null>(null)
+
+  /** Petugas terpilih dilepas bila jabatannya tidak cocok lagi dengan saringan jabatan. */
+  function pilihJabatan(j: Jabatan | 'Semua') {
+    setJabatan(j)
+    if (petugas && j !== 'Semua' && petugas.jabatan !== j) setPetugas(null)
+  }
 
   const [sibuk, setSibuk] = useState<number | null>(null)
   const [galatAksi, setGalatAksi] = useState<string | null>(null)
@@ -45,7 +53,12 @@ export function LaporanKendalaAdmin() {
     () => jendelaPeriode(periode, tanggal, bulan, rentang),
     [periode, tanggal, bulan, rentang],
   )
-  const dasar = jendela ? { ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan } : null
+  const dasar = jendela
+    ? { ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan, petugas_id: petugas?.id }
+    : null
+  const saringan = [jabatan === 'Semua' ? '' : JABATAN_PANJANG[jabatan], petugas?.nama ?? '']
+    .filter(Boolean)
+    .join(' · ')
 
   /**
    * Dua pengambilan dengan sengaja: yang pertama tanpa saringan status, dipakai
@@ -102,7 +115,7 @@ export function LaporanKendalaAdmin() {
       judul: 'Laporan Kendala',
       keterangan: [
         `Periode: ${labelPeriode}`,
-        jabatan === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatan],
+        saringan || 'Semua petugas',
         status === 'Semua' ? 'Semua status' : `Status ${status}`,
         `${terlihat.length} laporan`,
       ].join(' · '),
@@ -182,7 +195,7 @@ export function LaporanKendalaAdmin() {
             <PilihRapi
               aria-label="Jabatan pelapor"
               value={jabatan}
-              onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+              onChange={(e) => pilihJabatan(e.target.value as Jabatan | 'Semua')}
               className="ml-auto"
             >
               <option value="Semua">Semua jabatan</option>
@@ -192,6 +205,7 @@ export function LaporanKendalaAdmin() {
                 </option>
               ))}
             </PilihRapi>
+            <PilihPetugas jabatan={jabatan} nilai={petugas} onPilih={setPetugas} />
             <PilihRapi
               aria-label="Status laporan"
               value={status}
@@ -214,7 +228,7 @@ export function LaporanKendalaAdmin() {
       <Kartu className="mt-4.5">
         <KopKartu
           judul="Laporan kendala masuk"
-          sub={`Ubah status setelah kendala ditindaklanjuti · ${labelPeriode}${jabatan === 'Semua' ? '' : ` · ${JABATAN_PANJANG[jabatan]}`}`}
+          sub={`Ubah status setelah kendala ditindaklanjuti · ${labelPeriode}${saringan ? ` · ${saringan}` : ''}`}
           aksi={
             <span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">
               {terlihat.length} laporan
@@ -235,7 +249,7 @@ export function LaporanKendalaAdmin() {
                 <span className="mt-0.5 block text-[12px] text-teks-lembut">
                   {alamat === null
                     ? 'Pilih rentang tanggal dulu.'
-                    : 'Ganti periode, jabatan, atau status laporan.'}
+                    : 'Ganti periode, jabatan, nama petugas, atau status laporan.'}
                 </span>
               </td>
             </tr>

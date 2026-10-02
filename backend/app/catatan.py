@@ -64,10 +64,13 @@ def saring(
     dari: date | None,
     sampai: date | None,
     jabatan: str | None,
+    petugas_id: int | None = None,
 ) -> Select:
     """Filter umum. Petugas hanya melihat catatan miliknya atau yang ia kirim."""
     if user.peran == "user":
         q = q.where(or_(model.petugas_id == user.id, model.dibuat_oleh == user.id))
+    if petugas_id:
+        q = q.where(model.petugas_id == petugas_id)
     if tanggal:
         q = q.where(model.waktu >= f.awal_hari(tanggal), model.waktu < f.akhir_hari(tanggal))
     if dari:

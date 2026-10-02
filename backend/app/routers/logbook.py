@@ -23,12 +23,13 @@ def daftar(
     dari: date | None = None,
     sampai: date | None = None,
     jabatan: Jabatan | None = None,
+    petugas_id: int | None = None,
     batas: int = Query(200, ge=1, le=1000),
     db: Session = Depends(ambil_db),
     user: User = Depends(user_saat_ini),
 ):
     q = select(Logbook).options(selectinload(Logbook.petugas), selectinload(Logbook.foto))
-    q = saring(q, Logbook, user, tanggal, dari, sampai, jabatan)
+    q = saring(q, Logbook, user, tanggal, dari, sampai, jabatan, petugas_id)
     baris = list(db.scalars(q.order_by(Logbook.waktu.desc()).limit(batas)))
     return tampil.daftar_logbook(db, baris)
 

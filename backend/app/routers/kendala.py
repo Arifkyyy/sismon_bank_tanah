@@ -25,12 +25,13 @@ def daftar(
     dari: date | None = None,
     sampai: date | None = None,
     jabatan: Jabatan | None = None,
+    petugas_id: int | None = None,
     batas: int = Query(200, ge=1, le=1000),
     db: Session = Depends(ambil_db),
     user: User = Depends(user_saat_ini),
 ):
     q = select(Kendala).options(selectinload(Kendala.petugas), selectinload(Kendala.foto))
-    q = saring(q, Kendala, user, tanggal, dari, sampai, jabatan)
+    q = saring(q, Kendala, user, tanggal, dari, sampai, jabatan, petugas_id)
     if status:
         q = q.where(Kendala.status == status)
     return [tampil.kendala(k) for k in db.scalars(q.order_by(Kendala.waktu.desc()).limit(batas))]

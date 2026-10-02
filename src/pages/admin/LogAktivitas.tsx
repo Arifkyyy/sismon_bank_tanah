@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PratinjauFoto } from '@/components/Foto'
+import { PilihPetugas } from '@/components/PilihPetugas'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import {
@@ -15,7 +16,7 @@ import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
 import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
-import type { Jabatan, Logbook } from '@/types'
+import type { Jabatan, Logbook, Petugas } from '@/types'
 
 const BULAN_PILIHAN = daftarBulan()
 
@@ -26,28 +27,42 @@ export function LogAktivitas() {
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
+  const [petugas, setPetugas] = useState<Petugas | null>(null)
+
+  /** Petugas terpilih dilepas bila jabatannya tidak cocok lagi dengan saringan jabatan. */
+  function pilihJabatan(j: Jabatan | 'Semua') {
+    setJabatan(j)
+    if (petugas && j !== 'Semua' && petugas.jabatan !== j) setPetugas(null)
+  }
 
   /**
    * Seluruh penyaringan dikerjakan backend: periode jadi dari/sampai, jabatan
-   * dikirim apa adanya. `jendela` bernilai null saat Custom dipilih tapi
-   * rentangnya belum diisi — saat itu data sengaja tidak diambil.
+   * dan petugas dikirim apa adanya. `jendela` bernilai null saat Custom dipilih
+   * tapi rentangnya belum diisi — saat itu data sengaja tidak diambil.
    */
   const jendela = useMemo(
     () => jendelaPeriode(periode, tanggal, bulan, rentang),
     [periode, tanggal, bulan, rentang],
   )
   const alamat = jendela
-    ? `/api/logbook${query({ ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan })}`
+    ? `/api/logbook${query({
+        ...jendela,
+        jabatan: jabatan === 'Semua' ? '' : jabatan,
+        petugas_id: petugas?.id,
+      })}`
     : null
+  const saringan = [jabatan === 'Semua' ? '' : JABATAN_PANJANG[jabatan], petugas?.nama ?? '']
+    .filter(Boolean)
+    .join(' · ')
   const { data: terlihat, memuat, galat, muat } = useApi<Logbook[]>(alamat, [])
 
   function unduh() {
     unduhExcel({
-      namaBerkas: `log-aktivitas-${jendela?.dari ?? 'semua'}`,
+      namaBerkas: `log-aktivitas-${jendela?.dari ?? 'semua'}${petugas ? `-${petugas.nama.toLowerCase().replace(/\s+/g, '-')}` : ''}`,
       judul: 'Log Aktivitas Petugas',
       keterangan: [
         `Periode: ${labelPeriode}`,
-        jabatan === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatan],
+        saringan || 'Semua petugas',
         `${terlihat.length} catatan`,
       ].join(' · '),
       namaLembar: 'Log aktivitas',
@@ -120,7 +135,7 @@ export function LogAktivitas() {
             <PilihRapi
               aria-label="Jabatan petugas"
               value={jabatan}
-              onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+              onChange={(e) => pilihJabatan(e.target.value as Jabatan | 'Semua')}
               className="ml-auto"
             >
               <option value="Semua">Semua jabatan</option>
@@ -130,6 +145,7 @@ export function LogAktivitas() {
                 </option>
               ))}
             </PilihRapi>
+            <PilihPetugas jabatan={jabatan} nilai={petugas} onPilih={setPetugas} />
             <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
               <Ikon.Unduh size={15} /> Unduh Excel
             </Tombol>
@@ -140,7 +156,7 @@ export function LogAktivitas() {
       <Kartu>
         <KopKartu
           judul="Log aktivitas petugas"
-          sub={`Setiap catatan wajib disertai foto dari kamera · ${labelPeriode}${jabatan === 'Semua' ? '' : ` · ${JABATAN_PANJANG[jabatan]}`}`}
+          sub={`Setiap catatan wajib disertai foto dari kamera · ${labelPeriode}${saringan ? ` · ${saringan}` : ''}`}
           aksi={
             <span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">
               {terlihat.length} catatan
@@ -161,7 +177,7 @@ export function LogAktivitas() {
                 <span className="mt-0.5 block text-[12px] text-teks-lembut">
                   {alamat === null
                     ? 'Pilih rentang tanggal dulu.'
-                    : 'Ganti periode atau pilih jabatan lain.'}
+                    : 'Ganti periode, jabatan, atau nama petugas.'}
                 </span>
               </td>
             </tr>
