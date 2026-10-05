@@ -4,6 +4,7 @@ import { StatCard } from '@/components/StatCard'
 import { IsiKartu, Kartu, KopKartu, Tombol } from '@/components/ui'
 import { KartuLembur } from '@/pages/user/Lembur'
 import { StatusData } from '@/components/StatusData'
+import { KartuShiftSaya } from '@/components/shift/KartuShiftSaya'
 import { AKAR } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
 import { useLemburSaya } from '@/context/LemburContext'
@@ -133,6 +134,7 @@ export function DashboardUser() {
         </Kartu>
 
         <div className="grid content-start gap-4.5">
+          <KartuShiftSaya />
           {lembur && <KartuLembur lembur={lembur} />}
           <Kartu>
             <KopKartu judul="Pengumuman" sub="Dari Bagian Umum" />

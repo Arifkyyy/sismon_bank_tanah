@@ -20,6 +20,7 @@ const pengelolaan: GrupMenu = {
     { id: 'user', label: 'Data user', path: 'data-user', ikon: 'Orang' },
     { id: 'rekap', label: 'Rekapitulasi', path: 'rekapitulasi', ikon: 'Rekap' },
     { id: 'lembur', label: 'Pengajuan lembur', path: 'pengajuan-lembur', ikon: 'Jam' },
+    { id: 'shift', label: 'Jadwal Shift', path: 'jadwal-shift', ikon: 'Kalender' },
   ],
 }
 
@@ -47,6 +48,7 @@ export const MENU: Record<Peran, GrupMenu[]> = {
       judul: 'Harian',
       item: [
         { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
+        { id: 'jadwal', label: 'Jadwal saya', path: 'jadwal-saya', ikon: 'Kalender' },
         { id: 'logbook', label: 'Aktivitas', path: 'logbook', ikon: 'Buku' },
         { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas' },
       ],
@@ -81,9 +83,11 @@ export const JUDUL: Record<string, [string, string]> = {
   rekapitulasi: ['Rekapitulasi', 'Gabungan logbook dan lembur per periode'],
   'laporan-kendala': ['Laporan kendala', 'Kendala lapangan yang dilaporkan petugas'],
   'pengajuan-lembur': ['Pengajuan lembur', 'Buat penugasan lembur dan pantau jawabannya'],
+  'jadwal-shift': ['Jadwal Shift', 'Susun jadwal, atur jenis shift, dan proses permintaan tukar'],
   'kelola-akun': ['Kelola akun', 'Tambah, ubah, dan hapus akun admin maupun petugas'],
   'hapus-data-foto': ['Hapus data foto', 'Bersihkan arsip foto logbook dan laporan kendala'],
   logbook: ['Aktivitas', 'Catat aktivitas Anda hari ini'],
+  'jadwal-saya': ['Jadwal saya', 'Jadwal shift Anda dan permintaan tukar shift'],
   'rekap-harian': ['Rekap harian', 'Ringkasan aktivitas dan kendala Anda'],
   lembur: ['Lembur', 'Penugasan lembur yang ditujukan kepada Anda'],
   profil: ['Profil', 'Data akun dan pengaturan keamanan'],

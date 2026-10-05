@@ -110,6 +110,47 @@ belum dibayar. Rekap per petugas (`/statistik/rekap`) membawa `upah` dan
 | POST | `/akun/{id}/reset-sandi` | → sandi sementara baru |
 | DELETE | `/akun/{id}` | permanen, data dan fotonya ikut terhapus |
 
+### Jadwal shift
+| Metode | Alamat | Hak akses | Keterangan |
+| --- | --- | --- | --- |
+| GET | `/shift/jenis?jabatan=&semua=` | admin | `Shift[]`; Libur selalu ikut; `semua=true` ikut yang nonaktif |
+| POST | `/shift/jenis` | admin | `{nama, kode, mulai, selesai, jabatan[], warna, aktif}` |
+| PUT | `/shift/jenis/{id}` | admin | isian sama; Libur tidak bisa diubah |
+| POST | `/shift/jenis/{id}/aktif` | admin | `{aktif}` |
+| DELETE | `/shift/jenis/{id}` | admin | hanya bila belum pernah dipakai (`dipakai: false`) |
+| GET | `/shift/jadwal?dari=&sampai=&jabatan=&cari=` | admin | `{dari, sampai, petugas[], kotak[]}`; maks. 62 hari |
+| PUT | `/shift/jadwal` | admin | `{petugasId, tanggal, shiftId}`; `shiftId: null` = kosongkan |
+| POST | `/shift/jadwal/massal` | admin | `{petugasIds[], dari, sampai, shiftId, timpa}` → `{diisi, dilewati, tukarDibatalkan}` |
+| POST | `/shift/jadwal/salin` | admin | `{mode: "minggu"\|"bulan", dari, sampai, jabatan, timpa}` |
+| GET | `/shift/saya?dari=&sampai=` | petugas | satu baris per hari (shift kosong = belum dijadwalkan); bawaan hari ini + 6 hari |
+| GET | `/shift/rekan?tanggal=` | petugas | rekan satu jabatan + shift mereka di tanggal itu |
+| GET | `/shift/rekan/{id}/jadwal?dari=&sampai=` | petugas | jadwal seorang rekan; bawaan hari ini + 13 hari |
+| POST | `/shift/tukar` | petugas | `{tanggalSaya, rekanId, tanggalRekan, alasan}` |
+| POST | `/shift/tukar/{id}/jawab` | rekan | `{setuju, alasan}` |
+| POST | `/shift/tukar/{id}/putuskan` | admin | `{setuju, alasan}`; tolak wajib alasan; setuju = jadwal langsung ditukar |
+| POST | `/shift/tukar/{id}/batal` | pengaju | selama masih Menunggu Rekan / Menunggu Admin |
+| GET | `/shift/tukar?status=&batas=` | admin | terbaru lebih dulu |
+| GET | `/shift/tukar/saya` | petugas | yang saya ajukan dan yang ditujukan ke saya (`peranSaya`) |
+
+Tanggal jadwal = tanggal shift **dimulai**: Malam 6 Okt 23.00 – 7 Okt 07.00
+tercatat 6 Okt. `selesai < mulai` = lintas hari (`lintasHari`), `selesai = mulai`
+= 24 jam (`duaPuluhEmpatJam`). Satu petugas hanya punya satu kotak per tanggal,
+dan shift yang diberikan harus berlaku untuk jabatannya (Libur berlaku untuk semua).
+
+`massal` dan `salin` dengan `timpa: false` dijawab **409** bila ada kotak berisi
+shift lain yang akan tertimpa. Tampilkan pesannya sebagai konfirmasi, lalu kirim
+ulang dengan `timpa: true`. Salin minggu mengambil 7 hari sebelumnya; salin bulan
+mengambil tanggal yang sama di bulan sebelumnya (tanggal yang tidak ada dilewati).
+Shift sumber yang nonaktif atau tidak cocok jabatan dilewati (`dilewati`).
+
+Tukar shift: status `Menunggu Rekan` → `Menunggu Admin` → `Disetujui` / `Ditolak`,
+atau `Dibatalkan`. Saat disetujui, kotak kedua petugas ditukar pada tanggal
+pemohon **dan** tanggal rekan (satu tanggal bila sama), lalu kotaknya diberi tanda
+`tukar: true` (⇄). Tanggal yang sudah lewat tidak bisa diajukan atau disetujui.
+Kotak yang ikut permintaan berjalan bertanda `diajukanTukar: true` dan tidak bisa
+diajukan lagi; bila admin mengubah kotak itu, permintaannya otomatis dibatalkan
+(`catatanBatal: "Jadwal diubah admin"`).
+
 ---
 
 ## Tipe TypeScript untuk checklist

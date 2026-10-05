@@ -248,6 +248,133 @@ export interface StatistikFoto {
   lebihEnamBulan: number
 }
 
+/* ------------------------------------------------------------ Jadwal shift */
+
+/** Nama warna shift; kelas Tailwind-nya di src/lib/shift.ts. */
+export type WarnaShift = 'hijau' | 'hijau-tua' | 'emas' | 'tanah' | 'ink' | 'abu'
+
+/** Jenis shift — GET /api/shift/jenis. Libur: `sistem: true`, tanpa jam. */
+export interface Shift {
+  id: number
+  nama: string
+  /** 1–2 huruf, tampil di kotak jadwal */
+  kode: string
+  /** '07:00' untuk isian form; kosong untuk Libur */
+  mulai?: string | null
+  selesai?: string | null
+  /** '07.00 – 15.00' untuk tampilan; kosong untuk Libur */
+  rentang?: string | null
+  /** jam selesai < jam mulai, mis. Malam 23.00 – 07.00 */
+  lintasHari: boolean
+  /** jam selesai = jam mulai */
+  duaPuluhEmpatJam: boolean
+  jabatan: Jabatan[]
+  warna: WarnaShift
+  aktif: boolean
+  sistem: boolean
+  /** sudah dipakai jadwal/tukar: tidak bisa dihapus, hanya dinonaktifkan */
+  dipakai: boolean
+}
+
+export type StatusTukar = 'Menunggu Rekan' | 'Menunggu Admin' | 'Disetujui' | 'Ditolak' | 'Dibatalkan'
+
+/** Petugas di tabel jadwal admin. */
+export interface PetugasJadwal {
+  id: number
+  nama: string
+  jabatan: Jabatan
+  status: Status
+  fotoProfil?: string | null
+}
+
+/** Satu kotak terisi di tabel jadwal admin. */
+export interface KotakJadwal {
+  petugasId: number
+  /** ISO '2026-10-06' */
+  tanggal: string
+  shiftId: number
+  /** hasil tukar shift (tanda ⇄) */
+  tukar: boolean
+  /** ikut permintaan tukar yang masih berjalan */
+  diajukanTukar: boolean
+}
+
+/** GET /api/shift/jadwal */
+export interface JadwalPeriode {
+  dari: string
+  sampai: string
+  petugas: PetugasJadwal[]
+  kotak: KotakJadwal[]
+}
+
+/** Satu hari di Jadwal Saya — GET /api/shift/saya. Shift kosong = belum dijadwalkan. */
+export interface JadwalSaya {
+  tanggal: string
+  tanggalTeks: string
+  hari: string
+  shift?: Shift | null
+  tukar: boolean
+  diajukanTukar: boolean
+  diubahPada?: string | null
+  diaturOleh?: string | null
+}
+
+/** Rekan satu jabatan dan shiftnya di suatu tanggal — GET /api/shift/rekan. */
+export interface RekanShift {
+  id: number
+  nama: string
+  status: Status
+  fotoProfil?: string | null
+  shift?: Shift | null
+  diajukanTukar: boolean
+}
+
+/** Satu hari jadwal rekan — GET /api/shift/rekan/{id}/jadwal. */
+export interface HariRekan {
+  tanggal: string
+  tanggalTeks: string
+  hari: string
+  shift?: Shift | null
+  diajukanTukar: boolean
+}
+
+export interface PihakTukar {
+  id: number
+  nama: string
+  fotoProfil?: string | null
+  tanggal: string
+  tanggalTeks: string
+  hari: string
+  shift: Shift
+}
+
+/** Permintaan tukar shift — GET /api/shift/tukar dan /tukar/saya. */
+export interface TukarShift {
+  id: number
+  status: StatusTukar
+  jabatan: Jabatan
+  pemohon: PihakTukar
+  rekan: PihakTukar
+  alasan: string
+  alasanTolak?: string | null
+  ditolakOleh?: 'rekan' | 'admin' | null
+  catatanBatal?: string | null
+  dibuatPada: string
+  dijawabRekanPada?: string | null
+  diputusPada?: string | null
+  diputusOleh?: string | null
+  diperbaruiPada: string
+  /** hanya di /tukar/saya */
+  peranSaya?: 'pemohon' | 'rekan' | null
+}
+
+/** Hasil isi massal / salin periode. */
+export interface HasilMassal {
+  diisi: number
+  dilewati: number
+  tukarDibatalkan: number
+}
+
 /** Satu baris daftar akun admin — GET /api/akun/admin. */
 export interface AkunAdmin {
   id: number

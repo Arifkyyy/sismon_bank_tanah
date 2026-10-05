@@ -427,3 +427,177 @@ class LanggananMasuk(Skema):
 
 class LanggananHapus(Skema):
     endpoint: str = Field(min_length=1, max_length=2000)
+
+
+# ---------------------------------------------------------------- Jadwal shift
+
+WarnaShift = Literal["hijau", "hijau-tua", "emas", "tanah", "ink", "abu"]
+StatusTukar = Literal["Menunggu Rekan", "Menunggu Admin", "Disetujui", "Ditolak", "Dibatalkan"]
+
+
+class ShiftKeluar(Skema):
+    """= interface Shift."""
+    id: int
+    nama: str
+    kode: str
+    # '07:00' untuk isian form; kosong untuk Libur.
+    mulai: str | None = None
+    selesai: str | None = None
+    # '07.00 – 15.00' untuk tampilan; kosong untuk Libur.
+    rentang: str | None = None
+    lintas_hari: bool = False
+    dua_puluh_empat_jam: bool = False
+    jabatan: list[Jabatan]
+    warna: WarnaShift
+    aktif: bool
+    sistem: bool
+    # Sudah dipakai di jadwal/tukar = tidak bisa dihapus, hanya dinonaktifkan.
+    dipakai: bool = False
+
+
+class ShiftMasuk(Skema):
+    nama: str = Field(min_length=1, max_length=40)
+    kode: str = Field(min_length=1, max_length=2, pattern=r"^[A-Za-z0-9]{1,2}$")
+    mulai: time
+    selesai: time
+    jabatan: list[Jabatan] = Field(min_length=1)
+    warna: WarnaShift
+    aktif: bool = True
+
+
+class AktifShift(Skema):
+    aktif: bool
+
+
+class PetugasJadwal(Skema):
+    id: int
+    nama: str
+    jabatan: Jabatan
+    status: StatusAkun
+    foto_profil: str | None = None
+
+
+class KotakJadwal(Skema):
+    petugas_id: int
+    tanggal: str  # ISO
+    shift_id: int
+    # Kotak hasil tukar shift (tanda ⇄).
+    tukar: bool = False
+    # Ikut permintaan tukar yang masih berjalan.
+    diajukan_tukar: bool = False
+
+
+class JadwalPeriode(Skema):
+    dari: str
+    sampai: str
+    petugas: list[PetugasJadwal]
+    kotak: list[KotakJadwal]
+
+
+class AturKotak(Skema):
+    petugas_id: int
+    tanggal: date
+    # None = kosongkan.
+    shift_id: int | None = None
+
+
+class HasilAturKotak(Skema):
+    kotak: KotakJadwal | None = None
+    tukar_dibatalkan: int = 0
+
+
+class IsiMassal(Skema):
+    petugas_ids: list[int] = Field(min_length=1)
+    dari: date
+    sampai: date
+    shift_id: int
+    # false = tolak (409) bila ada kotak terisi dengan shift lain.
+    timpa: bool = False
+
+
+class SalinPeriode(Skema):
+    """Salin isi periode sebelumnya ke periode dari–sampai."""
+    mode: Literal["minggu", "bulan"]
+    dari: date
+    sampai: date
+    jabatan: Jabatan | None = None
+    timpa: bool = False
+
+
+class HasilMassal(Skema):
+    diisi: int
+    # Kotak yang tidak disalin karena shift sumbernya nonaktif / tidak cocok jabatan.
+    dilewati: int = 0
+    tukar_dibatalkan: int = 0
+
+
+class JadwalSaya(Skema):
+    """Satu hari di halaman Jadwal Saya; shift kosong = belum dijadwalkan."""
+    tanggal: str  # ISO
+    tanggal_teks: str
+    hari: str
+    shift: ShiftKeluar | None = None
+    tukar: bool = False
+    diajukan_tukar: bool = False
+    diubah_pada: str | None = None
+    diatur_oleh: str | None = None
+
+
+class RekanShift(Skema):
+    id: int
+    nama: str
+    status: StatusAkun
+    foto_profil: str | None = None
+    shift: ShiftKeluar | None = None
+    diajukan_tukar: bool = False
+
+
+class HariRekan(Skema):
+    tanggal: str
+    tanggal_teks: str
+    hari: str
+    shift: ShiftKeluar | None = None
+    diajukan_tukar: bool = False
+
+
+class AjukanTukar(Skema):
+    tanggal_saya: date
+    rekan_id: int
+    tanggal_rekan: date
+    alasan: str = Field(min_length=1, max_length=500)
+
+
+class JawabTukar(Skema):
+    setuju: bool
+    alasan: str = Field(default="", max_length=500)
+
+
+class PihakTukar(Skema):
+    id: int
+    nama: str
+    foto_profil: str | None = None
+    tanggal: str  # ISO
+    tanggal_teks: str
+    hari: str
+    shift: ShiftKeluar
+
+
+class TukarKeluar(Skema):
+    """= interface TukarShift."""
+    id: int
+    status: StatusTukar
+    jabatan: Jabatan
+    pemohon: PihakTukar
+    rekan: PihakTukar
+    alasan: str
+    alasan_tolak: str | None = None
+    # 'rekan' / 'admin' bila Ditolak.
+    ditolak_oleh: Literal["rekan", "admin"] | None = None
+    catatan_batal: str | None = None
+    dibuat_pada: str
+    dijawab_rekan_pada: str | None = None
+    diputus_pada: str | None = None
+    diputus_oleh: str | None = None
+    diperbarui_pada: str
+    # Hanya di /tukar/saya: posisi pengguna yang sedang masuk.
+    peran_saya: Literal["pemohon", "rekan"] | None = None

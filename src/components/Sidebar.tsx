@@ -9,7 +9,7 @@ import { keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import type { NamaIkon } from '@/lib/ikon'
 import { cn } from '@/lib/util'
-import type { Kendala, Logbook, Peran } from '@/types'
+import type { Kendala, Logbook, Peran, TukarShift } from '@/types'
 
 interface Props {
   peran: Peran
@@ -33,18 +33,35 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
     [],
   )
   const kendalaBaru = useApi<Kendala[]>(pengawas ? '/api/kendala?status=Baru&batas=1000' : null, [])
+  // Tukar shift: admin melihat yang menunggu keputusannya, petugas melihat ajakan yang perlu dijawab.
+  const tukar = useApi<TukarShift[]>(
+    pengawas ? `/api/shift/tukar${query({ status: 'Menunggu Admin' })}` : '/api/shift/tukar/saya',
+    [],
+  )
   const muatLog = logHariIni.muat
   const muatKendala = kendalaBaru.muat
+  const muatTukar = tukar.muat
   // Diperbarui tiap pindah halaman (mis. setelah mengubah status kendala) dan tiap menit.
   useEffect(() => {
     muatLog()
     muatKendala()
+    muatTukar()
     const t = window.setInterval(() => {
       muatLog()
       muatKendala()
+      muatTukar()
     }, 60_000)
     return () => window.clearInterval(t)
-  }, [lokasi.pathname, muatLog, muatKendala])
+  }, [lokasi.pathname, muatLog, muatKendala, muatTukar])
+  // Halaman jadwal memancarkan 'shift-berubah' setelah menjawab/memutuskan tukar shift.
+  useEffect(() => {
+    const segar = () => void muatTukar()
+    window.addEventListener('shift-berubah', segar)
+    return () => window.removeEventListener('shift-berubah', segar)
+  }, [muatTukar])
+  const tukarPerluTindakan = pengawas
+    ? tukar.data.length
+    : tukar.data.filter((t) => t.status === 'Menunggu Rekan' && t.peranSaya === 'rekan').length
 
   /**
    * Angka Log aktivitas hanya menghitung logbook yang belum dilihat: yang
@@ -179,7 +196,9 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
                     ? angka(logBelumDilihat)
                     : pengawas && item.id === 'kendala'
                       ? angka(kendalaBaru.data.length)
-                      : item.tanda
+                      : (pengawas && item.id === 'shift') || (peran === 'user' && item.id === 'jadwal')
+                        ? angka(tukarPerluTindakan)
+                        : item.tanda
               return (
                 <NavLink
                   key={item.id}

@@ -11,7 +11,7 @@ import { bolehDiajakAktifkan } from '@/lib/push'
 import { BULAN_PENDEK, keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
-import type { Kendala, Peran } from '@/types'
+import type { JadwalSaya, Kendala, Peran, TukarShift } from '@/types'
 
 type Nada = 'hijau' | 'emas' | 'tanah' | 'merah'
 
@@ -79,6 +79,82 @@ function bacaTersimpan(kunci: string): Set<string> {
 }
 
 /**
+ * Notifikasi tukar shift untuk petugas: ajakan masuk (rekan), rekan sudah
+ * setuju (pengaju), dan hasil akhirnya. Keputusan yang diambil petugas itu
+ * sendiri (rekan menolak, pengaju membatalkan) tidak diberitahukan balik.
+ */
+function notifTukarPetugas(daftar: TukarShift[], batas: Date, tautan: string): Notif[] {
+  const hasil: Notif[] = []
+  for (const t of daftar) {
+    const waktu = dariCap(t.diperbaruiPada)
+    const isi = `${t.pemohon.tanggalTeks} ⇄ ${t.rekan.tanggalTeks}`
+    const dasar = { tautan, waktu }
+    if (t.status === 'Menunggu Rekan' && t.peranSaya === 'rekan') {
+      hasil.push({
+        ...dasar,
+        kunci: `tukar-${t.id}-masuk`,
+        judul: `${t.pemohon.nama} mengajak Anda tukar shift`,
+        isi: `${isi} · “${t.alasan}”`,
+        waktu: dariCap(t.dibuatPada),
+        ikon: 'Tukar',
+        nada: 'emas',
+      })
+      continue
+    }
+    if (!waktu || waktu < batas) continue
+    if (t.status === 'Menunggu Admin' && t.peranSaya === 'pemohon') {
+      hasil.push({ ...dasar, kunci: `tukar-${t.id}-rekan-setuju`, judul: `${t.rekan.nama} setuju tukar shift, menunggu admin`, isi, ikon: 'Tukar', nada: 'emas' })
+    } else if (t.status === 'Disetujui') {
+      hasil.push({ ...dasar, kunci: `tukar-${t.id}-Disetujui`, judul: 'Tukar shift Anda disetujui admin', isi: `${isi} · jadwal sudah diperbarui`, ikon: 'Centang', nada: 'hijau' })
+    } else if (t.status === 'Ditolak' && !(t.ditolakOleh === 'rekan' && t.peranSaya === 'rekan')) {
+      hasil.push({
+        ...dasar,
+        kunci: `tukar-${t.id}-Ditolak`,
+        judul: t.ditolakOleh === 'admin' ? 'Permintaan tukar shift ditolak admin' : `${t.rekan.nama} menolak ajakan tukar shift Anda`,
+        isi: t.alasanTolak ? `${isi} · “${t.alasanTolak}”` : isi,
+        ikon: 'Silang',
+        nada: 'merah',
+      })
+    } else if (t.status === 'Dibatalkan' && !(t.catatanBatal === 'Dibatalkan pengaju' && t.peranSaya === 'pemohon')) {
+      hasil.push({
+        ...dasar,
+        kunci: `tukar-${t.id}-Dibatalkan`,
+        judul: 'Permintaan tukar shift dibatalkan',
+        isi: `${isi}${t.catatanBatal ? ` · ${t.catatanBatal}` : ''}`,
+        ikon: 'Info',
+        nada: 'tanah',
+      })
+    }
+  }
+  return hasil
+}
+
+/**
+ * Satu notifikasi ringkas untuk jadwal yang diubah admin dalam 7 hari terakhir
+ * (bukan hasil tukar), supaya petugas tidak dibanjiri saat admin mengisi
+ * sebulan sekaligus. Kuncinya ikut waktu perubahan terakhir, jadi perubahan
+ * baru memunculkannya lagi.
+ */
+function notifJadwalDiubah(hari: JadwalSaya[], batas: Date, tautan: string): Notif | null {
+  const diubah = hari
+    .filter((h) => h.shift && !h.tukar && h.diaturOleh)
+    .map((h) => ({ h, waktu: dariCap(h.diubahPada) }))
+    .filter((x): x is { h: JadwalSaya; waktu: Date } => !!x.waktu && x.waktu >= batas)
+  if (!diubah.length) return null
+  const terakhir = diubah.reduce((a, b) => (b.waktu > a.waktu ? b : a))
+  const tanggal = diubah.map((x) => x.h.tanggalTeks.slice(0, 6))
+  return {
+    kunci: `jadwal-${terakhir.h.diubahPada}`,
+    judul: 'Jadwal shift Anda diperbarui',
+    isi: `${diubah.length} tanggal: ${tanggal.slice(0, 5).join(', ')}${tanggal.length > 5 ? ', …' : ''}`,
+    waktu: terakhir.waktu,
+    tautan,
+    ikon: 'Kalender',
+    nada: 'hijau',
+  }
+}
+
+/**
  * Lonceng di topbar. Isinya disusun dari data yang sudah ada di backend —
  * tidak ada tabel notifikasi tersendiri. Tanda "sudah dibaca" disimpan per
  * akun di browser; kalau hilang, notifikasinya cuma tampil belum dibaca lagi.
@@ -104,10 +180,30 @@ export function Notifikasi({ peran }: { peran: Peran }) {
     [],
   )
   const muatKendala = kendala.muat
+  // Tukar shift: admin hanya yang menunggu keputusannya; petugas semua yang melibatkannya.
+  const tukar = useApi<TukarShift[]>(
+    pengawas ? `/api/shift/tukar${query({ status: 'Menunggu Admin' })}` : '/api/shift/tukar/saya',
+    [],
+  )
+  // Jadwal petugas 30 hari ke depan, untuk "jadwal Anda diperbarui".
+  const [jadwalDari, jadwalSampai] = useMemo(() => {
+    const t = new Date()
+    const akhir = new Date(t)
+    akhir.setDate(t.getDate() + 30)
+    return [keIso(t), keIso(akhir)]
+  }, [])
+  const jadwal = useApi<JadwalSaya[]>(
+    pengawas ? null : `/api/shift/saya${query({ dari: jadwalDari, sampai: jadwalSampai })}`,
+    [],
+  )
+  const muatTukar = tukar.muat
+  const muatJadwal = jadwal.muat
   const muatSemua = useCallback(() => {
     muatLembur()
     muatKendala()
-  }, [muatLembur, muatKendala])
+    muatTukar()
+    muatJadwal()
+  }, [muatLembur, muatKendala, muatTukar, muatJadwal])
 
   // Diperbarui tiap pindah halaman dan tiap menit.
   useEffect(() => {
@@ -184,7 +280,22 @@ export function Notifikasi({ peran }: { peran: Peran }) {
           nada: tolak ? 'merah' : 'hijau',
         })
       }
+      for (const t of tukar.data) {
+        if (t.status !== 'Menunggu Admin') continue
+        hasil.push({
+          kunci: `tukar-${t.id}-admin`,
+          judul: `Tukar shift ${t.pemohon.nama} ⇄ ${t.rekan.nama} menunggu persetujuan`,
+          isi: `${t.pemohon.tanggalTeks} ⇄ ${t.rekan.tanggalTeks} · “${t.alasan}”`,
+          waktu: dariCap(t.dijawabRekanPada ?? t.diperbaruiPada),
+          tautan: `${akar}/jadwal-shift?tab=tukar`,
+          ikon: 'Tukar',
+          nada: 'emas',
+        })
+      }
     } else {
+      for (const n of notifTukarPetugas(tukar.data, batas, `${akar}/jadwal-saya`)) hasil.push(n)
+      const diubah = notifJadwalDiubah(jadwal.data, batas, `${akar}/jadwal-saya`)
+      if (diubah) hasil.push(diubah)
       for (const l of lembur) {
         if (l.status !== 'Menunggu') continue
         hasil.push({
@@ -215,7 +326,7 @@ export function Notifikasi({ peran }: { peran: Peran }) {
 
     // Pengingat tanpa waktu di paling atas, sisanya yang terbaru lebih dulu.
     return hasil.sort((a, b) => (b.waktu?.getTime() ?? Infinity) - (a.waktu?.getTime() ?? Infinity))
-  }, [pengawas, akar, kendala.data, lembur])
+  }, [pengawas, akar, kendala.data, lembur, tukar.data, jadwal.data])
 
   const belum = semua.filter((n) => !dibaca.has(n.kunci)).length
 
@@ -228,7 +339,7 @@ export function Notifikasi({ peran }: { peran: Peran }) {
    */
   const [popup, setPopup] = useState<Notif[]>([])
   const dikenal = useRef<Set<string> | null>(null)
-  const memuatData = kendala.memuat || memuatLembur
+  const memuatData = kendala.memuat || memuatLembur || tukar.memuat || jadwal.memuat
   useEffect(() => {
     if (dikenal.current === null) {
       if (memuatData) return

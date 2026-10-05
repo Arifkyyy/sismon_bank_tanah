@@ -1,7 +1,8 @@
 """
 Struktur tabel database.
 
-Tabel utama: users, logbook, kendala, lembur, foto, log_audit, checklist_*, langganan_push.
+Tabel utama: users, logbook, kendala, lembur, foto, log_audit, checklist_*, langganan_push,
+shift, shift_jabatan, jadwal_shift, tukar_shift.
 Pilihan tetap (peran, jabatan, status) disimpan sebagai teks biasa lalu
 dijaga dengan CHECK, supaya gampang ditambah nanti tanpa migrasi ENUM.
 """
@@ -26,6 +27,11 @@ MODE_CHECKLIST = ("harian", "sesi")
 SESI = ("Harian", "Pagi", "Siang", "Sore")
 STATUS_CHECKLIST = ("Draf", "Dikirim")
 STATUS_JAWABAN = ("Ya", "Tidak")
+# Nama warna, dipetakan ke kelas Tailwind di src/lib/shift.ts. Merah sengaja tidak ada:
+# di aplikasi ini merah khusus untuk tindakan menghapus.
+WARNA_SHIFT = ("hijau", "hijau-tua", "emas", "tanah", "ink", "abu")
+STATUS_TUKAR = ("Menunggu Rekan", "Menunggu Admin", "Disetujui", "Ditolak", "Dibatalkan")
+TUKAR_BERJALAN = ("Menunggu Rekan", "Menunggu Admin")
 
 
 def _pilihan(kolom: str, nilai: tuple[str, ...]) -> str:
@@ -289,3 +295,142 @@ class LanggananPush(Base):
     perangkat: Mapped[str] = mapped_column(String(200), default="")
     dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     terakhir_dipakai: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+def _tukar_berjalan() -> str:
+    return _pilihan("status", TUKAR_BERJALAN)
+
+
+class Shift(Base):
+    """
+    Jenis shift, mis. Pagi 07.00–15.00. Disusun admin per jabatan.
+
+    jam_selesai < jam_mulai = lintas hari; jam_selesai = jam_mulai = 24 jam.
+    'Libur' adalah shift sistem (sistem = True): tanpa jam, berlaku untuk semua
+    jabatan, dan tidak bisa diubah. Shift yang sudah dipakai jadwal tidak bisa
+    dihapus, hanya dinonaktifkan.
+    """
+
+    __tablename__ = "shift"
+    __table_args__ = (
+        CheckConstraint(_pilihan("warna", WARNA_SHIFT), name="ck_shift_warna"),
+        CheckConstraint("sistem OR (jam_mulai IS NOT NULL AND jam_selesai IS NOT NULL)", name="ck_shift_jam"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nama: Mapped[str] = mapped_column(String(40))
+    # Tampil di kotak jadwal, 1–2 huruf.
+    kode: Mapped[str] = mapped_column(String(2))
+    jam_mulai: Mapped[time | None] = mapped_column(Time)
+    jam_selesai: Mapped[time | None] = mapped_column(Time)
+    warna: Mapped[str] = mapped_column(String(20))
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    sistem: Mapped[bool] = mapped_column(Boolean, default=False)
+    dibuat_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    daftar_jabatan: Mapped[list["ShiftJabatan"]] = relationship(
+        cascade="all, delete-orphan", order_by="ShiftJabatan.jabatan"
+    )
+
+    @property
+    def jabatan(self) -> list[str]:
+        return [j.jabatan for j in self.daftar_jabatan]
+
+    def cocok(self, jabatan: str | None) -> bool:
+        """Libur cocok untuk semua jabatan."""
+        return self.sistem or jabatan in self.jabatan
+
+
+class ShiftJabatan(Base):
+    """Jabatan yang boleh memakai sebuah shift. Libur tidak punya baris di sini."""
+
+    __tablename__ = "shift_jabatan"
+    __table_args__ = (CheckConstraint(_pilihan("jabatan", JABATAN), name="ck_shift_jabatan"),)
+
+    shift_id: Mapped[int] = mapped_column(ForeignKey("shift.id", ondelete="CASCADE"), primary_key=True)
+    jabatan: Mapped[str] = mapped_column(String(20), primary_key=True)
+
+
+class TukarShift(Base):
+    """
+    Permintaan tukar shift antara dua petugas satu jabatan.
+
+    Alur: Menunggu Rekan → Menunggu Admin → Disetujui / Ditolak, atau
+    Dibatalkan (oleh pemohon, atau otomatis saat admin mengubah jadwal terkait).
+    Saat disetujui, isi kotak kedua petugas ditukar pada tanggal_pemohon dan
+    tanggal_rekan (satu tanggal bila sama). shift_*_id adalah salinan saat
+    diajukan, supaya riwayatnya tetap utuh walau jadwalnya berubah.
+    """
+
+    __tablename__ = "tukar_shift"
+    __table_args__ = (
+        CheckConstraint(_pilihan("status", STATUS_TUKAR), name="ck_tukar_status"),
+        CheckConstraint("pemohon_id <> rekan_id", name="ck_tukar_beda_orang"),
+        # Satu kotak hanya boleh ikut satu permintaan yang masih berjalan.
+        # Persilangan lain (mis. kotak pemohon dipakai sebagai kotak rekan) dicek di router.
+        Index(
+            "uq_tukar_pemohon_berjalan", "pemohon_id", "tanggal_pemohon",
+            unique=True, postgresql_where=_tukar_berjalan(),
+        ),
+        Index(
+            "uq_tukar_rekan_berjalan", "rekan_id", "tanggal_rekan",
+            unique=True, postgresql_where=_tukar_berjalan(),
+        ),
+        Index("ix_tukar_status", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pemohon_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    tanggal_pemohon: Mapped[date] = mapped_column(Date)
+    shift_pemohon_id: Mapped[int] = mapped_column(ForeignKey("shift.id", ondelete="RESTRICT"))
+    rekan_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    tanggal_rekan: Mapped[date] = mapped_column(Date)
+    shift_rekan_id: Mapped[int] = mapped_column(ForeignKey("shift.id", ondelete="RESTRICT"))
+    alasan: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="Menunggu Rekan")
+    dijawab_rekan_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Diisi saat admin menyetujui/menolak; kosong + Ditolak = ditolak rekan.
+    diputus_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    diputus_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    alasan_tolak: Mapped[str | None] = mapped_column(Text)
+    # Mengapa dibatalkan, mis. 'Jadwal diubah admin'.
+    catatan_batal: Mapped[str | None] = mapped_column(String(200))
+    dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Waktu perubahan status terakhir — untuk urutan dan notifikasi.
+    diperbarui_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    pemohon: Mapped[User] = relationship(foreign_keys=[pemohon_id])
+    rekan: Mapped[User] = relationship(foreign_keys=[rekan_id])
+    shift_pemohon: Mapped[Shift] = relationship(foreign_keys=[shift_pemohon_id])
+    shift_rekan: Mapped[Shift] = relationship(foreign_keys=[shift_rekan_id])
+    pemutus: Mapped[User | None] = relationship(foreign_keys=[diputus_oleh])
+
+    @property
+    def sel(self) -> set[tuple[int, date]]:
+        """Semua kotak (petugas, tanggal) yang berubah bila permintaan ini disetujui."""
+        tanggal = {self.tanggal_pemohon, self.tanggal_rekan}
+        return {(u, t) for u in (self.pemohon_id, self.rekan_id) for t in tanggal}
+
+
+class JadwalShift(Base):
+    """Satu kotak jadwal: shift seorang petugas pada satu tanggal (= tanggal shift dimulai)."""
+
+    __tablename__ = "jadwal_shift"
+    __table_args__ = (
+        UniqueConstraint("user_id", "tanggal", name="uq_jadwal_petugas_tanggal"),
+        Index("ix_jadwal_tanggal", "tanggal"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    tanggal: Mapped[date] = mapped_column(Date)
+    shift_id: Mapped[int] = mapped_column(ForeignKey("shift.id", ondelete="RESTRICT"), index=True)
+    # Terisi bila kotak ini hasil tukar shift (tanda ⇄); dikosongkan lagi saat admin mengubahnya.
+    dari_tukar_id: Mapped[int | None] = mapped_column(ForeignKey("tukar_shift.id", ondelete="SET NULL"))
+    diatur_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    diubah_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    shift: Mapped[Shift] = relationship()
+    petugas: Mapped[User] = relationship(foreign_keys=[user_id])
+    pengatur: Mapped[User | None] = relationship(foreign_keys=[diatur_oleh])

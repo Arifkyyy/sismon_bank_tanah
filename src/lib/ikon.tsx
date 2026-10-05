@@ -210,6 +210,12 @@ export const Ikon = {
       <path d="m9 6 6 6-6 6" />
     </Dasar>
   ),
+  /** tukar shift (⇄) */
+  Tukar: (p: Props) => (
+    <Dasar {...p}>
+      <path d="M4 8h15l-4-4M20 16H5l4 4" />
+    </Dasar>
+  ),
 }
 
 export type NamaIkon = keyof typeof Ikon

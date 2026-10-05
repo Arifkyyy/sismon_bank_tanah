@@ -94,5 +94,21 @@ def lembur_dijawab(nama_petugas: str, diterima: bool, lembur_id: int) -> None:
     _kirim(_pengawas(), f"{nama_petugas} {kata} penugasan lembur", "pengajuan-lembur", f"lembur-{lembur_id}")
 
 
+def tukar_masuk(rekan_id: int, nama_pemohon: str, tukar_id: int) -> None:
+    _kirim([rekan_id], f"{nama_pemohon} mengajak Anda tukar shift", "jadwal-saya", f"tukar-{tukar_id}")
+
+
+def tukar_menunggu_admin(nama_pemohon: str, nama_rekan: str, tukar_id: int) -> None:
+    _kirim(
+        _pengawas(), f"Tukar shift {nama_pemohon} ⇄ {nama_rekan} menunggu persetujuan", "jadwal-shift?tab=tukar",
+        f"tukar-{tukar_id}",
+    )
+
+
+def tukar_selesai(user_ids: Iterable[int], judul: str, tukar_id: int) -> None:
+    """Hasil akhir permintaan tukar (disetujui/ditolak/dibatalkan) untuk pemohon dan rekan."""
+    _kirim(user_ids, judul, "jadwal-saya", f"tukar-{tukar_id}")
+
+
 def uji(user_id: int, nama: str) -> None:
     _kirim([user_id], f"Notifikasi uji untuk {nama}", "profil", "uji")
