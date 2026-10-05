@@ -233,6 +233,7 @@ export function PengajuanLembur() {
               <Kolom label="Jabatan yang ditugaskan" wajib penuh>
                 <Segmen
                   lebar
+                  lipat
                   opsi={DAFTAR_JABATAN.map((j) => JABATAN_PANJANG[j])}
                   nilai={JABATAN_PANJANG[form.jabatan]}
                   onPilih={gantiJabatan}

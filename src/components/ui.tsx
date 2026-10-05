@@ -373,6 +373,7 @@ export function Segmen({
   onPilih,
   lebar,
   terkunci,
+  lipat,
 }: {
   opsi: string[]
   nilai: string
@@ -380,9 +381,17 @@ export function Segmen({
   lebar?: boolean
   /** hanya menampilkan pilihan; tidak bisa diganti */
   terkunci?: boolean
+  /** di layar HP pilihan ditata 2 kolom supaya label panjang tidak meluber; sebaris mulai layar sm */
+  lipat?: boolean
 }) {
   return (
-    <div className={cn('inline-flex rounded-xl bg-[#EBF1ED] p-1', lebar && 'w-full')}>
+    <div
+      className={cn(
+        'inline-flex rounded-xl bg-[#EBF1ED] p-1',
+        lebar && 'w-full',
+        lipat && 'max-sm:grid max-sm:grid-cols-2 max-sm:gap-1',
+      )}
+    >
       {opsi.map((o) => (
         <button
           key={o}
