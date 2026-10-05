@@ -7,6 +7,7 @@ import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import type { NamaIkon } from '@/lib/ikon'
 import { query } from '@/lib/api'
+import { didukung } from '@/lib/push'
 import { BULAN_PENDEK, keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
@@ -113,6 +114,18 @@ export function Notifikasi({ peran }: { peran: Peran }) {
     const t = window.setInterval(muatSemua, 60_000)
     return () => window.clearInterval(t)
   }, [muatSemua])
+
+  // Service worker memberi tahu bila push masuk saat aplikasi sedang dilihat:
+  // muat sekarang supaya popupnya tidak menunggu putaran 60 detik.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    function pesan(e: MessageEvent) {
+      if (e.data?.jenis === 'muat-notifikasi') muatSemua()
+    }
+    navigator.serviceWorker.addEventListener('message', pesan)
+    return () => navigator.serviceWorker.removeEventListener('message', pesan)
+  }, [muatSemua])
+  const bisaPush = didukung() && Notification.permission === 'default'
   const halamanAwal = useRef(true)
   useEffect(() => {
     // Pemuatan pertama sudah dilakukan useApi sendiri.
@@ -373,6 +386,19 @@ export function Notifikasi({ peran }: { peran: Peran }) {
                 )
               })}
             </ul>
+          )}
+
+          {bisaPush && (
+            <button
+              type="button"
+              onClick={() => {
+                setBuka(false)
+                navigate(`${akar}/profil`)
+              }}
+              className="flex w-full items-center gap-2 border-t border-garis bg-[#FAFCFB] px-4.5 py-3 text-left text-[12px] font-semibold text-hijau transition hover:bg-hijau-lembut"
+            >
+              <Ikon.Lonceng size={14} /> Aktifkan notifikasi di perangkat ini
+            </button>
           )}
         </div>
       )}

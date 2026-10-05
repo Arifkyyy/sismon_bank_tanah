@@ -1,12 +1,12 @@
 """Laporan kendala dari petugas; admin mengubah statusnya."""
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app import format as f
-from app import tampil
+from app import push, tampil
 from app.audit import catat
 from app.catatan import periksa_isi, periksa_petugas, saring, simpan_foto
 from app.database import ambil_db
@@ -38,8 +38,10 @@ def daftar(
 
 
 @router.post("", response_model=KendalaKeluar, status_code=201)
-def kirim(isi: CatatanMasuk, db: Session = Depends(ambil_db), user: User = Depends(user_saat_ini)):
-    periksa_petugas(db, isi.petugas_id, user)
+def kirim(
+    isi: CatatanMasuk, tugas: BackgroundTasks, db: Session = Depends(ambil_db), user: User = Depends(user_saat_ini)
+):
+    petugas = periksa_petugas(db, isi.petugas_id, user)
     periksa_isi(isi)
     laporan = Kendala(
         petugas_id=isi.petugas_id,
@@ -58,6 +60,7 @@ def kirim(isi: CatatanMasuk, db: Session = Depends(ambil_db), user: User = Depen
             hapus_berkas(lokasi)
         raise
     db.refresh(laporan)
+    tugas.add_task(push.kendala_baru, petugas.nama, laporan.id)
     return tampil.kendala(laporan)
 
 
@@ -65,6 +68,7 @@ def kirim(isi: CatatanMasuk, db: Session = Depends(ambil_db), user: User = Depen
 def ubah_status(
     kendala_id: int,
     isi: UbahStatusKendala,
+    tugas: BackgroundTasks,
     db: Session = Depends(ambil_db),
     admin: User = Depends(butuh_peran(*PENGAWAS)),
 ):
@@ -77,4 +81,6 @@ def ubah_status(
     laporan.diperbarui_pada = f.sekarang()
     catat(db, admin, "ubah_status_kendala", f"Laporan #{laporan.id}: {lama} → {isi.status}")
     db.commit()
+    if isi.status != lama and isi.status != "Baru":
+        tugas.add_task(push.status_kendala, laporan.petugas_id, isi.status, laporan.id)
     return tampil.kendala(laporan)

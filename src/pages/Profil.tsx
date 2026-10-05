@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Modal } from '@/components/Modal'
+import { NotifikasiPerangkat } from '@/components/NotifikasiPerangkat'
 import {
   BarisData, GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Tombol,
 } from '@/components/ui'
@@ -329,6 +330,8 @@ export function Profil() {
               </BarisData>
             </IsiKartu>
           </Kartu>
+
+          <NotifikasiPerangkat />
 
           <Kartu>
             <IsiKartu>

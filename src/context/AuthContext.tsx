@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ambilToken, api, hapusToken, simpanToken } from '@/lib/api'
+import { lepasSaatKeluar } from '@/lib/push'
 import type { Akun, Peran } from '@/types'
 
 interface NilaiAuth {
@@ -54,8 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const keluar = useCallback(() => {
-    hapusToken()
-    setSesi(null)
+    // Lepas langganan push dulu (butuh token), supaya pengguna berikutnya di
+    // perangkat ini tidak menerima notifikasi milik akun yang sudah keluar.
+    void lepasSaatKeluar().finally(() => {
+      hapusToken()
+      setSesi(null)
+    })
   }, [])
 
   const perbaruiAkun = useCallback((akun: Akun) => {

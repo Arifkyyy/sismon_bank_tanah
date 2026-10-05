@@ -27,6 +27,11 @@ class Pengaturan(BaseSettings):
     # 0 = hanya hari ini; 1 = hari ini dan kemarin.
     checklist_mundur_hari: int = 1
 
+    # Kunci Web Push (VAPID). Kosong = notifikasi push dimatikan, fitur lain tetap jalan.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:admin@example.com"
+
     @property
     def daftar_origin(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

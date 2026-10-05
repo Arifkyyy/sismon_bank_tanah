@@ -1,7 +1,7 @@
 """
 Struktur tabel database.
 
-Enam tabel: users, logbook, kendala, lembur, foto, log_audit.
+Tabel utama: users, logbook, kendala, lembur, foto, log_audit, checklist_*, langganan_push.
 Pilihan tetap (peran, jabatan, status) disimpan sebagai teks biasa lalu
 dijaga dengan CHECK, supaya gampang ditambah nanti tanpa migrasi ENUM.
 """
@@ -272,3 +272,20 @@ class ChecklistJawaban(Base):
 
     lembar: Mapped[ChecklistHarian] = relationship(back_populates="jawaban")
     item: Mapped[ChecklistItem] = relationship()
+
+
+class LanggananPush(Base):
+    """Satu browser/perangkat yang mengizinkan notifikasi push untuk seorang pengguna."""
+
+    __tablename__ = "langganan_push"
+    __table_args__ = (UniqueConstraint("endpoint", name="uq_langganan_push_endpoint"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # Alamat dari layanan push browser (Google/Mozilla/Apple); unik per browser.
+    endpoint: Mapped[str] = mapped_column(Text)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    perangkat: Mapped[str] = mapped_column(String(200), default="")
+    dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    terakhir_dipakai: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

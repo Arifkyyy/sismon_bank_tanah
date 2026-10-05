@@ -404,3 +404,26 @@ class RingkasKeluar(Skema):
     tidak: int
     persen: int
     dikirim_pada: str | None = None
+
+
+# ---------------------------------------------------------------- Web Push
+
+class KunciPush(Skema):
+    """Kunci publik VAPID; kosong berarti push belum disiapkan di server ini."""
+    kunci: str
+
+
+class KunciLangganan(Skema):
+    p256dh: str = Field(min_length=1, max_length=200)
+    auth: str = Field(min_length=1, max_length=100)
+
+
+class LanggananMasuk(Skema):
+    """Bentuk sama dengan PushSubscription.toJSON() di browser, ditambah keterangan perangkat."""
+    endpoint: str = Field(min_length=1, max_length=2000)
+    keys: KunciLangganan
+    perangkat: str = Field(default="", max_length=200)
+
+
+class LanggananHapus(Skema):
+    endpoint: str = Field(min_length=1, max_length=2000)

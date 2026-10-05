@@ -6,12 +6,12 @@ menolak dengan alasan (Diterima/Ditolak). Diterima + tanggal lewat = Selesai.
 """
 from datetime import date, time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import format as f
-from app import tampil
+from app import push, tampil
 from app.audit import catat
 from app.config import pengaturan
 from app.database import ambil_db
@@ -91,7 +91,9 @@ def daftar(
 
 
 @router.post("/{lembur_id}/terima", response_model=LemburKeluar)
-def terima(lembur_id: str, db: Session = Depends(ambil_db), user: User = Depends(butuh_peran("user"))):
+def terima(
+    lembur_id: str, tugas: BackgroundTasks, db: Session = Depends(ambil_db), user: User = Depends(butuh_peran("user"))
+):
     l = _ambil(db, lembur_id)
     if l.petugas_id != user.id:
         raise HTTPException(403, "Penugasan ini bukan untuk Anda.")
@@ -102,12 +104,17 @@ def terima(lembur_id: str, db: Session = Depends(ambil_db), user: User = Depends
     l.status = "Diterima"
     l.dijawab_pada = f.sekarang()
     db.commit()
+    tugas.add_task(push.lembur_dijawab, user.nama, True, l.id)
     return tampil.lembur(l)
 
 
 @router.post("/{lembur_id}/tolak", response_model=LemburKeluar)
 def tolak(
-    lembur_id: str, isi: TolakLembur, db: Session = Depends(ambil_db), user: User = Depends(butuh_peran("user"))
+    lembur_id: str,
+    isi: TolakLembur,
+    tugas: BackgroundTasks,
+    db: Session = Depends(ambil_db),
+    user: User = Depends(butuh_peran("user")),
 ):
     l = _ambil(db, lembur_id)
     if l.petugas_id != user.id:
@@ -118,6 +125,7 @@ def tolak(
     l.alasan_tolak = isi.alasan.strip()
     l.dijawab_pada = f.sekarang()
     db.commit()
+    tugas.add_task(push.lembur_dijawab, user.nama, False, l.id)
     return tampil.lembur(l)
 
 
@@ -161,7 +169,12 @@ def hapus_draf(lembur_id: str, db: Session = Depends(ambil_db), _: User = Depend
 
 
 @router.post("/draf/{lembur_id}/kirim", response_model=LemburKeluar)
-def kirim_draf(lembur_id: str, db: Session = Depends(ambil_db), admin: User = Depends(butuh_peran(*PENGAWAS))):
+def kirim_draf(
+    lembur_id: str,
+    tugas: BackgroundTasks,
+    db: Session = Depends(ambil_db),
+    admin: User = Depends(butuh_peran(*PENGAWAS)),
+):
     l = _ambil(db, lembur_id)
     if l.status != "Draf":
         raise HTTPException(409, "Draf ini sudah dikirim.")
@@ -182,6 +195,7 @@ def kirim_draf(lembur_id: str, db: Session = Depends(ambil_db), admin: User = De
     l.tarif_per_jam = tarif_lembur(db)
     catat(db, admin, "kirim_lembur", f"Lembur #{l.id} untuk {l.petugas.nama} tanggal {l.tanggal}")
     db.commit()
+    tugas.add_task(push.lembur_dikirim, l.petugas_id, admin.nama, l.id)
     return tampil.lembur(l)
 
 

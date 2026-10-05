@@ -5,7 +5,10 @@ import App from '@/App'
 import { AuthProvider } from '@/context/AuthContext'
 import { KonfirmasiProvider } from '@/context/KonfirmasiContext'
 import { LemburProvider } from '@/context/LemburContext'
+import { daftarkanServiceWorker } from '@/lib/push'
 import '@/index.css'
+
+daftarkanServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

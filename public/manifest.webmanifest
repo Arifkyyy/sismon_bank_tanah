@@ -1,0 +1,15 @@
+{
+  "name": "Sistem Monitoring Petugas — Badan Bank Tanah",
+  "short_name": "Sismon BT",
+  "description": "Logbook harian, laporan kendala, dan lembur petugas Badan Bank Tanah.",
+  "lang": "id",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F1F5F2",
+  "theme_color": "#0B3747",
+  "icons": [
+    { "src": "/ikon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/ikon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
