@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ambilToken, api, hapusToken, simpanToken } from '@/lib/api'
-import { lepasSaatKeluar } from '@/lib/push'
+import { lepasSaatKeluar, lepasSaatSesiHabis, pulihkanSetelahMasuk } from '@/lib/push'
 import type { Akun, Peran } from '@/types'
 
 interface NilaiAuth {
@@ -40,9 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setMemulihkan(false))
   }, [])
 
-  // lib/api.ts memancarkan 'sesi-habis' bila backend menolak token.
+  // Dibaca oleh penangan 'sesi-habis' tanpa harus memasang ulang penangannya.
+  const sesiRef = useRef(sesi)
+  sesiRef.current = sesi
+
+  // lib/api.ts memancarkan 'sesi-habis' bila backend menolak token. Langganan
+  // push ikut dilepas supaya pengguna berikutnya tidak menerima notifikasi akun ini.
   useEffect(() => {
-    const habis = () => setSesi(null)
+    const habis = () => {
+      void lepasSaatSesiHabis(sesiRef.current?.akun.id ?? null)
+      setSesi(null)
+    }
     window.addEventListener('sesi-habis', habis)
     return () => window.removeEventListener('sesi-habis', habis)
   }, [])
@@ -51,13 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const hasil = await api<Sesi & { token: string }>('/api/auth/masuk', 'POST', { email, sandi })
     simpanToken(hasil.token, ingat)
     setSesi({ peran: hasil.peran, akun: hasil.akun })
+    void pulihkanSetelahMasuk(hasil.akun.id)
     return hasil.peran
   }, [])
 
   const keluar = useCallback(() => {
     // Lepas langganan push dulu (butuh token), supaya pengguna berikutnya di
     // perangkat ini tidak menerima notifikasi milik akun yang sudah keluar.
-    void lepasSaatKeluar().finally(() => {
+    void lepasSaatKeluar(sesiRef.current?.akun.id ?? null).finally(() => {
       hapusToken()
       setSesi(null)
     })

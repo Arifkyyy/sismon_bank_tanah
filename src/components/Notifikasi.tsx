@@ -7,7 +7,7 @@ import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import type { NamaIkon } from '@/lib/ikon'
 import { query } from '@/lib/api'
-import { didukung } from '@/lib/push'
+import { bolehDiajakAktifkan } from '@/lib/push'
 import { BULAN_PENDEK, keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
@@ -125,7 +125,21 @@ export function Notifikasi({ peran }: { peran: Peran }) {
     navigator.serviceWorker.addEventListener('message', pesan)
     return () => navigator.serviceWorker.removeEventListener('message', pesan)
   }, [muatSemua])
-  const bisaPush = didukung() && Notification.permission === 'default'
+
+  // Diperiksa tiap kali lonceng dibuka, karena langganan bisa berubah dari
+  // halaman Profil atau dilepas saat keluar walau izin browsernya masih ada.
+  const [bisaPush, setBisaPush] = useState(false)
+  useEffect(() => {
+    if (!buka) return
+    let batal = false
+    bolehDiajakAktifkan()
+      .then((b) => !batal && setBisaPush(b))
+      .catch(() => {})
+    return () => {
+      batal = true
+    }
+  }, [buka])
+
   const halamanAwal = useRef(true)
   useEffect(() => {
     // Pemuatan pertama sudah dilakukan useApi sendiri.

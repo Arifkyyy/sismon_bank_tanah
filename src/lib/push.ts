@@ -113,25 +113,99 @@ async function berlangganan(): Promise<StatusPush> {
   return 'aktif'
 }
 
-/** Berhenti menerima push di perangkat ini. */
+/** Berhenti menerima push di perangkat ini (dimatikan sendiri oleh pengguna). */
 export async function matikan(): Promise<StatusPush> {
-  const l = didukung() ? await langgananSekarang() : null
-  if (l) {
-    await api('/api/push/langganan', 'DELETE', { endpoint: l.endpoint }).catch(() => {})
-    await l.unsubscribe()
-  }
+  lupakanPemulihan()
+  await lepas(true)
   return didukung() ? 'mati' : 'tidak-didukung'
 }
 
-/**
- * Dipanggil saat keluar: perangkat ini berhenti menerima notifikasi untuk
- * akun tersebut (penting di komputer yang dipakai bergantian). Tidak pernah
- * melempar galat supaya proses keluar tetap jalan.
+async function lepas(lewatServer: boolean): Promise<boolean> {
+  const l = didukung() ? await langgananSekarang() : null
+  if (!l) return false
+  if (lewatServer) await api('/api/push/langganan', 'DELETE', { endpoint: l.endpoint }).catch(() => {})
+  // Tanpa lewat server pun aman: endpoint yang sudah dilepas dijawab 410 oleh
+  // layanan push, lalu barisnya dihapus backend saat pengiriman berikutnya.
+  await l.unsubscribe()
+  return true
+}
+
+/*
+ * Notifikasi dilepas setiap kali sesi berakhir, supaya pengguna berikutnya di
+ * perangkat yang sama tidak menerima notifikasi akun sebelumnya. Id akun yang
+ * melepasnya diingat, sehingga saat akun yang SAMA masuk lagi notifikasinya
+ * dinyalakan kembali otomatis; akun lain tetap harus menyalakannya sendiri.
  */
-export async function lepasSaatKeluar() {
+const KUNCI_PULIHKAN = 'sismon_push_pulihkan'
+
+function ingatPemulihan(akunId: number) {
   try {
-    await matikan()
+    localStorage.setItem(KUNCI_PULIHKAN, String(akunId))
+  } catch {
+    /* tanpa penyimpanan, pengguna menyalakan ulang dari Profil */
+  }
+}
+
+function lupakanPemulihan() {
+  try {
+    localStorage.removeItem(KUNCI_PULIHKAN)
   } catch {
     /* abaikan */
   }
+}
+
+function perluDipulihkan(akunId: number): boolean {
+  try {
+    return localStorage.getItem(KUNCI_PULIHKAN) === String(akunId)
+  } catch {
+    return false
+  }
+}
+
+/** Batas tunggu pelepasan saat keluar, supaya tombol Keluar tidak tertahan server yang lambat. */
+const BATAS_KELUAR_MS = 3_000
+
+/**
+ * Dipanggil saat menekan Keluar (token masih ada). Tidak pernah melempar
+ * galat dan selesai paling lama 3 detik supaya proses keluar tetap jalan.
+ */
+export async function lepasSaatKeluar(akunId: number | null) {
+  try {
+    const dilepas = await denganBatas(lepas(true), BATAS_KELUAR_MS, 'lewat batas')
+    if (dilepas && akunId !== null) ingatPemulihan(akunId)
+  } catch {
+    /* abaikan */
+  }
+}
+
+/** Dipanggil saat token ditolak server: tokennya sudah terhapus, jadi cukup lepas di browser. */
+export async function lepasSaatSesiHabis(akunId: number | null) {
+  try {
+    const dilepas = await lepas(false)
+    if (dilepas && akunId !== null) ingatPemulihan(akunId)
+  } catch {
+    /* abaikan */
+  }
+}
+
+/**
+ * Dipanggil setelah berhasil masuk. Sisa langganan sesi lain (bila pelepasan
+ * dulu gagal) dibuang; bila akun ini dulu menyalakan notifikasi di perangkat
+ * ini, langganannya dibuat lagi tanpa bertanya, karena izinnya masih ada.
+ */
+export async function pulihkanSetelahMasuk(akunId: number) {
+  try {
+    if (!didukung()) return
+    await lepas(false)
+    if (!perluDipulihkan(akunId) || Notification.permission !== 'granted') return
+    if ((await denganBatas(berlangganan(), BATAS_AKTIFKAN_MS, 'lewat batas')) === 'aktif') lupakanPemulihan()
+  } catch {
+    /* pengguna masih bisa menyalakannya dari Profil */
+  }
+}
+
+/** Untuk ajakan di lonceng: browser mendukung, izin belum ditolak, tapi perangkat ini belum berlangganan. */
+export async function bolehDiajakAktifkan(): Promise<boolean> {
+  if (!didukung() || Notification.permission === 'denied') return false
+  return (await langgananSekarang()) === null
 }
