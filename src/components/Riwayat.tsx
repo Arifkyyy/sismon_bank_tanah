@@ -19,6 +19,12 @@ export interface PosRiwayat {
   fotoVarian?: 'a' | 'b' | 'c'
   /** penanda tambahan di kaki baris, mis. jam lembur */
   tanda?: ReactNode
+  /** pengganti pil status, mis. tag jenis catatan */
+  label?: ReactNode
+  /** isi tambahan di bawah baris, mis. tombol aksi */
+  tambahan?: ReactNode
+  /** tepi kartu disorot emas, mis. kendala yang perlu ditindaklanjuti */
+  sorot?: boolean
 }
 
 /** Warna titik linimasa mengikuti arti status yang sama di seluruh aplikasi. */
@@ -130,7 +136,12 @@ export function LinimasaRiwayat({
                   </span>
 
                   <div className="min-w-0 py-2">
-                    <div className="rounded-xl border border-garis bg-white p-3 transition duration-200 hover:border-garis-kuat hover:shadow-kartu">
+                    <div
+                      className={cn(
+                        'rounded-xl border bg-white p-3 transition duration-200 hover:shadow-kartu',
+                        p.sorot ? 'border-emas/70' : 'border-garis hover:border-garis-kuat',
+                      )}
+                    >
                       <div className="flex items-start gap-3">
                         <div className="flex-none">
                           {p.foto && p.foto.length > 0 ? (
@@ -144,7 +155,7 @@ export function LinimasaRiwayat({
                             {p.keterangan}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                            <Pil status={p.status} />
+                            {p.label ?? <Pil status={p.status} />}
                             {p.tanda}
                             {p.foto && p.foto.length > 1 && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-[#F3F7F4] px-2 py-1 text-[11.5px] font-semibold text-teks-lembut">
@@ -155,6 +166,7 @@ export function LinimasaRiwayat({
                           </div>
                         </div>
                       </div>
+                      {p.tambahan}
                     </div>
                   </div>
                 </li>

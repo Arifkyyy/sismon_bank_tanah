@@ -152,7 +152,7 @@ def buat_contoh(db, u: dict[str, User]) -> None:
     log("Andri Kurniawan", kemarin, "19:00", "Mulai shift malam, pengecekan seluruh titik CCTV di gedung.")
 
     def kendala(nama, hari, jam, ket, status):
-        db.add(Kendala(petugas_id=u[nama].id, dibuat_oleh=u[nama].id, status=status,
+        db.add(Kendala(petugas_id=u[nama].id, dibuat_oleh=u[nama].id, penangan_id=u[nama].id, status=status,
                        waktu=f.gabung_waktu(hari, time.fromisoformat(jam)), keterangan=ket))
 
     kendala("Joko Priyono", kini, "07:40", "Keran wastafel toilet pria lantai 2 bocor, air menggenang di lantai.", "Baru")

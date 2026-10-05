@@ -14,6 +14,8 @@ export interface Draf {
   jam: string
   keterangan: string
   foto: string[]
+  /** true = dikirim sebagai laporan kendala, bukan catatan aktivitas */
+  kendala?: boolean
 }
 
 /** Bagian yang masih kosong pada sebuah draf — dipakai untuk penanda kesiapan. */
@@ -114,7 +116,9 @@ export function KartuDataPending({
                       'masuk-halus group relative overflow-hidden rounded-2xl border bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-naik',
                       sedangDiedit
                         ? 'border-hijau ring-[3px] ring-hijau/15'
-                        : 'border-garis hover:border-garis-kuat',
+                        : d.kendala
+                          ? 'border-emas/70'
+                          : 'border-garis hover:border-garis-kuat',
                     )}
                   >
                     {/* Pita kiri: emas = menunggu dikirim, hijau = sedang diedit */}
@@ -154,6 +158,11 @@ export function KartuDataPending({
                             {sedangDiedit ? <Pil status="Diproses">Diedit</Pil> : <Pil status="Menunggu" />}
                           </div>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            {d.kendala && (
+                              <span className="inline-flex items-center gap-1 rounded-[7px] border border-[#F0DCAE] bg-[#FDF6E4] px-2 py-0.5 text-[11.5px] font-semibold text-tanah-teks">
+                                ⚠️ Kendala
+                              </span>
+                            )}
                             {d.jabatan && <TagJabatan jabatan={d.jabatan} />}
                             <span className="num inline-flex items-center rounded-[7px] bg-[#F3F7F4] px-2 py-0.5 text-[11.5px] font-semibold text-teks-lembut">
                               {formatTanggal(d.tanggal).tanggal}
@@ -214,7 +223,7 @@ export function KartuDataPending({
                           <Ikon.Pena size={13} /> Edit
                         </Tombol>
                         <Tombol kecil className="flex-1" onClick={() => onKirim(d.id)}>
-                          <Ikon.Kirim size={13} /> Kirim
+                          <Ikon.Kirim size={13} /> {d.kendala ? 'Kirim laporan' : 'Kirim'}
                         </Tombol>
                         <TombolIkon label="Hapus draf" bahaya onClick={() => onHapus(d.id)}>
                           <Ikon.Sampah size={14} />

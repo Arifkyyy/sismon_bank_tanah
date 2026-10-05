@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, union
 from sqlalchemy.orm import Session
 
 from app import format as f
@@ -73,13 +73,14 @@ def rekap(
 ):
     """
     Rekap per petugas dalam satu periode.
-    - hari   : jumlah hari yang punya minimal satu logbook
-    Tanpa dari/sampai = seluruh periode (sejak logbook pertama).
+    - hari   : jumlah hari yang punya minimal satu logbook ATAU laporan kendala
+               (kendala dihitung milik pelapornya)
+    Tanpa dari/sampai = seluruh periode (sejak catatan pertama).
     """
     sampai = sampai or f.hari_ini()
     if dari is None:
-        pertama = db.scalar(select(func.min(_TGL_LOG)))
-        dari = pertama or sampai
+        awal = [t for t in (db.scalar(select(func.min(_TGL_LOG))), db.scalar(select(func.min(_TGL_KENDALA)))) if t]
+        dari = min(awal) if awal else sampai
     if dari > sampai:
         raise HTTPException(422, "Tanggal awal harus sebelum tanggal akhir.")
     # Hari yang belum terjadi tidak ikut dihitung sebagai hari wajib isi.
@@ -94,26 +95,23 @@ def rekap(
     if not ids:
         return []
 
-    rentang_log = (Logbook.waktu >= f.awal_hari(dari), Logbook.waktu < f.akhir_hari(sampai))
-    log = {
-        pid: (n, hari)
-        for pid, n, hari in db.execute(
-            select(Logbook.petugas_id, func.count(), func.count(func.distinct(_TGL_LOG)))
-            .where(Logbook.petugas_id.in_(ids), *rentang_log)
-            .group_by(Logbook.petugas_id)
-        )
-    }
-    kendala = dict(
-        db.execute(
-            select(Kendala.petugas_id, func.count())
-            .where(
-                Kendala.petugas_id.in_(ids),
-                Kendala.waktu >= f.awal_hari(dari),
-                Kendala.waktu < f.akhir_hari(sampai),
-            )
-            .group_by(Kendala.petugas_id)
-        ).all()
+    rentang_log = (Logbook.petugas_id.in_(ids), Logbook.waktu >= f.awal_hari(dari), Logbook.waktu < f.akhir_hari(sampai))
+    rentang_kendala = (
+        Kendala.petugas_id.in_(ids), Kendala.waktu >= f.awal_hari(dari), Kendala.waktu < f.akhir_hari(sampai)
     )
+    log = dict(
+        db.execute(select(Logbook.petugas_id, func.count()).where(*rentang_log).group_by(Logbook.petugas_id)).all()
+    )
+    kendala = dict(
+        db.execute(select(Kendala.petugas_id, func.count()).where(*rentang_kendala).group_by(Kendala.petugas_id)).all()
+    )
+    # UNION membuang pasangan (petugas, tanggal) kembar: hari dengan logbook
+    # dan kendala sekaligus tetap dihitung satu hari.
+    hari_aktif = union(
+        select(Logbook.petugas_id.label("pid"), _TGL_LOG.label("tgl")).where(*rentang_log),
+        select(Kendala.petugas_id.label("pid"), _TGL_KENDALA.label("tgl")).where(*rentang_kendala),
+    ).subquery()
+    hari = dict(db.execute(select(hari_aktif.c.pid, func.count()).group_by(hari_aktif.c.pid)).all())
     menit = defaultdict(int)
     upah = defaultdict(int)
     upah_dibayar = defaultdict(int)
@@ -144,7 +142,6 @@ def rekap(
 
     hasil = []
     for p in petugas:
-        n_log, n_hari = log.get(p.id, (0, 0))
         jam_lembur = menit[p.id] / 60
         hasil.append(
             RekapKeluar(
@@ -152,8 +149,8 @@ def rekap(
                 nama=p.nama,
                 jabatan=p.jabatan,
                 foto_profil=url_foto_profil(p.foto_profil),
-                hari=n_hari,
-                logbook=n_log,
+                hari=hari.get(p.id, 0),
+                logbook=log.get(p.id, 0),
                 kendala=kendala.get(p.id, 0),
                 lembur=f"{round(jam_lembur, 1):g} jam".replace(".", ","),
                 checklist=f"{checklist.get(p.id, 0)}/{jumlah_hari} hari",

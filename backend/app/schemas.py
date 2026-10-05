@@ -158,9 +158,26 @@ class LogbookKeluar(Skema):
     lembur: str
 
 
-class KendalaKeluar(Skema):
-    """= interface Kendala."""
+class OrangKendala(Skema):
     id: int
+    nama: str
+    jabatan: Jabatan | None = None
+    foto_profil: str | None = None
+
+
+class RiwayatKendala(Skema):
+    """Satu kejadian pada riwayat kendala, disusun dari log_audit."""
+    waktu: str  # '15 Sep 2026 · 10.24'
+    jenis: Literal["dilaporkan", "ditugaskan", "mulai", "selesai", "dibuka_lagi", "status"]
+    kejadian: str  # kalimat siap tampil, mis. 'Ditugaskan ke Andi'
+    oleh: str | None = None
+    catatan: str | None = None  # alasan buka lagi / keterangan penyelesaian
+
+
+class KendalaKeluar(Skema):
+    """= interface Kendala. nama/jabatan/foto_profil = pelapor."""
+    id: int
+    pelapor_id: int
     nama: str
     jabatan: Jabatan
     foto_profil: str | None = None
@@ -171,13 +188,46 @@ class KendalaKeluar(Skema):
     keterangan: str
     status: StatusKendala
     foto: Literal["a", "b", "c"]
+    # = foto_sebelum, dipertahankan untuk halaman lama
     foto_url: list[str] = []
-    # kapan admin terakhir mengubah statusnya, mis. '15 Sep 2026 · 10.24'
+    foto_sebelum: list[str] = []
+    foto_sesudah: list[str] = []
+    penangan: OrangKendala | None = None
+    # semua waktu berbentuk '15 Sep 2026 · 10.24'
+    ditugaskan_pada: str | None = None
+    mulai_pada: str | None = None
+    selesai_pada: str | None = None
+    diselesaikan_oleh: str | None = None
+    diselesaikan_oleh_id: int | None = None
+    keterangan_selesai: str | None = None
+    dibuka_lagi_pada: str | None = None
+    # kapan terakhir ada perubahan (status/penangan)
     diperbarui_pada: str | None = None
 
 
+class DetailKendala(KendalaKeluar):
+    riwayat: list[RiwayatKendala] = []
+
+
 class UbahStatusKendala(Skema):
+    """Hanya Baru → Diproses. Selesai lewat /selesai, buka lagi lewat /buka-lagi."""
     status: StatusKendala
+
+
+class SelesaiKendala(Skema):
+    keterangan: str = Field(min_length=1)
+    # Data URL foto sesudah dari kamera; wajib bagi petugas, tidak wajib bagi admin.
+    foto: list[str] = []
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class TugaskanKendala(Skema):
+    penangan_id: int
+
+
+class BukaLagiKendala(Skema):
+    alasan: str = Field(min_length=1)
 
 
 # ---------------------------------------------------------------- Lembur
@@ -295,6 +345,7 @@ class FotoKeluar(Skema):
     waktu: str
     waktu_iso: str
     sumber: Literal["Logbook", "Kendala"]
+    tahap: Literal["sebelum", "sesudah"] = "sebelum"
     url: str
     ukuran_byte: int
 

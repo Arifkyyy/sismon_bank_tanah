@@ -12,6 +12,7 @@ import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
 import { formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal'
+import { cn } from '@/lib/util'
 import type { Kendala, Logbook } from '@/types'
 
 
@@ -33,10 +34,13 @@ export function DashboardUser() {
     `/api/logbook${query({ dari: awalBulan, sampai: hariIniIso })}`,
     [],
   )
+  // Hanya yang dilaporkan sendiri; kendala yang ditugaskan dihitung terpisah di bawah.
   const kendalaBulanIni = useApi<Kendala[]>(
-    `/api/kendala${query({ dari: awalBulan, sampai: hariIniIso })}`,
+    `/api/kendala${query({ dari: awalBulan, sampai: hariIniIso, milik: 'dilaporkan' })}`,
     [],
   )
+  const perluDitangani = useApi<Kendala[]>(`/api/kendala${query({ milik: 'ditangani', terbuka: 'true' })}`, [])
+  const nPerlu = perluDitangani.data.length
 
   // Hari berbeda yang punya minimal satu catatan pada bulan berjalan.
   const hariTercatat = new Set(bulanIni.data.map((l) => l.tanggalIso)).size
@@ -81,20 +85,39 @@ export function DashboardUser() {
                 : `Anda sudah mengisi ${hariIni.data.length} catatan hari ini.`}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2.5">
-            <Link to={`${akar}/logbook`}>
-              <Tombol>
-                <Ikon.Kamera size={16} /> Isi aktivitas
-              </Tombol>
-            </Link>
-            <Link to={`${akar}/laporan-kendala`}>
-              <Tombol className="border border-white/25 bg-white/15 text-white shadow-none hover:bg-white/25">
-                Laporkan kendala
-              </Tombol>
-            </Link>
-          </div>
+          <Link to={`${akar}/catatan-harian`} className="max-sm:w-full">
+            <Tombol className="px-7 py-4 text-[15px]" lebar>
+              <Ikon.Tambah size={18} /> Catat Kegiatan
+            </Tombol>
+          </Link>
         </div>
       </div>
+
+      <Link
+        to={`${akar}/catatan-harian?jenis=kendala`}
+        className={cn(
+          'mt-4.5 flex items-center gap-3 rounded-kartu border px-5 py-4 no-underline shadow-kartu transition hover:shadow-naik',
+          nPerlu > 0 ? 'border-emas/60 bg-emas-lembut text-emas-teks' : 'border-garis bg-white text-teks-lembut',
+        )}
+      >
+        <span
+          className={cn(
+            'grid h-10 w-10 flex-none place-items-center rounded-full',
+            nPerlu > 0 ? 'bg-emas text-ink-deep' : 'bg-hijau-lembut text-hijau-tua',
+          )}
+        >
+          {nPerlu > 0 ? <Ikon.Awas size={18} /> : <Ikon.Centang size={18} />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <b className="block text-[14px] font-bold text-ink">
+            Kendala yang perlu kamu tangani: <span className="num">{nPerlu}</span>
+          </b>
+          <span className="text-[12px]">
+            {nPerlu > 0 ? 'Mulai tangani atau tandai selesai di Catatan Harian' : 'Tidak ada kendala yang menunggu'}
+          </span>
+        </span>
+        <Ikon.Chevron size={16} className="flex-none" />
+      </Link>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard gaya="pekat" nama="Catatan hari ini" angka={String(hariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket={HARI_INI} />
@@ -125,11 +148,6 @@ export function DashboardUser() {
             ) : (
               <Linimasa pos={pos} />
             )}
-            <Link to={`${akar}/logbook`} className="mt-4.5 block">
-              <Tombol lebar>
-                <Ikon.Kamera size={16} /> Isi catatan
-              </Tombol>
-            </Link>
           </IsiKartu>
         </Kartu>
 

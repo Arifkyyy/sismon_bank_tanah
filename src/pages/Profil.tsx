@@ -177,7 +177,11 @@ export function Profil() {
 
   // Untuk admin, backend mengembalikan seluruh petugas; untuk petugas, miliknya.
   const { data: logbook } = useApi<Logbook[]>(`/api/logbook${jendela}`, [])
-  const { data: kendala } = useApi<Kendala[]>(`/api/kendala${jendela}`, [])
+  // Petugas: hanya yang ia laporkan, bukan yang ditugaskan kepadanya.
+  const { data: kendala } = useApi<Kendala[]>(
+    `/api/kendala${query({ dari: awalBulan, sampai: hariIniIso, milik: petugas ? 'dilaporkan' : '' })}`,
+    [],
+  )
   const { data: lemburBulanIni } = useApi<Lembur[]>(`/api/lembur${jendela}`, [])
 
   const jamLembur = jumlahJamLembur(lemburBulanIni.filter((l) => l.status === 'Diterima' || l.status === 'Selesai'))

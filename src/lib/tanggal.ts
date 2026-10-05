@@ -125,6 +125,27 @@ export function zonaWaktu(t: Date = new Date()): string {
   return `UTC${tanda}${Math.abs(jam)}`
 }
 
+/**
+ * Tanggal ('2026-10-05') dan jam ('14:03') saat ini dalam WIB, apa pun zona
+ * perangkatnya — backend membaca tanggal + jam catatan sebagai WIB.
+ */
+export function sekarangWib(): { tanggal: string; jam: string } {
+  const bagian = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(new Date())
+      .map((p) => [p.type, p.value]),
+  )
+  return { tanggal: `${bagian.year}-${bagian.month}-${bagian.day}`, jam: `${bagian.hour}:${bagian.minute}` }
+}
+
 /** Date → '14.03.21' (detik ikut, karena dipakai sebagai cap waktu foto). */
 export function jamLengkap(t: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')

@@ -24,12 +24,13 @@ def daftar(
     sampai: date | None = None,
     jabatan: Jabatan | None = None,
     petugas_id: int | None = None,
+    cari: str | None = Query(None, max_length=120),
     batas: int = Query(200, ge=1, le=1000),
     db: Session = Depends(ambil_db),
     user: User = Depends(user_saat_ini),
 ):
     q = select(Logbook).options(selectinload(Logbook.petugas), selectinload(Logbook.foto))
-    q = saring(q, Logbook, user, tanggal, dari, sampai, jabatan, petugas_id)
+    q = saring(q, Logbook, user, tanggal, dari, sampai, jabatan, petugas_id, cari)
     baris = list(db.scalars(q.order_by(Logbook.waktu.desc()).limit(batas)))
     return tampil.daftar_logbook(db, baris)
 
@@ -44,7 +45,7 @@ def kirim(isi: CatatanMasuk, db: Session = Depends(ambil_db), user: User = Depen
         waktu=f.gabung_waktu(isi.tanggal, isi.jam),
         keterangan=isi.keterangan.strip(),
     )
-    berkas = simpan_foto(isi.foto, isi, catatan)
+    berkas = simpan_foto(isi.foto, catatan, catatan.waktu, isi.latitude, isi.longitude)
     try:
         db.add(catatan)
         db.commit()

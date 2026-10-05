@@ -175,11 +175,18 @@ export function Notifikasi({ peran }: { peran: Peran }) {
   /* ---------------------------------------------------------------- data */
 
   const { daftar: lembur, muat: muatLembur, memuat: memuatLembur } = useLembur()
-  const kendala = useApi<Kendala[]>(
-    `/api/kendala${query(pengawas ? { status: 'Baru', batas: 50 } : { batas: 30 })}`,
-    [],
-  )
-  const muatKendala = kendala.muat
+  // Admin: laporan yang belum disentuh siapa pun.
+  const kendala = useApi<Kendala[]>(pengawas ? `/api/kendala${query({ status: 'Baru', batas: 50 })}` : null, [])
+  // Kendala yang berubah 7 hari terakhir (ditugaskan, diproses, selesai, dibuka lagi).
+  // Untuk petugas, backend sudah membatasi ke yang ia laporkan atau tangani.
+  const sejak = useMemo(() => {
+    const t = new Date()
+    t.setDate(t.getDate() - BATAS_HARI)
+    return keIso(t)
+  }, [])
+  const kendalaBerubah = useApi<Kendala[]>(`/api/kendala${query({ berubah_sejak: sejak, batas: 100 })}`, [])
+  const muatKendalaBaru = kendala.muat
+  const muatKendalaBerubah = kendalaBerubah.muat
   // Tukar shift: admin hanya yang menunggu keputusannya; petugas semua yang melibatkannya.
   const tukar = useApi<TukarShift[]>(
     pengawas ? `/api/shift/tukar${query({ status: 'Menunggu Admin' })}` : '/api/shift/tukar/saya',
@@ -200,10 +207,11 @@ export function Notifikasi({ peran }: { peran: Peran }) {
   const muatJadwal = jadwal.muat
   const muatSemua = useCallback(() => {
     muatLembur()
-    muatKendala()
+    muatKendalaBaru()
+    muatKendalaBerubah()
     muatTukar()
     muatJadwal()
-  }, [muatLembur, muatKendala, muatTukar, muatJadwal])
+  }, [muatLembur, muatKendalaBaru, muatKendalaBerubah, muatTukar, muatJadwal])
 
   // Diperbarui tiap pindah halaman dan tiap menit.
   useEffect(() => {
@@ -255,15 +263,32 @@ export function Notifikasi({ peran }: { peran: Peran }) {
     batas.setDate(batas.getDate() - BATAS_HARI)
 
     if (pengawas) {
+      const tautanKendala = `${akar}/laporan-petugas?tab=kendala`
       for (const k of kendala.data) {
         hasil.push({
           kunci: `kendala-${k.id}`,
           judul: `Laporan kendala baru dari ${k.nama}`,
           isi: k.keterangan,
           waktu: dariIsoJam(k.tanggalIso, k.jam),
-          tautan: `${akar}/laporan-kendala`,
+          tautan: tautanKendala,
           ikon: 'Awas',
           nada: 'tanah',
+        })
+      }
+      for (const k of kendalaBerubah.data) {
+        // Hanya petugas yang bisa menjadi penangan, jadi penyelesai = penangan berarti
+        // diselesaikan petugas, bukan oleh admin sendiri.
+        const selesai = dariCap(k.selesaiPada)
+        if (k.status !== 'Selesai' || !selesai || selesai < batas) continue
+        if (!k.penangan || k.diselesaikanOlehId !== k.penangan.id) continue
+        hasil.push({
+          kunci: `kendala-${k.id}-selesai-${k.selesaiPada}`,
+          judul: `${k.penangan.nama} menandai kendala selesai`,
+          isi: k.keteranganSelesai || k.keterangan,
+          waktu: selesai,
+          tautan: tautanKendala,
+          ikon: 'Centang',
+          nada: 'hijau',
         })
       }
       for (const l of lembur) {
@@ -308,25 +333,67 @@ export function Notifikasi({ peran }: { peran: Peran }) {
           nada: 'emas',
         })
       }
-      for (const k of kendala.data) {
-        const diubah = dariCap(k.diperbaruiPada)
-        if (k.status === 'Baru' || !diubah || diubah < batas) continue
-        const selesai = k.status === 'Selesai'
-        hasil.push({
-          kunci: `kendala-${k.id}-${k.status}`,
-          judul: selesai ? 'Laporan kendala Anda sudah selesai' : 'Laporan kendala Anda sedang diproses',
-          isi: k.keterangan,
-          waktu: diubah,
-          tautan: `${akar}/laporan-kendala`,
-          ikon: selesai ? 'Centang' : 'Awas',
-          nada: selesai ? 'hijau' : 'emas',
-        })
+      const tautanKendala = `${akar}/catatan-harian?jenis=kendala`
+      const saya = akun?.id
+      for (const k of kendalaBerubah.data) {
+        const penanganSaya = !!saya && k.penangan?.id === saya
+        const pelaporSaya = !!saya && k.pelaporId === saya
+        const dasar = { isi: k.keterangan, tautan: tautanKendala }
+
+        const ditugaskan = dariCap(k.ditugaskanPada)
+        if (penanganSaya && !pelaporSaya && ditugaskan && ditugaskan >= batas) {
+          hasil.push({
+            ...dasar,
+            kunci: `kendala-${k.id}-tugas-${k.ditugaskanPada}`,
+            judul: `Kamu ditugaskan menangani kendala dari ${k.nama}`,
+            waktu: ditugaskan,
+            ikon: 'Orang',
+            nada: 'emas',
+          })
+        }
+
+        const dibuka = dariCap(k.dibukaLagiPada)
+        if ((penanganSaya || pelaporSaya) && dibuka && dibuka >= batas) {
+          hasil.push({
+            ...dasar,
+            kunci: `kendala-${k.id}-buka-${k.dibukaLagiPada}`,
+            judul: penanganSaya
+              ? 'Kendala yang kamu tangani dibuka lagi oleh admin'
+              : 'Laporan kendala Anda dibuka lagi oleh admin',
+            waktu: dibuka,
+            ikon: 'Putar',
+            nada: 'tanah',
+          })
+        }
+
+        // Kabar penanganan laporan sendiri — kecuali yang dikerjakan petugas ini sendiri.
+        const selesai = dariCap(k.selesaiPada)
+        const mulai = dariCap(k.mulaiPada)
+        if (k.status === 'Selesai' && selesai && selesai >= batas && (pelaporSaya || penanganSaya) && k.diselesaikanOlehId !== saya) {
+          hasil.push({
+            ...dasar,
+            kunci: `kendala-${k.id}-Selesai-${k.selesaiPada}`,
+            judul: pelaporSaya ? 'Laporan kendala Anda sudah selesai' : 'Kendala yang kamu tangani ditandai selesai admin',
+            waktu: selesai,
+            ikon: 'Centang',
+            nada: 'hijau',
+          })
+        } else if (k.status === 'Diproses' && pelaporSaya && !penanganSaya && mulai && mulai >= batas) {
+          hasil.push({
+            ...dasar,
+            kunci: `kendala-${k.id}-Diproses-${k.mulaiPada}`,
+            judul: 'Laporan kendala Anda sedang diproses',
+            waktu: mulai,
+            ikon: 'Jam',
+            nada: 'emas',
+          })
+        }
       }
     }
 
     // Pengingat tanpa waktu di paling atas, sisanya yang terbaru lebih dulu.
     return hasil.sort((a, b) => (b.waktu?.getTime() ?? Infinity) - (a.waktu?.getTime() ?? Infinity))
-  }, [pengawas, akar, kendala.data, lembur, tukar.data, jadwal.data])
+  }, [pengawas, akar, akun?.id, kendala.data, kendalaBerubah.data, lembur, tukar.data, jadwal.data])
 
   const belum = semua.filter((n) => !dibaca.has(n.kunci)).length
 
@@ -339,7 +406,7 @@ export function Notifikasi({ peran }: { peran: Peran }) {
    */
   const [popup, setPopup] = useState<Notif[]>([])
   const dikenal = useRef<Set<string> | null>(null)
-  const memuatData = kendala.memuat || memuatLembur || tukar.memuat || jadwal.memuat
+  const memuatData = kendala.memuat || kendalaBerubah.memuat || memuatLembur || tukar.memuat || jadwal.memuat
   useEffect(() => {
     if (dikenal.current === null) {
       if (memuatData) return

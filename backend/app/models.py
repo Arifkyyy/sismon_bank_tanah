@@ -20,6 +20,7 @@ PERAN = ("superadmin", "admin", "user")
 JABATAN = ("Security", "OB", "CS", "Messenger")
 STATUS_AKUN = ("Aktif", "Cuti", "Nonaktif")
 STATUS_KENDALA = ("Baru", "Diproses", "Selesai")
+TAHAP_FOTO = ("sebelum", "sesudah")
 # 'Selesai' pada lembur tidak disimpan: dihitung dari 'Diterima' + tanggal sudah lewat.
 STATUS_LEMBUR = ("Draf", "Menunggu", "Diterima", "Ditolak")
 # 'harian' = satu status per hari (OB/OG). 'sesi' = dicek Pagi, Siang, Sore (Cleaning Service).
@@ -99,14 +100,33 @@ class Kendala(Base):
     waktu: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     keterangan: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="Baru", index=True)
-    ditangani_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    # Petugas yang bertugas memperbaiki; awalnya = pelapor, bisa dialihkan admin.
+    # None bila akun penangannya sudah dihapus.
+    penangan_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    ditugaskan_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    mulai_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    selesai_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    diselesaikan_oleh: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    keterangan_selesai: Mapped[str | None] = mapped_column(Text)
+    dibuka_lagi_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Perubahan terakhir apa pun (status, penangan) — untuk notifikasi.
     diperbarui_pada: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     dibuat_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     petugas: Mapped[User] = relationship(foreign_keys=[petugas_id])
+    penangan: Mapped[User | None] = relationship(foreign_keys=[penangan_id])
+    penyelesai: Mapped[User | None] = relationship(foreign_keys=[diselesaikan_oleh])
     foto: Mapped[list["Foto"]] = relationship(
         back_populates="kendala", cascade="all, delete-orphan", order_by="Foto.id"
     )
+
+    @property
+    def foto_sebelum(self) -> list["Foto"]:
+        return [x for x in self.foto if x.tahap == "sebelum"]
+
+    @property
+    def foto_sesudah(self) -> list["Foto"]:
+        return [x for x in self.foto if x.tahap == "sesudah"]
 
 
 class Lembur(Base):
@@ -167,11 +187,15 @@ class Foto(Base):
             "(logbook_id IS NOT NULL AND kendala_id IS NULL) OR (logbook_id IS NULL AND kendala_id IS NOT NULL)",
             name="ck_foto_satu_pemilik",
         ),
+        CheckConstraint(_pilihan("tahap", TAHAP_FOTO), name="ck_foto_tahap"),
+        # Foto sesudah = bukti kendala selesai diperbaiki, jadi hanya ada di kendala.
+        CheckConstraint("tahap = 'sebelum' OR kendala_id IS NOT NULL", name="ck_foto_sesudah_kendala"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     logbook_id: Mapped[int | None] = mapped_column(ForeignKey("logbook.id", ondelete="CASCADE"), index=True)
     kendala_id: Mapped[int | None] = mapped_column(ForeignKey("kendala.id", ondelete="CASCADE"), index=True)
+    tahap: Mapped[str] = mapped_column(String(10), default="sebelum", server_default="sebelum")
     lokasi_file: Mapped[str] = mapped_column(String(300))
     ukuran_byte: Mapped[int] = mapped_column(Integer, default=0)
     diambil_pada: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

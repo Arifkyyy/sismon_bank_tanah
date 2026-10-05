@@ -73,7 +73,13 @@ export function RekapHarian() {
   const pakaiKendala = saringan !== 'Aktivitas saja'
 
   const catatan = useApi<Logbook[]>(params !== null && pakaiAktivitas ? `/api/logbook${params}` : null, [])
-  const laporan = useApi<Kendala[]>(params !== null && pakaiKendala ? `/api/kendala${params}` : null, [])
+  // Hanya kendala yang dilaporkan sendiri, bukan yang ditugaskan dari petugas lain.
+  const laporan = useApi<Kendala[]>(
+    jendela && pakaiKendala
+      ? `/api/kendala${query({ dari: jendela.dari, sampai: jendela.sampai, milik: 'dilaporkan' })}`
+      : null,
+    [],
+  )
 
   const memuat = catatan.memuat || laporan.memuat
   const galat = catatan.galat ?? laporan.galat

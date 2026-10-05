@@ -31,7 +31,7 @@ def aktif() -> bool:
 
 
 def _kirim(user_ids: Iterable[int], judul: str, halaman: str, tag: str) -> None:
-    """`halaman` adalah bagian setelah akar peran, mis. 'laporan-kendala'."""
+    """`halaman` adalah bagian setelah akar peran, mis. 'lembur'."""
     ids = set(user_ids)
     if not aktif() or not ids:
         return
@@ -76,13 +76,30 @@ def _pengawas() -> list[int]:
 
 # ------------------------------------------------------------- per kejadian
 
+# Halaman kendala per sisi; sama dengan rute di src/App.tsx.
+_KENDALA_ADMIN = "laporan-petugas?tab=kendala"
+_KENDALA_PETUGAS = "catatan-harian?jenis=kendala"
+
+
 def kendala_baru(nama_petugas: str, kendala_id: int) -> None:
-    _kirim(_pengawas(), f"Laporan kendala baru dari {nama_petugas}", "laporan-kendala", f"kendala-{kendala_id}")
+    _kirim(_pengawas(), f"Laporan kendala baru dari {nama_petugas}", _KENDALA_ADMIN, f"kendala-{kendala_id}")
 
 
 def status_kendala(petugas_id: int, status: str, kendala_id: int) -> None:
     judul = "Laporan kendala Anda sudah selesai" if status == "Selesai" else "Laporan kendala Anda sedang diproses"
-    _kirim([petugas_id], judul, "laporan-kendala", f"kendala-{kendala_id}")
+    _kirim([petugas_id], judul, _KENDALA_PETUGAS, f"kendala-{kendala_id}-{status}")
+
+
+def kendala_ditugaskan(penangan_id: int, nama_pelapor: str, kendala_id: int) -> None:
+    _kirim([penangan_id], f"Anda ditugaskan menangani kendala dari {nama_pelapor}", _KENDALA_PETUGAS, f"kendala-{kendala_id}-tugas")
+
+
+def kendala_dibuka_lagi(user_ids: Iterable[int], kendala_id: int) -> None:
+    _kirim(user_ids, "Kendala dibuka lagi oleh admin, perlu ditangani ulang", _KENDALA_PETUGAS, f"kendala-{kendala_id}-buka")
+
+
+def kendala_selesai_petugas(nama_petugas: str, kendala_id: int) -> None:
+    _kirim(_pengawas(), f"{nama_petugas} menandai kendala selesai", _KENDALA_ADMIN, f"kendala-{kendala_id}-selesai")
 
 
 def lembur_dikirim(petugas_id: int, nama_admin: str, lembur_id: int) -> None:

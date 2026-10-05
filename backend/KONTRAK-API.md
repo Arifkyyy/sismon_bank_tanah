@@ -31,7 +31,7 @@ jadi pesannya bisa langsung ditampilkan ke pengguna.
 ### Logbook
 | Metode | Alamat | Hak akses | Keterangan |
 | --- | --- | --- | --- |
-| GET | `/logbook?tanggal=&dari=&sampai=&jabatan=&batas=` | login | petugas hanya melihat miliknya |
+| GET | `/logbook?tanggal=&dari=&sampai=&jabatan=&petugas_id=&cari=&batas=` | login | petugas hanya melihat miliknya; `cari` = potongan nama petugas |
 | POST | `/logbook` | login | `{petugasId, tanggal, jam, keterangan, foto[]}` |
 
 `foto` berisi data URL hasil kamera (`data:image/jpeg;base64,...`), maksimal 5 foto,
@@ -42,9 +42,64 @@ mencatat atas nama petugas mana pun. Aturan yang sama berlaku untuk `/kendala`.
 ### Laporan kendala
 | Metode | Alamat | Hak akses | Keterangan |
 | --- | --- | --- | --- |
-| GET | `/kendala?status=&tanggal=&dari=&sampai=&jabatan=&batas=` | login | |
-| POST | `/kendala` | login | isian sama dengan logbook |
-| PATCH | `/kendala/{id}/status` | admin | `{status: "Baru" \| "Diproses" \| "Selesai"}` |
+| GET | `/kendala?status=&tanggal=&dari=&sampai=&jabatan=&petugas_id=&penangan_id=&terbuka=&milik=&cari=&batas=` | login | lihat aturan di bawah |
+| GET | `/kendala/{id}` | login | `Kendala` + `riwayat[]` |
+| POST | `/kendala` | login | isian sama dengan logbook; penangan otomatis = pelapor |
+| POST | `/kendala/{id}/mulai` | penangan / admin | Baru → Diproses |
+| POST | `/kendala/{id}/selesai` | penangan / admin | `{keterangan, foto[]}` → Selesai |
+| PATCH | `/kendala/{id}/penangan` | admin | `{penanganId}` petugas berstatus Aktif; tidak untuk kendala Selesai |
+| POST | `/kendala/{id}/buka-lagi` | admin | `{alasan}` wajib; Selesai → Diproses |
+| PATCH | `/kendala/{id}/status` | admin | `{status: "Diproses"}` hanya dari Baru |
+
+**Siapa melihat apa.** Admin melihat semua. Petugas hanya menerima kendala yang
+ia laporkan (`petugasId`/pengirim = dia) atau yang **penangannya** dia; laporan
+lain ditolak 403 di `GET /kendala/{id}`.
+
+Saringan tambahan: `terbuka=true` = belum Selesai (`false` = hanya Selesai);
+`milik=dilaporkan` / `milik=ditangani` relatif terhadap akun yang sedang masuk
+(dipakai petugas untuk memisahkan "kendala saya" dan "perlu saya tangani");
+`penangan_id` untuk admin; `cari` = potongan nama pelapor; `berubah_sejak=YYYY-MM-DD`
+= hanya yang diperbarui (ditugaskan/diproses/selesai/dibuka lagi) sejak tanggal itu,
+diurutkan dari perubahan terbaru (dipakai lonceng notifikasi).
+
+**Penangan.** Saat dibuat, penangan = pelapor. Admin bisa mengalihkannya ke
+petugas lain (`/penangan`). Petugas hanya bisa `/mulai` dan `/selesai` pada
+kendala yang penangannya dia sendiri (selain itu 403 "Kendala ini tidak
+ditugaskan kepada Anda.").
+
+**Selesai.** Petugas: hanya dari Diproses, wajib 1–5 foto sesudah (data URL dari
+kamera, aturan sama dengan foto laporan) dan keterangan penyelesaian. Admin:
+boleh dari Baru maupun Diproses (mis. dikerjakan vendor), foto tidak wajib,
+keterangan tetap wajib. `PATCH /status` tidak menerima Selesai.
+
+**Buka lagi.** Waktu dan keterangan selesai dikosongkan; foto sesudah yang lama
+tetap disimpan sebagai jejak (foto sesudah berikutnya ditambahkan).
+
+Bentuk `Kendala` (selain field lama `nama`, `jabatan`, `fotoProfil` = pelapor):
+
+```ts
+pelaporId: number
+fotoUrl: string[]        // = fotoSebelum, untuk halaman lama
+fotoSebelum: string[]
+fotoSesudah: string[]
+penangan: { id, nama, jabatan, fotoProfil } | null   // null bila akunnya dihapus
+ditugaskanPada, mulaiPada, selesaiPada, dibukaLagiPada, diperbaruiPada: string | null  // '15 Sep 2026 · 10.24'
+diselesaikanOleh: string | null   // nama
+diselesaikanOlehId: number | null // = penangan.id berarti diselesaikan petugas, bukan admin
+keteranganSelesai: string | null
+// hanya di GET /kendala/{id}:
+riwayat: { waktu, jenis, kejadian, oleh, catatan }[]
+// jenis: 'dilaporkan' | 'ditugaskan' | 'mulai' | 'selesai' | 'dibuka_lagi' | 'status'
+```
+
+**Notifikasi push kendala.** Admin: laporan baru, kendala ditandai selesai oleh
+petugas (tautan `laporan-petugas?tab=kendala`). Petugas: ditugaskan kepadanya,
+kendala yang ia tangani/laporkan dibuka lagi, laporannya diproses/selesai oleh
+orang lain (tautan `catatan-harian?jenis=kendala`).
+
+Riwayat disusun dari `log_audit` (aksi `kendala_*` dan `ubah_status_kendala`).
+`catatan` berisi keterangan penyelesaian atau alasan buka lagi. Kendala dari
+sebelum fitur ini hanya punya kejadian "Dilaporkan" dan perubahan status lama.
 
 ### Lembur
 | Metode | Alamat | Hak akses | Keterangan |
@@ -91,12 +146,12 @@ belum dibayar. Rekap per petugas (`/statistik/rekap`) membawa `upah` dan
 | --- | --- | --- | --- |
 | GET | `/statistik/tujuh-hari` | login | bagan batang; petugas otomatis hanya datanya sendiri |
 | GET | `/statistik/sebaran-jabatan` | admin | bagan donat |
-| GET | `/statistik/rekap?dari=&sampai=&jabatan=` | admin | rekap per petugas |
+| GET | `/statistik/rekap?dari=&sampai=&jabatan=` | admin | rekap per petugas; `hari` = hari yang punya logbook **atau** laporan kendala |
 
 ### Arsip foto (super admin)
 | Metode | Alamat | Keterangan |
 | --- | --- | --- |
-| GET | `/foto?sumber=&jabatan=&batas=` | daftar arsip |
+| GET | `/foto?sumber=&jabatan=&batas=` | daftar arsip; tiap foto membawa `tahap: "sebelum" \| "sesudah"` (sesudah = bukti kendala selesai) |
 | GET | `/foto/statistik` | total, ukuran, jumlah lebih dari 6 bulan |
 | POST | `/foto/hapus` | `{ids: [...]}` |
 | POST | `/foto/hapus-sebelum` | `{tanggal, konfirmasi: "HAPUS"}`; minimal 30 hari lalu |

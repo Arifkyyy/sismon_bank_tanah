@@ -9,17 +9,15 @@ import { SistemDesain } from '@/pages/SistemDesain'
 import { DashboardAdmin } from '@/pages/admin/Dashboard'
 import { DataUser } from '@/pages/admin/DataUser'
 import { JadwalShift } from '@/pages/admin/JadwalShift'
-import { LaporanKendalaAdmin } from '@/pages/admin/LaporanKendala'
-import { LogAktivitas } from '@/pages/admin/LogAktivitas'
+import { LaporanPetugas } from '@/pages/admin/LaporanPetugas'
 import { PengajuanLembur } from '@/pages/admin/PengajuanLembur'
 import { Rekapitulasi } from '@/pages/admin/Rekapitulasi'
 import { HapusDataFoto } from '@/pages/superadmin/HapusDataFoto'
 import { KelolaAkun } from '@/pages/superadmin/KelolaAkun'
+import { CatatanHarian } from '@/pages/user/CatatanHarian'
 import { DashboardUser } from '@/pages/user/Dashboard'
 import { JadwalSayaUser } from '@/pages/user/JadwalSaya'
-import { LaporanKendalaUser } from '@/pages/user/LaporanKendala'
 import { LemburUser } from '@/pages/user/Lembur'
-import { LogbookUser } from '@/pages/user/Logbook'
 import { RekapHarian } from '@/pages/user/RekapHarian'
 import type { Peran } from '@/types'
 
@@ -51,9 +49,11 @@ export default function App() {
       >
         <Route index element={<DashboardAdmin peran="admin" />} />
         <Route path="data-user" element={<DataUser peran="admin" />} />
-        <Route path="log-aktivitas" element={<LogAktivitas />} />
+        <Route path="laporan-petugas" element={<LaporanPetugas />} />
+        {/* Alamat lama: bookmark dan notifikasi push yang sudah terkirim */}
+        <Route path="log-aktivitas" element={<Navigate to="/admin/laporan-petugas?tab=aktivitas" replace />} />
         <Route path="rekapitulasi" element={<Rekapitulasi />} />
-        <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="laporan-kendala" element={<Navigate to="/admin/laporan-petugas?tab=kendala" replace />} />
         <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
         <Route path="jadwal-shift" element={<JadwalShift />} />
         <Route path="profil" element={<Profil />} />
@@ -71,9 +71,11 @@ export default function App() {
       >
         <Route index element={<DashboardAdmin peran="superadmin" />} />
         <Route path="data-user" element={<DataUser peran="superadmin" />} />
-        <Route path="log-aktivitas" element={<LogAktivitas />} />
+        <Route path="laporan-petugas" element={<LaporanPetugas />} />
+        {/* Alamat lama: bookmark dan notifikasi push yang sudah terkirim */}
+        <Route path="log-aktivitas" element={<Navigate to="/super-admin/laporan-petugas?tab=aktivitas" replace />} />
         <Route path="rekapitulasi" element={<Rekapitulasi />} />
-        <Route path="laporan-kendala" element={<LaporanKendalaAdmin />} />
+        <Route path="laporan-kendala" element={<Navigate to="/super-admin/laporan-petugas?tab=kendala" replace />} />
         <Route path="pengajuan-lembur" element={<PengajuanLembur />} />
         <Route path="jadwal-shift" element={<JadwalShift />} />
         <Route path="kelola-akun" element={<KelolaAkun />} />
@@ -93,9 +95,12 @@ export default function App() {
       >
         <Route index element={<DashboardUser />} />
         <Route path="jadwal-saya" element={<JadwalSayaUser />} />
-        <Route path="logbook" element={<LogbookUser />} />
+        <Route path="catat-kegiatan" element={<Navigate to="/petugas/catatan-harian" replace />} />
+        <Route path="catatan-harian" element={<CatatanHarian />} />
+        {/* Alamat lama (bookmark, notifikasi push yang sudah terkirim) */}
+        <Route path="logbook" element={<Navigate to="/petugas/catatan-harian?jenis=aktivitas" replace />} />
+        <Route path="laporan-kendala" element={<Navigate to="/petugas/catatan-harian?jenis=kendala" replace />} />
         <Route path="rekap-harian" element={<RekapHarian />} />
-        <Route path="laporan-kendala" element={<LaporanKendalaUser />} />
         <Route path="lembur" element={<LemburUser />} />
         <Route path="profil" element={<Profil />} />
         <Route path="sistem-desain" element={<SistemDesain />} />

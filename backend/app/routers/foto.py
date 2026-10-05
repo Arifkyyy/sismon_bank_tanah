@@ -26,6 +26,7 @@ def _keluar(x: Foto) -> FotoKeluar:
         waktu=f.cap_waktu(x.diambil_pada),
         waktu_iso=f.ke_wib(x.diambil_pada).date().isoformat(),
         sumber="Logbook" if x.logbook_id else "Kendala",
+        tahap=x.tahap,
         url=url_foto(x.lokasi_file),
         ukuran_byte=x.ukuran_byte,
     )

@@ -87,8 +87,18 @@ export interface Logbook {
   lembur: string
 }
 
+/** Pelapor/penangan kendala dalam bentuk ringkas. */
+export interface OrangKendala {
+  id: number
+  nama: string
+  jabatan?: Jabatan | null
+  fotoProfil?: string | null
+}
+
+/** `nama`, `jabatan`, `fotoProfil` = pelapor. */
 export interface Kendala {
   id?: number
+  pelaporId?: number
   nama: string
   jabatan: Jabatan
   /** URL foto profil petugas; kosong berarti avatar memakai inisial */
@@ -100,10 +110,42 @@ export interface Kendala {
   keterangan: string
   status: Status
   foto: 'a' | 'b' | 'c'
-  /** foto asli hasil kamera (data URL); mengalahkan `foto` bila ada isinya */
+  /** = fotoSebelum; dipertahankan untuk halaman lama */
   fotoUrl?: string[]
-  /** kapan admin terakhir mengubah statusnya, mis. '15 Sep 2026 · 10.24' */
+  /** foto saat dilaporkan */
+  fotoSebelum?: string[]
+  /** bukti setelah diperbaiki */
+  fotoSesudah?: string[]
+  /** petugas yang bertugas memperbaiki; null bila akunnya sudah dihapus */
+  penangan?: OrangKendala | null
+  /** semua waktu berbentuk '15 Sep 2026 · 10.24' */
+  ditugaskanPada?: string | null
+  mulaiPada?: string | null
+  selesaiPada?: string | null
+  /** nama yang menandai selesai */
+  diselesaikanOleh?: string | null
+  diselesaikanOlehId?: number | null
+  keteranganSelesai?: string | null
+  dibukaLagiPada?: string | null
+  /** kapan terakhir ada perubahan (status/penangan) */
   diperbaruiPada?: string | null
+}
+
+export type JenisRiwayatKendala = 'dilaporkan' | 'ditugaskan' | 'mulai' | 'selesai' | 'dibuka_lagi' | 'status'
+
+export interface RiwayatKendala {
+  waktu: string
+  jenis: JenisRiwayatKendala
+  /** kalimat siap tampil, mis. 'Ditugaskan ke Andi' */
+  kejadian: string
+  oleh?: string | null
+  /** keterangan penyelesaian / alasan buka lagi */
+  catatan?: string | null
+}
+
+/** GET /api/kendala/{id} */
+export interface DetailKendala extends Kendala {
+  riwayat: RiwayatKendala[]
 }
 
 export interface Lembur {
@@ -237,6 +279,8 @@ export interface FotoArsip {
   waktu: string
   waktuIso: string
   sumber: 'Logbook' | 'Kendala'
+  /** 'sesudah' = bukti kendala selesai diperbaiki */
+  tahap?: 'sebelum' | 'sesudah'
   url: string
   ukuranByte: number
 }

@@ -115,7 +115,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             judul="Kendala yang perlu ditindak"
             sub="Diurutkan dari yang terbaru"
             aksi={
-              <Link to={`${akar}/laporan-kendala`}>
+              <Link to={`${akar}/laporan-petugas?tab=kendala`}>
                 <Tombol varian="hantu" kecil>
                   Buka halaman
                 </Tombol>
@@ -172,7 +172,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             judul="Aktivitas terbaru"
             sub="Catatan terbaru hari ini"
             aksi={
-              <Link to={`${akar}/log-aktivitas`}>
+              <Link to={`${akar}/laporan-petugas?tab=aktivitas`}>
                 <Tombol varian="hantu" kecil>
                   Lihat semua
                 </Tombol>

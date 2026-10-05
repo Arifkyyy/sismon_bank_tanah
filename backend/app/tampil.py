@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from app import format as f
 from app.foto_util import url_foto, url_foto_profil
 from app.models import Kendala, Lembur, Logbook, User
-from app.schemas import AkunKeluar, DrafKeluar, KendalaKeluar, LemburKeluar, LogbookKeluar, PetugasKeluar
+from app.schemas import (
+    AkunKeluar, DrafKeluar, KendalaKeluar, LemburKeluar, LogbookKeluar, OrangKendala, PetugasKeluar,
+)
 
 
 def akun(u: User) -> AkunKeluar:
@@ -91,10 +93,16 @@ def daftar_logbook(db: Session, baris: list[Logbook]) -> list[LogbookKeluar]:
     return hasil
 
 
+def orang_kendala(u: User) -> OrangKendala:
+    return OrangKendala(id=u.id, nama=u.nama, jabatan=u.jabatan, foto_profil=url_foto_profil(u.foto_profil))
+
+
 def kendala(k: Kendala) -> KendalaKeluar:
     w = f.ke_wib(k.waktu)
+    sebelum = [url_foto(x.lokasi_file) for x in k.foto_sebelum]
     return KendalaKeluar(
         id=k.id,
+        pelapor_id=k.petugas_id,
         nama=k.petugas.nama,
         jabatan=k.petugas.jabatan,
         foto_profil=url_foto_profil(k.petugas.foto_profil),
@@ -105,7 +113,17 @@ def kendala(k: Kendala) -> KendalaKeluar:
         keterangan=k.keterangan,
         status=k.status,
         foto=f.varian_foto(k.id),
-        foto_url=[url_foto(x.lokasi_file) for x in k.foto],
+        foto_url=sebelum,
+        foto_sebelum=sebelum,
+        foto_sesudah=[url_foto(x.lokasi_file) for x in k.foto_sesudah],
+        penangan=orang_kendala(k.penangan) if k.penangan else None,
+        ditugaskan_pada=f.cap_waktu(k.ditugaskan_pada),
+        mulai_pada=f.cap_waktu(k.mulai_pada),
+        selesai_pada=f.cap_waktu(k.selesai_pada),
+        diselesaikan_oleh=k.penyelesai.nama if k.penyelesai else None,
+        diselesaikan_oleh_id=k.diselesaikan_oleh,
+        keterangan_selesai=k.keterangan_selesai,
+        dibuka_lagi_pada=f.cap_waktu(k.dibuka_lagi_pada),
         diperbarui_pada=f.cap_waktu(k.diperbarui_pada),
     )
 

@@ -64,7 +64,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
     : tukar.data.filter((t) => t.status === 'Menunggu Rekan' && t.peranSaya === 'rekan').length
 
   /**
-   * Angka Log aktivitas hanya menghitung logbook yang belum dilihat: yang
+   * Angka Laporan Petugas menghitung kendala baru ditambah logbook yang belum dilihat: yang
    * disimpan id logbook terbaru saat admin membuka halamannya. Sama seperti
    * lonceng, tandanya disimpan per akun di browser.
    */
@@ -78,16 +78,16 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
     }
   }, [kunciLog])
   const idLogTerbaru = logHariIni.data.reduce((maks, l) => Math.max(maks, l.id ?? 0), 0)
-  const diLogAktivitas = pengawas && lokasi.pathname === `${AKAR[peran]}/log-aktivitas`
+  const diLaporanPetugas = pengawas && lokasi.pathname === `${AKAR[peran]}/laporan-petugas`
   useEffect(() => {
-    if (!diLogAktivitas || idLogTerbaru <= logDilihat) return
+    if (!diLaporanPetugas || idLogTerbaru <= logDilihat) return
     setLogDilihat(idLogTerbaru)
     try {
       localStorage.setItem(kunciLog, String(idLogTerbaru))
     } catch {
       // penyimpanan browser tidak tersedia — tanda dilihat hanya bertahan selama halaman terbuka
     }
-  }, [diLogAktivitas, idLogTerbaru, logDilihat, kunciLog])
+  }, [diLaporanPetugas, idLogTerbaru, logDilihat, kunciLog])
   const logBelumDilihat = logHariIni.data.filter((l) => (l.id ?? 0) > logDilihat).length
 
   const angka = (n: number) => (n > 0 ? (n > 99 ? '99+' : String(n)) : undefined)
@@ -192,11 +192,9 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
               const tanda =
                 peran === 'user' && item.id === 'lembur'
                   ? angka(menunggu.length)
-                  : pengawas && item.id === 'log'
-                    ? angka(logBelumDilihat)
-                    : pengawas && item.id === 'kendala'
-                      ? angka(kendalaBaru.data.length)
-                      : (pengawas && item.id === 'shift') || (peran === 'user' && item.id === 'jadwal')
+                  : pengawas && item.id === 'laporan'
+                    ? angka(logBelumDilihat + kendalaBaru.data.length)
+                    : (pengawas && item.id === 'shift') || (peran === 'user' && item.id === 'jadwal')
                         ? angka(tukarPerluTindakan)
                         : item.tanda
               return (

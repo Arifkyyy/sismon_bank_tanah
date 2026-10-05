@@ -405,6 +405,61 @@ export function Segmen({
   )
 }
 
+/**
+ * Saklar nyala/mati dengan label. Seluruh baris bisa ditekan, bukan hanya
+ * tombol kecilnya, supaya mudah dikenai jari di ponsel.
+ */
+export function Saklar({
+  nyala,
+  onUbah,
+  label,
+  keterangan,
+  warna = 'hijau',
+}: {
+  nyala: boolean
+  onUbah: (nyala: boolean) => void
+  label: string
+  keterangan?: string
+  /** warna saat menyala */
+  warna?: 'hijau' | 'emas'
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={nyala}
+      onClick={() => onUbah(!nyala)}
+      className={cn(
+        'flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition',
+        nyala
+          ? warna === 'emas'
+            ? 'border-emas/60 bg-emas-lembut'
+            : 'border-hijau/40 bg-hijau-lembut'
+          : 'border-garis-kuat bg-white hover:border-teks-samar',
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <b className="block text-[13px] font-semibold text-ink">{label}</b>
+        {keterangan && <span className="mt-0.5 block text-[11.5px] text-teks-lembut">{keterangan}</span>}
+      </span>
+      <span
+        aria-hidden
+        className={cn(
+          'relative h-6 w-11 flex-none rounded-full transition-colors',
+          nyala ? (warna === 'emas' ? 'bg-emas' : 'bg-hijau') : 'bg-garis-kuat',
+        )}
+      >
+        <i
+          className={cn(
+            'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+            nyala && 'translate-x-5',
+          )}
+        />
+      </span>
+    </button>
+  )
+}
+
 /** Pasangan ringkas `Input` untuk baris penyaring — setinggi `PilihRapi`. */
 export function InputRapi({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
   return (

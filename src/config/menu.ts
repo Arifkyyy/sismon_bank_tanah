@@ -8,9 +8,8 @@ const pemantauan: GrupMenu = {
   judul: 'Pemantauan',
   item: [
     { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
-    // `tanda` log dan kendala diisi Sidebar dari backend
-    { id: 'log', label: 'Log aktivitas', path: 'log-aktivitas', ikon: 'Buku' },
-    { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas' },
+    // `tanda` diisi Sidebar dari backend: logbook belum dilihat + kendala baru
+    { id: 'laporan', label: 'Laporan Petugas', path: 'laporan-petugas', ikon: 'Buku' },
   ],
 }
 
@@ -49,8 +48,7 @@ export const MENU: Record<Peran, GrupMenu[]> = {
       item: [
         { id: 'dash', label: 'Dashboard', path: '', ikon: 'Grid' },
         { id: 'jadwal', label: 'Jadwal saya', path: 'jadwal-saya', ikon: 'Kalender' },
-        { id: 'logbook', label: 'Aktivitas', path: 'logbook', ikon: 'Buku' },
-        { id: 'kendala', label: 'Laporan kendala', path: 'laporan-kendala', ikon: 'Awas' },
+        { id: 'catatan', label: 'Catatan Harian', path: 'catatan-harian', ikon: 'Buku' },
       ],
     },
     {
@@ -79,14 +77,13 @@ export const AKAR: Record<Peran, string> = {
 export const JUDUL: Record<string, [string, string]> = {
   '': ['Dashboard', 'Selasa, 15 September 2026'],
   'data-user': ['Data user', 'Daftar petugas Security, Office Boy, Customer Service, dan Messenger'],
-  'log-aktivitas': ['Log aktivitas', 'Seluruh logbook yang masuk dari petugas'],
+  'laporan-petugas': ['Laporan Petugas', 'Aktivitas dan kendala lapangan yang dilaporkan petugas'],
   rekapitulasi: ['Rekapitulasi', 'Gabungan logbook dan lembur per periode'],
-  'laporan-kendala': ['Laporan kendala', 'Kendala lapangan yang dilaporkan petugas'],
   'pengajuan-lembur': ['Pengajuan lembur', 'Buat penugasan lembur dan pantau jawabannya'],
   'jadwal-shift': ['Jadwal Shift', 'Susun jadwal, atur jenis shift, dan proses permintaan tukar'],
   'kelola-akun': ['Kelola akun', 'Tambah, ubah, dan hapus akun admin maupun petugas'],
   'hapus-data-foto': ['Hapus data foto', 'Bersihkan arsip foto logbook dan laporan kendala'],
-  logbook: ['Aktivitas', 'Catat aktivitas Anda hari ini'],
+  'catatan-harian': ['Catatan Harian', 'Catat kegiatan atau laporkan kendala, lalu pantau catatan Anda'],
   'jadwal-saya': ['Jadwal saya', 'Jadwal shift Anda dan permintaan tukar shift'],
   'rekap-harian': ['Rekap harian', 'Ringkasan aktivitas dan kendala Anda'],
   lembur: ['Lembur', 'Penugasan lembur yang ditujukan kepada Anda'],
