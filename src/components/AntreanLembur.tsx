@@ -17,7 +17,7 @@ export function kekuranganDraf(d: DrafLembur): string[] {
   if (!d.mulai || !d.selesai) kurang.push('rentang jam')
   else if (menitLembur(d.mulai, d.selesai) > MAKS_JAM_LEMBUR * 60)
     kurang.push(`rentang jam (maks. ${MAKS_JAM_LEMBUR} jam)`)
-  if (d.keterangan.trim().length < 20) kurang.push('keterangan tugas')
+  if (d.keterangan.trim().length < 1) kurang.push('keterangan tugas')
   return kurang
 }
 

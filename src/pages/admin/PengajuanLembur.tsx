@@ -304,7 +304,7 @@ export function PengajuanLembur() {
                 label="Keterangan tugas"
                 wajib
                 penuh
-                bantu="Minimal 20 karakter. Tulis tugas nyatanya supaya petugas tahu apa yang dikerjakan."
+                bantu="Tulis tugas nyatanya supaya petugas tahu apa yang dikerjakan."
               >
                 <AreaTeks
                   value={form.keterangan}

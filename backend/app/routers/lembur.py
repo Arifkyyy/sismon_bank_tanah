@@ -169,8 +169,8 @@ def kirim_draf(lembur_id: str, db: Session = Depends(ambil_db), admin: User = De
     kurang = []
     if l.petugas_id is None:
         kurang.append("nama")
-    if len(l.keterangan) < 20:
-        kurang.append("keterangan minimal 20 karakter")
+    if len(l.keterangan) < 1:
+        kurang.append("keterangan")
     if kurang:
         raise HTTPException(422, "Draf belum lengkap: " + ", ".join(kurang))
     # Draf lama bisa dibuat sebelum batas lama lembur berlaku, atau tanggalnya sudah lewat.

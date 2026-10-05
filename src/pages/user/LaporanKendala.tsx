@@ -173,7 +173,7 @@ export function LaporanKendalaUser() {
                 label="Keterangan kendala"
                 wajib
                 penuh
-                bantu="Minimal 20 karakter. Jelaskan kendalanya, lokasinya, dan sejak kapan terjadi."
+                bantu="Jelaskan kendalanya, lokasinya, dan sejak kapan terjadi."
               >
                 <AreaTeks
                   value={form.keterangan}
