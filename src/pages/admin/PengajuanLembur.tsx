@@ -220,7 +220,7 @@ export function PengajuanLembur() {
         <Kartu className="self-start">
           <KopKartu
             judul="Buat penugasan lembur"
-            sub="Disimpan ke Data Pending dulu — petugas belum menerima apa pun"
+            sub="Disimpan ke Cek Laporan dulu — petugas belum menerima apa pun"
             aksi={
               <>
                 {editId && <Pil status="Diproses">Mengedit draf</Pil>}
@@ -326,7 +326,7 @@ export function PengajuanLembur() {
             </Tombol>
             <Tombol onClick={simpanDraf}>
               <Ikon.Tambah size={15} />
-              {editId ? 'Simpan perubahan' : 'Simpan ke Data Pending'}
+              {editId ? 'Simpan perubahan' : 'Simpan ke Cek Laporan'}
             </Tombol>
           </KakiForm>
         </Kartu>

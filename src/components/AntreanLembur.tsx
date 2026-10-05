@@ -74,7 +74,7 @@ export function KartuAntreanLembur({
   return (
     <Kartu className="self-start">
       <KopKartu
-        judul="Data Pending"
+        judul="Cek Laporan"
         sub="Periksa dulu, petugas belum menerima apa pun"
         aksi={
           daftar.length > 0 && (
@@ -261,9 +261,9 @@ export function KartuAntreanLembur({
               onClick={onKirimSemua}
             >
               <Ikon.Kirim size={15} />
-              {siapKirim === 0
-                ? 'Belum ada draf yang siap dikirim'
-                : `Kirim ${siapKirim} draf yang siap`}
+                {siapKirim === 0
+                ? 'Belum ada laporan yang siap dikirim'
+                : `Kirim ${siapKirim} laporan yang siap`}
             </Tombol>
           </>
         )}

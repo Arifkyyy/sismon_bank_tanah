@@ -203,7 +203,7 @@ export function LogbookUser() {
                 Batal
               </Tombol>
             )}
-            <Tombol onClick={simpanDraf}>{editId ? 'Simpan perubahan' : 'Draft'}</Tombol>
+            <Tombol onClick={simpanDraf}>{editId ? 'Simpan perubahan' : 'Simpan'}</Tombol>
           </KakiForm>
         </Kartu>
 

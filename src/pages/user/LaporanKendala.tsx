@@ -209,7 +209,7 @@ export function LaporanKendalaUser() {
             <Tombol varian="hantu" onClick={batalEdit}>
               {editId ? 'Batal' : 'Kosongkan'}
             </Tombol>
-            <Tombol onClick={simpanDraf}>{editId ? 'Simpan perubahan' : 'Draft'}</Tombol>
+            <Tombol onClick={simpanDraf}>{editId ? 'Simpan perubahan' : 'Simpan'}</Tombol>
           </KakiForm>
         </Kartu>
 

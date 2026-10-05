@@ -33,9 +33,9 @@ export function kekuranganDraf(d: Draf): string[] {
 export function KartuDataPending({
   daftar,
   editId,
-  judul = 'Data Pending',
+  judul = 'Cek Laporan',
   sub = 'Data yang belum final',
-  kosongJudul = 'Belum ada data pending',
+  kosongJudul = 'Belum ada Cek Laporan',
   kosongPesan,
   onEdit,
   onKirim,
