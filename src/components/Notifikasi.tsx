@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AKAR } from '@/config/menu'
 import { useAuth } from '@/context/AuthContext'
@@ -33,6 +34,10 @@ const WARNA: Record<Nada, string> = {
 
 /** Notifikasi yang lebih tua dari ini tidak ditampilkan lagi. */
 const BATAS_HARI = 7
+
+/** Lama popup tampil sebelum hilang sendiri, dan jumlah popup yang boleh bertumpuk. */
+const LAMA_POPUP = 7000
+const MAKS_POPUP = 3
 
 /** '15 Sep 2026 · 10.24' → Date */
 function dariCap(teks?: string | null): Date | null {
@@ -92,7 +97,7 @@ export function Notifikasi({ peran }: { peran: Peran }) {
 
   /* ---------------------------------------------------------------- data */
 
-  const { daftar: lembur, muat: muatLembur } = useLembur()
+  const { daftar: lembur, muat: muatLembur, memuat: memuatLembur } = useLembur()
   const kendala = useApi<Kendala[]>(
     `/api/kendala${query(pengawas ? { status: 'Baru', batas: 50 } : { batas: 30 })}`,
     [],
@@ -186,6 +191,56 @@ export function Notifikasi({ peran }: { peran: Peran }) {
   }, [pengawas, akar, kendala.data, lembur])
 
   const belum = semua.filter((n) => !dibaca.has(n.kunci)).length
+
+  /* ------------------------------------------------------------- popup */
+
+  /**
+   * Popup hanya untuk notifikasi yang muncul SETELAH halaman dibuka. Daftar
+   * pertama dicatat sebagai "sudah dikenal" dan cukup diringkas jadi satu
+   * popup, supaya pengguna tidak dibanjiri saat baru masuk.
+   */
+  const [popup, setPopup] = useState<Notif[]>([])
+  const dikenal = useRef<Set<string> | null>(null)
+  const memuatData = kendala.memuat || memuatLembur
+  useEffect(() => {
+    if (dikenal.current === null) {
+      if (memuatData) return
+      dikenal.current = new Set(semua.map((n) => n.kunci))
+      const n = semua.filter((x) => !dibaca.has(x.kunci)).length
+      if (n > 0) {
+        setPopup([
+          {
+            kunci: 'ringkasan',
+            judul: `Ada ${n} notifikasi belum dibaca`,
+            isi: 'Klik untuk melihat daftarnya.',
+            waktu: null,
+            tautan: '',
+            ikon: 'Lonceng',
+            nada: 'tanah',
+          },
+        ])
+      }
+      return
+    }
+    const kenal = dikenal.current
+    const baru = semua.filter((x) => !kenal.has(x.kunci) && !dibaca.has(x.kunci))
+    semua.forEach((x) => kenal.add(x.kunci))
+    if (baru.length) setPopup((p) => [...p, ...baru].slice(-MAKS_POPUP))
+  }, [semua, memuatData]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const tutupPopup = useCallback((kunci: string) => {
+    setPopup((p) => p.filter((x) => x.kunci !== kunci))
+  }, [])
+
+  function klikPopup(n: Notif) {
+    tutupPopup(n.kunci)
+    if (n.kunci === 'ringkasan') {
+      muatSemua()
+      setBuka(true)
+    } else {
+      bukaNotif(n)
+    }
+  }
 
   /* -------------------------------------------------------------- aksi */
 
@@ -321,6 +376,58 @@ export function Notifikasi({ peran }: { peran: Peran }) {
           )}
         </div>
       )}
+
+      {popup.length > 0 &&
+        createPortal(
+          <div
+            aria-live="polite"
+            className="fixed bottom-5 right-5 z-[60] flex w-[min(360px,calc(100vw-24px))] flex-col gap-2.5 max-sm:bottom-3 max-sm:right-3"
+          >
+            {popup.map((n) => (
+              <Popup key={n.kunci} n={n} onKlik={() => klikPopup(n)} onTutup={tutupPopup} />
+            ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  )
+}
+
+/** Satu popup notifikasi. Hilang sendiri setelah beberapa detik; berhenti menghitung selama disorot. */
+function Popup({ n, onKlik, onTutup }: { n: Notif; onKlik: () => void; onTutup: (kunci: string) => void }) {
+  const [disorot, setDisorot] = useState(false)
+  const { kunci } = n
+  useEffect(() => {
+    if (disorot) return
+    const t = window.setTimeout(() => onTutup(kunci), LAMA_POPUP)
+    return () => window.clearTimeout(t)
+  }, [disorot, onTutup, kunci])
+
+  const Glif = Ikon[n.ikon]
+  return (
+    <div
+      role="status"
+      onMouseEnter={() => setDisorot(true)}
+      onMouseLeave={() => setDisorot(false)}
+      className="masuk-halus flex items-start gap-3 rounded-kartu border border-garis bg-white py-3 pl-3.5 pr-2 shadow-naik"
+    >
+      <button type="button" onClick={onKlik} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+        <span className={cn('mt-0.5 grid h-9 w-9 flex-none place-items-center rounded-full', WARNA[n.nada])}>
+          <Glif size={16} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <b className="block text-[12.5px] font-bold leading-snug text-ink">{n.judul}</b>
+          <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-teks-lembut">{n.isi}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-label="Tutup notifikasi"
+        onClick={() => onTutup(kunci)}
+        className="grid h-7 w-7 flex-none place-items-center rounded-full text-teks-samar transition hover:bg-kertas hover:text-ink"
+      >
+        <Ikon.Silang size={14} />
+      </button>
     </div>
   )
 }
