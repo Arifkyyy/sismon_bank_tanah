@@ -136,7 +136,7 @@ class CatatanMasuk(Skema):
     petugas_id: int
     tanggal: date
     jam: time
-    keterangan: str = Field(min_length=20)
+    keterangan: str = Field(min_length=1)
     foto: list[str] = Field(min_length=1, description="Data URL hasil kamera")
     latitude: float | None = None
     longitude: float | None = None

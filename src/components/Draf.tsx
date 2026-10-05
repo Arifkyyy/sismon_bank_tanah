@@ -22,7 +22,7 @@ export function kekuranganDraf(d: Draf): string[] {
   if (!d.nama) kurang.push('nama')
   if (!d.jam) kurang.push('jam')
   if (d.foto.length === 0) kurang.push('foto')
-  if (d.keterangan.trim().length < 20) kurang.push('keterangan')
+  if (d.keterangan.trim().length < 1) kurang.push('keterangan')
   return kurang
 }
 

@@ -186,7 +186,7 @@ export function LogbookUser() {
               <Kolom
                 label="Keterangan Aktivitas"
                 wajib
-                bantu="Minimal 20 karakter. Tulis kondisi nyata di lapangan, bukan salinan catatan sebelumnya."
+                bantu="."
               >
                 <AreaTeks
                   value={form.keterangan}
