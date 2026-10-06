@@ -195,22 +195,28 @@ export function RekapHarian() {
         <IsiKartu className="p-4">
           <Segmen
             lebar
+            lipat
             opsi={['Harian', 'Bulanan', 'Custom', 'All Time']}
             nilai={periode}
             onPilih={(v) => setPeriode(v as Periode)}
           />
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {periode === 'Harian' && (
               <InputRapi
                 type="date"
                 aria-label="Tanggal rekap"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
+                className="w-full sm:w-auto"
               />
             )}
             {periode === 'Bulanan' && (
-              <PilihRapi value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
+              <PilihRapi
+                value={bulan}
+                onChange={(e) => setBulan(e.target.value)}
+                className="w-full sm:w-auto sm:min-w-[180px]"
+              >
                 {BULAN_PILIHAN.map((b) => (
                   <option key={b.kunci} value={b.kunci}>
                     {b.label}
@@ -218,25 +224,33 @@ export function RekapHarian() {
                 ))}
               </PilihRapi>
             )}
-            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />}
+            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-full sm:w-[260px]" />}
             {periode === 'All Time' && (
               <span className="rounded-[10px] border border-garis bg-[#FAFCFB] px-3 py-2.5 text-[13px] text-teks-lembut">
                 Seluruh catatan tanpa batas tanggal
               </span>
             )}
 
-            <PilihRapi
-              value={saringan}
-              onChange={(e) => setSaringan(e.target.value as Saringan)}
-              className="ml-auto"
-            >
-              <option>Aktivitas dan kendala</option>
-              <option>Aktivitas saja</option>
-              <option>Kendala saja</option>
-            </PilihRapi>
-            <Tombol varian="hantu" kecil onClick={unduhPdf} disabled={memuat || rincian.length === 0}>
-              <Ikon.Unduh size={15} /> Unduh PDF
-            </Tombol>
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <PilihRapi
+                value={saringan}
+                onChange={(e) => setSaringan(e.target.value as Saringan)}
+                className="min-w-0 flex-1 sm:flex-none"
+              >
+                <option>Aktivitas dan kendala</option>
+                <option>Aktivitas saja</option>
+                <option>Kendala saja</option>
+              </PilihRapi>
+              <Tombol
+                varian="hantu"
+                kecil
+                onClick={unduhPdf}
+                disabled={memuat || rincian.length === 0}
+                className="flex-none self-stretch"
+              >
+                <Ikon.Unduh size={15} /> Unduh PDF
+              </Tombol>
+            </div>
           </div>
         </IsiKartu>
       </Kartu>

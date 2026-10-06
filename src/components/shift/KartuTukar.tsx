@@ -11,7 +11,7 @@ export function KartuTukar({ tukar: t, aksi }: { tukar: TukarShift; aksi?: React
   const bedaTanggal = t.pemohon.tanggal !== t.rekan.tanggal
   return (
     <div className="rounded-xl border border-garis bg-white">
-      <div className="flex flex-wrap items-center gap-2 border-b border-garis px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-garis px-3 py-2.5 sm:px-4">
         <span
           className={cn(
             'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-semibold',
@@ -26,15 +26,15 @@ export function KartuTukar({ tukar: t, aksi }: { tukar: TukarShift; aksi?: React
         </span>
       </div>
 
-      <div className="grid grid-cols-1 items-center gap-2 px-4 py-3 sm:grid-cols-[1fr_auto_1fr]">
+      <div className="grid grid-cols-1 items-center gap-1.5 px-3 py-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-2 sm:px-4">
         <Pihak pihak={t.pemohon} jabatan={t.jabatan} label={t.peranSaya === 'pemohon' ? 'Anda (pengaju)' : 'Pengaju'} />
-        <span className="mx-auto grid h-8 w-8 rotate-90 place-items-center rounded-full bg-kertas text-teks-lembut sm:rotate-0">
+        <span className="mx-auto grid h-7 w-7 rotate-90 place-items-center rounded-full bg-kertas text-teks-lembut sm:h-8 sm:w-8 sm:rotate-0">
           <Ikon.Tukar size={16} />
         </span>
         <Pihak pihak={t.rekan} jabatan={t.jabatan} label={t.peranSaya === 'rekan' ? 'Anda (rekan)' : 'Rekan'} />
       </div>
 
-      <div className="grid gap-2 px-4 pb-3.5 text-[12.5px] leading-relaxed">
+      <div className="grid gap-2 px-3 pb-3.5 text-[12.5px] leading-relaxed sm:px-4">
         {bedaTanggal && t.status !== 'Disetujui' && (
           <p className="m-0 text-[11.5px] text-teks-samar">
             Bila disetujui, jadwal keduanya pada {t.pemohon.tanggalTeks} dan {t.rekan.tanggalTeks} saling ditukar.
@@ -47,7 +47,7 @@ export function KartuTukar({ tukar: t, aksi }: { tukar: TukarShift; aksi?: React
       </div>
 
       {aksi && (
-        <div className="flex flex-wrap justify-end gap-2 rounded-b-xl border-t border-garis bg-[#FAFCFB] px-4 py-2.5">
+        <div className="flex flex-wrap justify-end gap-2 rounded-b-xl border-t border-garis bg-[#FAFCFB] px-3 py-2.5 sm:px-4 max-sm:[&>*]:flex-1">
           {aksi}
         </div>
       )}

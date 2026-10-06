@@ -144,7 +144,7 @@ export function JadwalSayaUser() {
         <StatusData memuat={sumber.memuat && !sumber.data.length} galat={sumber.galat} onUlang={sumber.muat} />
 
         {tampilan === '7 hari' && (
-          <IsiKartu className="grid gap-2">
+          <IsiKartu className="grid gap-2 max-sm:p-3">
             {tujuhHari.data.map((h) => (
               <BarisHari key={h.tanggal} hari={h} hariIni={hariIni} aksi={tombolAjukan(h)} />
             ))}
@@ -152,12 +152,12 @@ export function JadwalSayaUser() {
         )}
 
         {tampilan === 'Kalender' && (
-          <IsiKartu>
-            <div className="mb-3 flex items-center justify-center gap-2">
+          <IsiKartu className="max-sm:p-3">
+            <div className="mb-3 flex items-center justify-between gap-2 sm:justify-center">
               <TombolIkon label="Bulan sebelumnya" onClick={() => setAcuan((a) => geserPeriode('Bulan', a, -1))}>
                 <Ikon.Chevron size={15} className="rotate-180" />
               </TombolIkon>
-              <b className="min-w-[150px] text-center text-[14px] font-bold text-ink">{bulan.label}</b>
+              <b className="text-center text-[14px] font-bold text-ink sm:min-w-[150px]">{bulan.label}</b>
               <TombolIkon label="Bulan berikutnya" onClick={() => setAcuan((a) => geserPeriode('Bulan', a, 1))}>
                 <Ikon.Chevron size={15} />
               </TombolIkon>
@@ -184,7 +184,7 @@ export function JadwalSayaUser() {
                     aria-label={`${h?.hari ?? ''} ${h?.tanggalTeks ?? t}: ${h?.shift?.nama ?? 'belum dijadwalkan'}`}
                     onClick={() => setDipilih(pilih ? null : t)}
                     className={cn(
-                      'relative flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border transition sm:aspect-auto sm:py-2',
+                      'relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 transition sm:gap-1 sm:rounded-xl sm:py-2',
                       pilih ? 'border-hijau ring-2 ring-hijau/30' : 'border-garis hover:border-hijau',
                       t === hariIni ? 'bg-hijau-lembut' : 'bg-white',
                     )}
@@ -194,9 +194,9 @@ export function JadwalSayaUser() {
                       {info.tanggal}
                     </span>
                     {h?.shift ? (
-                      <KodeShift shift={h.shift} ukuran={24} />
+                      <KodeShift shift={h.shift} ukuran={22} className="rounded-md sm:!h-6 sm:!w-6 sm:!text-[10px]" />
                     ) : (
-                      <span className="grid h-6 w-6 place-items-center rounded-md border border-dashed border-garis-kuat text-[11px] text-teks-samar">
+                      <span className="grid h-[22px] w-[22px] place-items-center rounded-md border border-dashed border-garis-kuat text-[11px] text-teks-samar sm:h-6 sm:w-6">
                         –
                       </span>
                     )}
@@ -226,7 +226,7 @@ export function JadwalSayaUser() {
           sub="Yang Anda ajukan dan yang ditujukan kepada Anda"
         />
         <StatusData memuat={tukar.memuat && !tukar.data.length} galat={tukar.galat} onUlang={tukar.muat} />
-        <IsiKartu className="grid gap-3">
+        <IsiKartu className="grid gap-3 max-sm:p-3">
           {pesan && (
             <div className="flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12.5px] text-merah-teks">
               <Ikon.Awas size={15} className="mt-px flex-none" />
@@ -272,33 +272,36 @@ export function JadwalSayaUser() {
 /** Satu hari di daftar: tanggal, shift, dan tanda tukar. `aksi` untuk tombol di kanan. */
 function BarisHari({ hari: h, hariIni, aksi }: { hari: JadwalSaya; hariIni: string; aksi?: ReactNode }) {
   const kini = h.tanggal === hariIni
-  const label = h.shift ? labelJam(h.shift) : ''
+  const jam = [h.shift?.rentang, h.shift ? labelJam(h.shift) : ''].filter(Boolean).join(' · ')
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-2.5',
+        'flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3 py-2.5 sm:px-3.5',
         kini ? 'border-hijau/40 bg-hijau-lembut' : 'border-garis bg-white',
       )}
     >
-      <div className="w-[52px] flex-none text-center">
+      <div className="w-11 flex-none text-center sm:w-[52px]">
         <span className={cn('block text-[11px] font-semibold', kini ? 'text-hijau-tua' : 'text-teks-samar')}>
           {kini ? 'Hari ini' : h.hari}
         </span>
         <span className="num block text-[18px] font-bold leading-tight text-ink">{infoHari(h.tanggal).tanggal}</span>
       </div>
       {h.shift ? (
-        <KodeShift shift={h.shift} ukuran={36} />
+        <KodeShift shift={h.shift} ukuran={34} />
       ) : (
-        <span className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-dashed border-garis-kuat text-teks-samar">
+        <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-lg border border-dashed border-garis-kuat text-teks-samar">
           –
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <b className="block text-[13.5px] font-semibold text-ink">{h.shift?.nama ?? 'Belum dijadwalkan'}</b>
-        <span className="num block text-[12px] text-teks-lembut">
-          {h.tanggalTeks}
-          {h.shift?.rentang && ` · ${h.shift.rentang}`}
-          {label && ` · ${label}`}
+        <b className="block truncate text-[13.5px] font-semibold text-ink">{h.shift?.nama ?? 'Belum dijadwalkan'}</b>
+        <span className="num block text-[12px] leading-snug text-teks-lembut">
+          {/* di HP tanggal lengkap disembunyikan: hari & tanggal sudah tampil di kolom kiri */}
+          <span className="max-sm:hidden">
+            {h.tanggalTeks}
+            {jam && ' · '}
+          </span>
+          {jam}
         </span>
         {(h.tukar || h.diajukanTukar) && (
           <span className="mt-1 flex flex-wrap gap-1.5">
@@ -315,7 +318,11 @@ function BarisHari({ hari: h, hariIni, aksi }: { hari: JadwalSaya; hariIni: stri
           </span>
         )}
       </div>
-      {aksi}
+      {aksi && (
+        <div className="flex flex-none justify-end max-sm:w-full max-sm:border-t max-sm:border-garis/70 max-sm:pt-2 max-sm:[&>*]:w-full">
+          {aksi}
+        </div>
+      )}
     </div>
   )
 }
