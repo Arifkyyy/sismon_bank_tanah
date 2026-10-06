@@ -103,6 +103,29 @@ export function HapusDataFoto() {
     }
   }
 
+  // Dua dropdown saringan; dipakai di kepala kartu (laptop) dan di baris khusus HP.
+  function saringan(kelas: string) {
+    return (
+      <>
+        <PilihRapi value={sumber} onChange={(e) => setSumber(e.target.value)} className={kelas}>
+          <option value="Semua">Semua sumber</option>
+          <option>Logbook</option>
+          <option>Kendala</option>
+        </PilihRapi>
+        <PilihRapi
+          value={jabatan}
+          onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+          className={kelas}
+        >
+          <option value="Semua">Semua jabatan</option>
+          {DAFTAR_JABATAN.map((j) => (
+            <option key={j}>{j}</option>
+          ))}
+        </PilihRapi>
+      </>
+    )
+  }
+
   return (
     <>
       <div className="mb-4.5">
@@ -112,10 +135,12 @@ export function HapusDataFoto() {
         </Peringatan>
       </div>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <StatCard nama="Total foto tersimpan" angka={statistik.data.total.toLocaleString('id-ID')} nada="ink" ikon={<Ikon.Foto size={17} />} ket="Seluruh arsip" />
-        <StatCard nama="Ruang penyimpanan terpakai" angka={keUkuran(statistik.data.ukuranByte).angka} satuan={keUkuran(statistik.data.ukuranByte).satuan} nada="emas" ikon={<Ikon.Rekap size={17} />} ket="Dihitung dari ukuran berkas" />
-        <StatCard nama="Foto lebih dari 6 bulan" angka={statistik.data.lebihEnamBulan.toLocaleString('id-ID')} nada="tanah" ikon={<Ikon.Jam size={17} />} ket="Aman dihapus sesuai kebijakan arsip" />
+      <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-3">
+        <StatCard ringkas nama="Total foto tersimpan" angka={statistik.data.total.toLocaleString('id-ID')} nada="ink" ikon={<Ikon.Foto size={17} />} ket="Seluruh arsip" />
+        <StatCard ringkas nama="Ruang penyimpanan terpakai" angka={keUkuran(statistik.data.ukuranByte).angka} satuan={keUkuran(statistik.data.ukuranByte).satuan} nada="emas" ikon={<Ikon.Rekap size={17} />} ket="Dihitung dari ukuran berkas" />
+        <div className="max-sm:col-span-2">
+          <StatCard ringkas nama="Foto lebih dari 6 bulan" angka={statistik.data.lebihEnamBulan.toLocaleString('id-ID')} nada="tanah" ikon={<Ikon.Jam size={17} />} ket="Aman dihapus sesuai kebijakan arsip" />
+        </div>
       </div>
 
       <Kartu className="mt-4.5">
@@ -123,27 +148,16 @@ export function HapusDataFoto() {
           judul="Arsip foto"
           sub="Pilih foto yang ingin dihapus, atau hapus sekaligus per periode"
           aksi={
-            <>
-              <PilihRapi value={sumber} onChange={(e) => setSumber(e.target.value)}>
-                <option value="Semua">Semua sumber</option>
-                <option>Logbook</option>
-                <option>Kendala</option>
-              </PilihRapi>
-              <PilihRapi
-                value={jabatan}
-                onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
-              >
-                <option value="Semua">Semua jabatan</option>
-                {DAFTAR_JABATAN.map((j) => (
-                  <option key={j}>{j}</option>
-                ))}
-              </PilihRapi>
-            </>
+            // HP: dropdown pindah ke baris tersendiri di bawah judul (lihat di bawah).
+            <div className="flex items-center gap-2 max-sm:hidden">{saringan('')}</div>
           }
         />
+        <div className="grid grid-cols-2 gap-2 border-b border-garis px-4 py-3 sm:hidden">
+          {saringan('w-full min-w-0')}
+        </div>
         <StatusData memuat={arsip.memuat} galat={arsip.galat} onUlang={arsip.muat} />
-        <IsiKartu>
-          <div className="mb-4.5 flex flex-wrap items-center gap-3 rounded-xl border border-garis bg-[#F7FAF8] px-3.5 py-3">
+        <IsiKartu className="max-sm:px-4">
+          <div className="mb-4.5 flex flex-wrap items-center gap-3 rounded-xl border border-garis bg-[#F7FAF8] px-3.5 py-3 max-sm:gap-2.5">
             <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-ink">
               <input
                 type="checkbox"
@@ -158,9 +172,12 @@ export function HapusDataFoto() {
             <span className="num text-[12.5px] text-teks-lembut">
               {dipilih.size} foto dipilih · {(dipilih.size * rerataMb).toFixed(1)} MB
             </span>
-            <div className="ml-auto flex flex-wrap gap-2.5">
+            {/* HP: tombol di baris sendiri, berdampingan sama lebar. */}
+            <div className="ml-auto flex flex-wrap gap-2.5 max-sm:ml-0 max-sm:w-full max-sm:flex-nowrap max-sm:[&>*]:min-w-0 max-sm:[&>*]:flex-1">
               <Tombol varian="hantu" kecil>
-                <Ikon.Unduh size={15} /> Unduh yang dipilih
+                <Ikon.Unduh size={15} />
+                <span className="max-sm:hidden">Unduh yang dipilih</span>
+                <span className="sm:hidden">Unduh</span>
               </Tombol>
               <Tombol
                 varian="bahaya"
@@ -168,12 +185,14 @@ export function HapusDataFoto() {
                 onClick={hapusTerpilih}
                 disabled={dipilih.size === 0 || sibuk}
               >
-                <Ikon.Sampah size={15} /> Hapus yang dipilih
+                <Ikon.Sampah size={15} />
+                <span className="max-sm:hidden">Hapus yang dipilih</span>
+                <span className="sm:hidden">Hapus</span>
               </Tombol>
             </div>
           </div>
 
-          <div className="scrollbar-lembut -mx-1 grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3.5 px-1 py-1 lg:max-h-[440px] lg:overflow-y-auto lg:overscroll-contain">
+          <div className="scrollbar-lembut -mx-1 grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3.5 px-1 py-1 max-sm:grid-cols-2 max-sm:gap-2.5 lg:max-h-[440px] lg:overflow-y-auto lg:overscroll-contain">
             {arsip.data.length === 0 ? (
               <p className="col-span-full py-10 text-center text-[12.5px] text-teks-lembut">
                 {arsip.memuat ? 'Memuat arsip foto…' : 'Tidak ada foto pada saringan ini.'}
@@ -211,7 +230,7 @@ export function HapusDataFoto() {
                       />
                     </div>
                     <div className="px-3 py-2.5">
-                      <b className="block text-[12.5px] font-semibold text-ink">{f.nama}</b>
+                      <b className="block text-[12.5px] font-semibold text-ink max-sm:[overflow-wrap:anywhere]">{f.nama}</b>
                       <span className="num text-[11px] text-teks-samar">
                         {f.waktu} · {f.sumber}
                       </span>
@@ -251,9 +270,12 @@ export function HapusDataFoto() {
           )}
         </IsiKartu>
         <KakiForm>
-          <Tombol varian="bahaya" onClick={hapusMassal} disabled={ketikan !== 'HAPUS' || sibuk}>
-            <Ikon.Sampah size={15} /> Hapus foto sebelum tanggal ini
-          </Tombol>
+          {/* HP: tombol selebar penuh. */}
+          <div className="max-sm:w-full max-sm:[&>*]:w-full">
+            <Tombol varian="bahaya" onClick={hapusMassal} disabled={ketikan !== 'HAPUS' || sibuk}>
+              <Ikon.Sampah size={15} /> Hapus foto sebelum tanggal ini
+            </Tombol>
+          </div>
         </KakiForm>
       </Kartu>
     </>

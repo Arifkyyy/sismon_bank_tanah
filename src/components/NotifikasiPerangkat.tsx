@@ -4,6 +4,7 @@ import { api, pesanGalat } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
 import { aktifkan, bacaStatus, matikan } from '@/lib/push'
 import type { StatusPush } from '@/lib/push'
+import { cn } from '@/lib/util'
 
 const KETERANGAN: Record<StatusPush, string> = {
   aktif: 'Perangkat ini akan menerima notifikasi walau aplikasi sedang ditutup.',
@@ -60,25 +61,31 @@ export function NotifikasiPerangkat() {
   }
 
   const aktif = status === 'aktif'
+  const lencana = (kelas: string) =>
+    status && (
+      <span
+        className={cn(
+          'rounded-full px-2.5 py-1 text-[11.5px] font-semibold',
+          aktif ? 'bg-hijau-lembut text-hijau-tua' : 'bg-[#EEF2F0] text-teks-lembut',
+          kelas,
+        )}
+      >
+        {aktif ? 'Aktif' : 'Mati'}
+      </span>
+    )
   return (
     <Kartu>
       <div id="notifikasi-perangkat" />
       <KopKartu
-        judul="Notifikasi perangkat"
-        sub="Kabar kendala dan lembur langsung ke HP atau laptop ini"
-        aksi={
-          status && (
-            <span
-              className={
-                aktif
-                  ? 'rounded-full bg-hijau-lembut px-2.5 py-1 text-[11.5px] font-semibold text-hijau-tua'
-                  : 'rounded-full bg-[#EEF2F0] px-2.5 py-1 text-[11.5px] font-semibold text-teks-lembut'
-              }
-            >
-              {aktif ? 'Aktif' : 'Mati'}
-            </span>
-          )
+        // HP: lencana status sebaris dengan judul; laptop: tetap di kanan (slot aksi).
+        judul={
+          <>
+            Notifikasi perangkat
+            {lencana('ml-2 inline-block align-middle tracking-normal sm:hidden')}
+          </>
         }
+        sub="Kabar kendala dan lembur langsung ke HP atau laptop ini"
+        aksi={lencana('max-sm:hidden')}
       />
       <IsiKartu>
         <p className="m-0 text-[12.5px] leading-relaxed text-teks-lembut">

@@ -322,7 +322,8 @@ export function Profil() {
         <div className="grid content-start gap-4.5">
           <Kartu>
             <KopKartu judul="Ringkasan bulan ini" sub="Dihitung dari data bulan berjalan" />
-            <IsiKartu>
+            {/* HP: lebih padat — padding kartu dan jarak antarbaris BarisData diperkecil. */}
+            <IsiKartu className="max-sm:px-4 max-sm:py-1.5 max-sm:[&>div]:py-2.5">
               <BarisData label={petugas ? 'Catatan aktivitas' : 'Logbook ditinjau'}>
                 <span className="num">{logbook.length.toLocaleString('id-ID')}</span>
               </BarisData>

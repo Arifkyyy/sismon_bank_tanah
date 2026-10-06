@@ -228,10 +228,12 @@ export function LaporanPetugas() {
       </div>
 
       {tab === 'Kendala' && (
-        <div className="mb-4.5 grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-          <StatCard nama="Laporan baru" angka={String(jumlah('Baru'))} nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum mulai ditangani" />
-          <StatCard nama="Sedang diproses" angka={String(jumlah('Diproses'))} nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sedang ditangani petugas" />
-          <StatCard nama="Selesai" angka={String(jumlah('Selesai'))} ikon={<Ikon.Centang size={17} />} ket="Pada periode yang dipilih" />
+        <div className="mb-4.5 grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-3">
+          <StatCard ringkas nama="Laporan baru" angka={String(jumlah('Baru'))} nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum mulai ditangani" />
+          <StatCard ringkas nama="Sedang diproses" angka={String(jumlah('Diproses'))} nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sedang ditangani petugas" />
+          <div className="max-sm:col-span-2">
+            <StatCard ringkas nama="Selesai" angka={String(jumlah('Selesai'))} ikon={<Ikon.Centang size={17} />} ket="Pada periode yang dipilih" />
+          </div>
         </div>
       )}
 
