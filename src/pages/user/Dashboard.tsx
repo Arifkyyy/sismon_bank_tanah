@@ -119,11 +119,11 @@ export function DashboardUser() {
         <Ikon.Chevron size={16} className="flex-none" />
       </Link>
 
-      <div className="mt-4.5 grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard gaya="pekat" nama="Catatan hari ini" angka={String(hariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket={HARI_INI} />
-        <StatCard gaya="pekat" nama="Hari tercatat bulan ini" angka={String(hariTercatat)} satuan="hari" ikon={<Ikon.Centang size={17} />} ket="Hari yang punya catatan" />
-        <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Lembur yang Anda terima" />
-        <StatCard gaya="pekat" nama="Kendala saya" angka={String(kendalaBulanIni.data.length)} ikon={<Ikon.Awas size={17} />} ket={`${kendalaBelumSelesai} belum selesai`} />
+      <div className="mt-4.5 grid grid-cols-2 gap-2.5 sm:gap-4.5 xl:grid-cols-4">
+        <StatCard gaya="pekat" ringkas nama="Catatan hari ini" angka={String(hariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket={HARI_INI} />
+        <StatCard gaya="pekat" ringkas nama="Hari tercatat bulan ini" angka={String(hariTercatat)} satuan="hari" ikon={<Ikon.Centang size={17} />} ket="Hari yang punya catatan" />
+        <StatCard gaya="pekat" ringkas nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Lembur yang Anda terima" />
+        <StatCard gaya="pekat" ringkas nama="Kendala saya" angka={String(kendalaBulanIni.data.length)} ikon={<Ikon.Awas size={17} />} ket={`${kendalaBelumSelesai} belum selesai`} />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1fr_1.62fr]">
