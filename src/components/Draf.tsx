@@ -188,7 +188,7 @@ export function KartuDataPending({
 
                       <p
                         className={cn(
-                          'm-0 mt-3 line-clamp-2 text-[12.5px] leading-relaxed',
+                          'm-0 mt-3 line-clamp-2 text-[12.5px] leading-relaxed [overflow-wrap:anywhere]',
                           d.keterangan ? 'text-teks-lembut' : 'italic text-teks-samar',
                         )}
                       >

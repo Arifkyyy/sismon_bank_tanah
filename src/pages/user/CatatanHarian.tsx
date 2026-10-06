@@ -175,11 +175,13 @@ export function CatatanHarian() {
       ),
       tambahan:
         k.status === 'Selesai' && (k.keteranganSelesai || k.fotoSesudah?.length) ? (
-          <div className="mt-3 flex items-start gap-3 rounded-lg bg-hijau-lembut/60 p-2.5">
+          <div className="mt-3 flex flex-col gap-2.5 rounded-lg bg-hijau-lembut/60 p-2.5 sm:flex-row sm:items-start sm:gap-3">
             {!!k.fotoSesudah?.length && (
-              <TumpukanFoto foto={k.fotoSesudah} judul={`Foto sesudah · ${k.tanggal}`} maksTampil={2} />
+              <div className="flex-none max-sm:order-last">
+                <TumpukanFoto foto={k.fotoSesudah} judul={`Foto sesudah · ${k.tanggal}`} maksTampil={2} />
+              </div>
             )}
-            <div className="min-w-0 text-[12px] leading-relaxed text-hijau-tua">
+            <div className="min-w-0 text-[12px] leading-relaxed text-hijau-tua [overflow-wrap:anywhere]">
               <b className="block font-semibold">
                 Selesai{k.selesaiPada ? ` · ${k.selesaiPada}` : ''}
                 {k.diselesaikanOleh ? ` · ${k.diselesaikanOleh}` : ''}
@@ -190,7 +192,7 @@ export function CatatanHarian() {
         ) : perluTindakan ? (
           <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-garis pt-3">
             {k.dibukaLagiPada && (
-              <span className="mr-auto text-[11.5px] font-semibold text-tanah-teks">
+              <span className="mr-auto min-w-0 text-[11.5px] font-semibold text-tanah-teks">
                 Dibuka lagi oleh admin · {k.dibukaLagiPada}
               </span>
             )}

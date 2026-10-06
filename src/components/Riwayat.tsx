@@ -81,7 +81,7 @@ export function LinimasaRiwayat({
   return (
     <div
       className={cn(
-        'px-5 pb-5',
+        'px-3.5 pb-5 sm:px-5',
         maksTinggi > 0 &&
           'scrollbar-lembut lg:max-h-[var(--maks-tinggi)] lg:overflow-y-auto lg:overscroll-contain',
       )}
@@ -91,7 +91,7 @@ export function LinimasaRiwayat({
         <section key={tanggal}>
           {/* Di ponsel menempel di bawah topbar, di layar lebar di tepi atas
               area gulir linimasa. */}
-          <div className="sticky top-[var(--tinggi-topbar)] z-[5] -mx-5 flex items-center gap-2.5 bg-white/92 px-5 py-2.5 backdrop-blur lg:top-0">
+          <div className="sticky top-[var(--tinggi-topbar)] z-[5] -mx-3.5 flex items-center gap-2.5 bg-white/92 px-3.5 py-2.5 sm:-mx-5 sm:px-5 backdrop-blur lg:top-0">
             <span className="num rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-bold text-white">
               {tanggal}
             </span>
@@ -107,7 +107,7 @@ export function LinimasaRiwayat({
               const pertama = i === 0
               const terakhir = i === item.length - 1
               return (
-                <li key={p.id} className="grid grid-cols-[44px_16px_minmax(0,1fr)] gap-x-2.5">
+                <li key={p.id} className="grid grid-cols-[38px_12px_minmax(0,1fr)] gap-x-2 sm:grid-cols-[44px_16px_minmax(0,1fr)] sm:gap-x-2.5">
                   <span className="num pt-[18px] text-right text-[12px] font-bold text-ink">
                     {p.jam}
                   </span>
@@ -142,8 +142,10 @@ export function LinimasaRiwayat({
                         p.sorot ? 'border-emas/70' : 'border-garis hover:border-garis-kuat',
                       )}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-none">
+                      {/* Di ponsel foto turun ke bawah teks supaya keterangan
+                          mendapat lebar penuh kartu. */}
+                      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:gap-3">
+                        <div className="flex-none max-sm:order-last">
                           {p.foto && p.foto.length > 0 ? (
                             <TumpukanFoto foto={p.foto} judul={`Foto ${p.tanggal} · ${p.jam}`} maksTampil={2} />
                           ) : (
@@ -151,7 +153,7 @@ export function LinimasaRiwayat({
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="m-0 text-[12.5px] leading-relaxed text-teks-lembut">
+                          <p className="m-0 text-[12.5px] leading-relaxed text-teks-lembut [overflow-wrap:anywhere]">
                             {p.keterangan}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
