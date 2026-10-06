@@ -10,7 +10,7 @@ import { StatCard } from '@/components/StatCard'
 import { StatusData } from '@/components/StatusData'
 import { TagAktivitas, TagKendala } from '@/components/TagCatatan'
 import {
-  Avatar, FotoKecil, InputRapi, IsiKartu, Kartu, Kolom, KopKartu, Pil, PilihRapi, Segmen, SelOrang, Tombol,
+  Avatar, FotoKecil, InputRapi, IsiKartu, Kartu, Kolom, KopKartu, Pil, PilihRapi, Segmen, Tombol,
 } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
@@ -243,12 +243,24 @@ export function LaporanPetugas() {
             nilai={periode}
             onPilih={(v) => setPeriode(v as Periode)}
           />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* HP: grid 2 kolom — periode, cari, status, dan unduh selebar penuh; jabatan + petugas berdampingan. */}
+          <div className="mt-3 flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-2">
             {periode === 'Harian' && (
-              <InputRapi type="date" aria-label="Tanggal" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+              <InputRapi
+                type="date"
+                aria-label="Tanggal"
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                className="max-sm:col-span-2 max-sm:w-full"
+              />
             )}
             {periode === 'Bulanan' && (
-              <PilihRapi aria-label="Bulan" value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
+              <PilihRapi
+                aria-label="Bulan"
+                value={bulan}
+                onChange={(e) => setBulan(e.target.value)}
+                className="min-w-[180px] max-sm:col-span-2 max-sm:w-full"
+              >
                 {BULAN_PILIHAN.map((b) => (
                   <option key={b.kunci} value={b.kunci}>
                     {b.label}
@@ -256,14 +268,20 @@ export function LaporanPetugas() {
                 ))}
               </PilihRapi>
             )}
-            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />}
+            {periode === 'Custom' && (
+              <RentangTanggal
+                nilai={rentang}
+                onPilih={setRentang}
+                className="w-[260px] max-sm:col-span-2 max-sm:w-full"
+              />
+            )}
             {periode === 'All Time' && (
-              <span className="rounded-[10px] border border-garis bg-[#FAFCFB] px-3 py-2.5 text-[13px] text-teks-lembut">
+              <span className="rounded-[10px] border border-garis bg-[#FAFCFB] px-3 py-2.5 text-[13px] text-teks-lembut max-sm:col-span-2">
                 Seluruh catatan tanpa batas tanggal
               </span>
             )}
 
-            <div className="relative ml-auto">
+            <div className="relative ml-auto max-sm:col-span-2 max-sm:ml-0">
               <Ikon.Cari size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-teks-samar" />
               <InputRapi
                 type="search"
@@ -271,13 +289,14 @@ export function LaporanPetugas() {
                 placeholder="Cari nama…"
                 value={ketikan}
                 onChange={(e) => setKetikan(e.target.value)}
-                className="w-[180px] pl-8"
+                className="w-[180px] pl-8 max-sm:w-full"
               />
             </div>
             <PilihRapi
               aria-label="Jabatan petugas"
               value={jabatan}
               onChange={(e) => pilihJabatan(e.target.value as Jabatan | 'Semua')}
+              className="max-sm:w-full"
             >
               <option value="Semua">Semua jabatan</option>
               {DAFTAR_JABATAN.map((j) => (
@@ -286,12 +305,18 @@ export function LaporanPetugas() {
                 </option>
               ))}
             </PilihRapi>
-            <PilihPetugas jabatan={jabatan} nilai={petugas} onPilih={setPetugas} />
+            <PilihPetugas
+              jabatan={jabatan}
+              nilai={petugas}
+              onPilih={setPetugas}
+              className="max-sm:w-full max-sm:min-w-0"
+            />
             {tab !== 'Aktivitas' && (
               <PilihRapi
                 aria-label="Status kendala"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as Status | 'Semua')}
+                className="max-sm:col-span-2 max-sm:w-full"
               >
                 <option value="Semua">Semua status kendala</option>
                 {STATUS_KENDALA.map((s) => (
@@ -306,6 +331,7 @@ export function LaporanPetugas() {
               kecil
               onClick={() => setUnduhBuka(true)}
               disabled={logbook.data.length + kendalaTerlihat.length === 0}
+              className="max-sm:col-span-2 max-sm:w-full"
             >
               <Ikon.Unduh size={15} /> Unduh Excel
             </Tombol>
@@ -401,6 +427,41 @@ function Waktu({ tanggal, hari, jam }: { tanggal: string; hari: string; jam: str
   )
 }
 
+/**
+ * Satu orang di baris laporan (pelapor/penangan). Gayanya sama dengan SelOrang,
+ * tetapi boleh tanpa jabatan (mis. admin sebagai penangan) dan punya tampilan
+ * kosong untuk kendala yang belum punya penangan.
+ */
+function OrangBaris({
+  nama,
+  jabatan,
+  foto,
+  keterangan,
+  kosong,
+}: {
+  nama: string
+  jabatan?: Jabatan
+  foto?: string | null
+  keterangan: string
+  kosong?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      {kosong ? (
+        <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[10px] border border-dashed border-garis-kuat text-teks-samar">
+          <Ikon.Orang size={15} />
+        </span>
+      ) : (
+        <Avatar nama={nama} jabatan={jabatan} foto={foto} />
+      )}
+      <div>
+        <b className="block whitespace-nowrap text-[13px] font-semibold text-ink">{nama}</b>
+        <span className="block text-[11.5px] text-teks-samar">{keterangan}</span>
+      </div>
+    </div>
+  )
+}
+
 function BarisAktivitas({ l, onFoto }: { l: Logbook; onFoto: () => void }) {
   return (
     <li className="flex items-start gap-3.5 px-5 py-4 hover:bg-[#FAFCFB]">
@@ -411,7 +472,7 @@ function BarisAktivitas({ l, onFoto }: { l: Logbook; onFoto: () => void }) {
           <Waktu tanggal={l.tanggal} hari={l.hari} jam={l.jam} />
         </div>
         <div className="mt-2">
-          <SelOrang nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} keterangan={JABATAN_PANJANG[l.jabatan]} />
+          <OrangBaris nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} keterangan={JABATAN_PANJANG[l.jabatan]} />
         </div>
         <p className="m-0 mt-2 text-[12.5px] leading-relaxed text-teks-lembut">{l.keterangan}</p>
       </div>
@@ -446,21 +507,21 @@ function BarisKendala({
           <Pil status={k.status} />
           <Waktu tanggal={k.tanggal} hari={k.hari} jam={k.jam} />
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <SelOrang nama={k.nama} jabatan={k.jabatan} foto={k.fotoProfil} keterangan={`Pelapor · ${JABATAN_PANJANG[k.jabatan]}`} />
-          <div className="flex items-center gap-2.5">
-            {k.penangan ? (
-              <Avatar nama={k.penangan.nama} jabatan={k.penangan.jabatan ?? undefined} foto={k.penangan.fotoProfil} ukuran={28} />
-            ) : (
-              <span className="grid h-7 w-7 place-items-center rounded-[9px] border border-dashed border-garis-kuat text-teks-samar">
-                <Ikon.Orang size={13} />
-              </span>
-            )}
-            <div>
-              <b className="block text-[12.5px] font-semibold text-ink">{k.penangan?.nama ?? 'Belum ada'}</b>
-              <span className="block text-[11px] text-teks-samar">Penangan</span>
-            </div>
-          </div>
+        {/* HP: bertumpuk dengan tepi kiri sejajar; laptop: berdampingan. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 max-sm:flex-col max-sm:items-start max-sm:gap-y-2.5">
+          <OrangBaris
+            nama={k.nama}
+            jabatan={k.jabatan}
+            foto={k.fotoProfil}
+            keterangan={`Pelapor · ${JABATAN_PANJANG[k.jabatan]}`}
+          />
+          <OrangBaris
+            nama={k.penangan?.nama ?? 'Belum ada'}
+            jabatan={k.penangan?.jabatan ?? undefined}
+            foto={k.penangan?.fotoProfil}
+            keterangan="Penangan"
+            kosong={!k.penangan}
+          />
         </div>
         <p className="m-0 mt-2 line-clamp-2 text-[12.5px] leading-relaxed text-teks-lembut">{k.keterangan}</p>
         {k.status === 'Selesai' && k.keteranganSelesai && (
