@@ -14,16 +14,15 @@ import { useApi } from '@/lib/useApi';
 import { cn } from '@/lib/util';
 import type { Lembur } from '@/types';
 
-const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+  const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
 const BULAN_PILIHAN = daftarBulan();
 
 type Periode = 'Harian' | 'Bulanan' | 'Custom';
 
-/** Uang lembur satu penugasan; penugasan yang ditolak tidak dibayar. */
-function teksUpah(l: Lembur): string {
-  if (l.status === 'Ditolak') return 'Tidak dihitung';
-  return l.upah == null ? '–' : rupiah(l.upah);
+/** Uang lembur satu penugasan; (disembunyikan) */
+function teksUpah(_: Lembur): string {
+  return '–'
 }
 
 /** Kartu satu penugasan lembur, dipakai juga di dashboard petugas. */
@@ -60,8 +59,6 @@ export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onT
               : ['Rentang jam', lembur.rentang],
             ['Total lembur', lembur.total],
             ['Jabatan', lembur.jabatan],
-            ['Tarif per jam', lembur.tarifPerJam == null ? '–' : rupiah(lembur.tarifPerJam)],
-            [menunggu ? 'Perkiraan uang lembur' : 'Uang lembur', teksUpah(lembur)],
           ].map(([label, nilai]) => (
             <div key={label}>
               <span className="mb-0.5 block text-[11px] text-teks-samar">{label}</span>
@@ -170,8 +167,7 @@ export function LemburUser() {
   const diterima = riwayatPeriode.filter((l) => l.status === 'Diterima' || l.status === 'Selesai');
   const totalJam = jumlahJamLembur(diterima);
   // Tiap penugasan membawa upahnya sendiri: tarif dikunci backend saat dikirim.
-  const totalUpah = diterima.reduce((n, l) => n + (l.upah ?? 0), 0);
-  const belumDibayar = diterima.reduce((n, l) => n + (l.dibayarPada ? 0 : (l.upah ?? 0)), 0);
+  
 
   function bukaTolak(l: Lembur) {
     setDitolakkan(l);
@@ -230,7 +226,7 @@ export function LemburUser() {
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
         <StatCard gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? `Terdekat: ${[...menunggu].sort((a, b) => a.tanggalIso.localeCompare(b.tanggalIso))[0].tanggal}` : 'Semua penugasan sudah dijawab'} />
         <StatCard gaya="pekat" nama="Lembur diterima" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam · ${labelPeriode}`} />
-        <StatCard gaya="pekat" nama="Uang lembur" angka={rupiah(totalUpah)} ikon={<Ikon.Rekap size={17} />} ket={`${!diterima.length ? 'Belum ada lembur diterima' : belumDibayar ? `${rupiah(belumDibayar)} belum dibayar` : 'Semua sudah dibayar'} · ${labelPeriode}`} />
+        {/* Uang lembur disembunyikan */}
       </div>
 
       <div className="mb-3.5 mt-6 flex items-center gap-3">

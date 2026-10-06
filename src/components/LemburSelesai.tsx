@@ -24,14 +24,15 @@ const diterima = (l: Lembur) => l.status === 'Diterima' || l.status === 'Selesai
  */
 export function cetakRekapLembur(daftar: Lembur[], keterangan: string[], denganNama: boolean) {
   const dihitung = daftar.filter(diterima)
-  const total = dihitung.reduce((n, l) => n + (l.upah ?? 0), 0)
-  const dibayar = dihitung.reduce((n, l) => n + (l.dibayarPada ? (l.upah ?? 0) : 0), 0)
-  cetakPdf({
-    judul: 'Rekap Uang Lembur',
+  // Sembunyikan perhitungan uang lembur (sensitif)
+  const total = 0
+  const dibayar = 0
+    cetakPdf({
+    judul: 'Rekap Lembur',
     keterangan,
     ringkasan: [
       ['Lembur diterima', `${dihitung.length} penugasan`],
-      ['Total uang lembur', rupiah(total)],
+      ['Total', `${dihitung.length} penugasan`],
       ['Sudah dibayar', rupiah(dibayar)],
       ['Belum dibayar', rupiah(total - dibayar)],
     ],
@@ -40,8 +41,6 @@ export function cetakRekapLembur(daftar: Lembur[], keterangan: string[], denganN
       'Tanggal',
       'Jam dikerjakan',
       'Total',
-      'Tarif/jam',
-      'Uang lembur',
       'Status',
       'Pembayaran',
     ],
@@ -52,8 +51,7 @@ export function cetakRekapLembur(daftar: Lembur[], keterangan: string[], denganN
         l.tanggal,
         l.rentangAktual ? `${l.rentangAktual} (rencana ${l.rentang})` : l.rentang,
         l.total,
-        l.tarifPerJam == null ? '–' : rupiah(l.tarifPerJam),
-        l.status === 'Ditolak' ? 'Tidak dihitung' : l.upah == null ? '–' : rupiah(l.upah),
+        l.status === 'Ditolak' ? 'Tidak dihitung' : '–',
         l.status,
         !diterima(l) ? '–' : l.dibayarPada ? `Dibayar ${l.dibayarPada}` : 'Belum dibayar',
       ]),
