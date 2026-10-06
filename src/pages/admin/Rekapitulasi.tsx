@@ -44,7 +44,6 @@ export function Rekapitulasi() {
   const totalLogbook = terlihat.reduce((n, r) => n + r.logbook, 0)
   const totalKendala = terlihat.reduce((n, r) => n + r.kendala, 0)
   const totalJam = terlihat.reduce((n, r) => n + jamDari(r.lembur), 0)
-  const totalUpah = terlihat.reduce((n, r) => n + r.upah, 0)
 
   // Dipakai sebagai keterangan periode di kartu dan kartu statistik.
   const labelPeriode =
@@ -68,11 +67,9 @@ export function Rekapitulasi() {
       namaLembar: 'Rekapitulasi',
       kepala: [
         'Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur',
-        'Uang lembur (Rp)', 'Sudah dibayar (Rp)', 'Belum dibayar (Rp)',
       ],
       baris: terlihat.map((r) => [
         r.nama, JABATAN_PANJANG[r.jabatan], r.hari, r.logbook, r.kendala, r.lembur,
-        r.upah, r.upahDibayar, r.upah - r.upahDibayar,
       ]),
     })
   }
@@ -139,7 +136,7 @@ export function Rekapitulasi() {
 
       <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-3">
         <StatCard ringkas nama="Total logbook" angka={totalLogbook.toLocaleString('id-ID')} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard ringkas nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={`Uang lembur Rp ${totalUpah.toLocaleString('id-ID')}`} />
+        <StatCard ringkas nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={labelPeriode} />
         <div className="max-sm:col-span-2">
           <StatCard ringkas nama="Kendala dilaporkan" angka={String(totalKendala)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`Dari ${terlihat.length} petugas`} />
         </div>
@@ -156,10 +153,10 @@ export function Rekapitulasi() {
           }
         />
         <StatusData memuat={memuat} galat={galat} onUlang={muat} />
-        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur', 'Uang lembur']} maksTinggi={560}>
+        <Tabel kepala={['Nama', 'Jabatan', 'Hari tercatat', 'Logbook', 'Kendala', 'Jam lembur']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-5 py-12 text-center">
+              <td colSpan={6} className="px-5 py-12 text-center">
                 <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
                   <Ikon.Orang size={19} />
                 </span>
@@ -186,14 +183,6 @@ export function Rekapitulasi() {
                 <td className="num">{r.logbook}</td>
                 <td className="num">{r.kendala}</td>
                 <td className="num whitespace-nowrap">{r.lembur}</td>
-                <td className="num whitespace-nowrap">
-                  Rp {r.upah.toLocaleString('id-ID')}
-                  {r.upah > r.upahDibayar && (
-                    <span className="mt-0.5 block text-[11px] text-tanah-teks">
-                      Rp {(r.upah - r.upahDibayar).toLocaleString('id-ID')} belum dibayar
-                    </span>
-                  )}
-                </td>
               </Baris>
             ))
           )}

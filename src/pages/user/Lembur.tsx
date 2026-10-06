@@ -14,16 +14,9 @@ import { useApi } from '@/lib/useApi';
 import { cn } from '@/lib/util';
 import type { Lembur } from '@/types';
 
-  const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
-
 const BULAN_PILIHAN = daftarBulan();
 
 type Periode = 'Harian' | 'Bulanan' | 'Custom';
-
-/** Uang lembur satu penugasan; (disembunyikan) */
-function teksUpah(_: Lembur): string {
-  return '–'
-}
 
 /** Kartu satu penugasan lembur, dipakai juga di dashboard petugas. */
 export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onTerima?: (id: string) => void; onTolak?: (l: Lembur) => void }) {
