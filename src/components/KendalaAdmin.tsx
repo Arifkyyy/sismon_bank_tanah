@@ -194,7 +194,7 @@ function KolomFoto({
         {judul} {foto.length > 0 && <span className="num text-teks-samar">({foto.length})</span>}
       </span>
       {foto.length === 0 ? (
-        <div className="grid aspect-[4/3] place-items-center rounded-xl border border-dashed border-garis-kuat bg-[#FAFCFB] px-3 text-center text-[11.5px] text-teks-samar">
+        <div className="grid aspect-[4/3] place-items-center rounded-xl border border-dashed border-garis-kuat bg-[#FAFCFB] px-3 text-center text-[11.5px] text-teks-samar max-sm:aspect-auto max-sm:py-5">
           {kosong}
         </div>
       ) : (
@@ -303,6 +303,11 @@ export function ModalDetailKendala({
         <StatusData memuat={memuat && !k} galat={galat} onUlang={muat} />
         {k && (
           <div className="flex flex-col gap-4">
+            {/* HP: status dipisah dari kartu penangan supaya tidak berdesakan. */}
+            <div className="flex items-center justify-between gap-3 sm:hidden">
+              <span className="text-[12px] font-semibold text-teks-lembut">Status</span>
+              <Pil status={k.status} />
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="flex items-center gap-3 rounded-xl border border-garis p-3">
                 <Avatar nama={k.nama} jabatan={k.jabatan} foto={k.fotoProfil} />
@@ -327,7 +332,9 @@ export function ModalDetailKendala({
                     <span className="block text-[11.5px] text-teks-lembut">{JABATAN_PANJANG[k.penangan.jabatan]}</span>
                   )}
                 </div>
-                <Pil status={k.status} />
+                <span className="max-sm:hidden">
+                  <Pil status={k.status} />
+                </span>
               </div>
             </div>
 

@@ -38,7 +38,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] grid grid-cols-1 place-items-center overflow-y-auto bg-ink-deep/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] grid grid-cols-1 place-items-center overflow-y-auto bg-ink-deep/50 p-4 backdrop-blur-sm max-sm:p-3"
       onClick={onTutup}
     >
       <div
@@ -46,9 +46,10 @@ export function Modal({
         aria-modal="true"
         aria-label={judul}
         onClick={(e) => e.stopPropagation()}
-        className={`w-full min-w-0 ${lebar} overflow-hidden rounded-kartu border border-garis bg-white shadow-naik`}
+        // Kepala (tombol tutup) dan kaki (tombol aksi) tetap terlihat; hanya isinya yang digulir.
+        className={`flex max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col ${lebar} overflow-hidden rounded-kartu border border-garis bg-white shadow-naik max-sm:max-h-[calc(100dvh-1.5rem)]`}
       >
-        <div className="flex items-start gap-3 border-b border-garis px-5 py-4">
+        <div className="flex flex-none items-start gap-3 border-b border-garis px-5 py-4 max-sm:px-4">
           <div className="min-w-0 flex-1">
             <b className="block text-[14.5px] font-bold text-ink">{judul}</b>
             {sub && <span className="mt-0.5 block text-[12px] text-teks-lembut">{sub}</span>}
@@ -57,16 +58,16 @@ export function Modal({
             type="button"
             aria-label="Tutup"
             onClick={onTutup}
-            className="grid h-8 w-8 flex-none place-items-center rounded-full text-teks-samar transition hover:bg-kertas hover:text-ink"
+            className="grid h-8 w-8 flex-none place-items-center rounded-full bg-kertas text-teks-lembut transition hover:bg-garis hover:text-ink max-sm:h-9 max-sm:w-9"
           >
             <Ikon.Silang size={16} />
           </button>
         </div>
 
-        <div className="px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 max-sm:px-4">{children}</div>
 
         {aksi && (
-          <div className="flex flex-wrap justify-end gap-2.5 border-t border-garis bg-[#FAFCFB] px-5 py-3.5">
+          <div className="flex flex-none flex-wrap justify-end gap-2.5 border-t border-garis bg-[#FAFCFB] px-5 py-3.5 max-sm:px-4 max-sm:[&>*]:flex-1">
             {aksi}
           </div>
         )}
