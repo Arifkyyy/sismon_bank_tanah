@@ -14,16 +14,9 @@ import { useApi } from '@/lib/useApi';
 import { cn } from '@/lib/util';
 import type { Lembur } from '@/types';
 
-  const rupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
-
 const BULAN_PILIHAN = daftarBulan();
 
 type Periode = 'Harian' | 'Bulanan' | 'Custom';
-
-/** Uang lembur satu penugasan; (disembunyikan) */
-function teksUpah(_: Lembur): string {
-  return '–'
-}
 
 /** Kartu satu penugasan lembur, dipakai juga di dashboard petugas. */
 export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onTerima?: (id: string) => void; onTolak?: (l: Lembur) => void }) {
@@ -53,7 +46,7 @@ export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onT
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-garis bg-[#F7FAF8] p-3.5 sm:grid-cols-2">
           {[
             ['Tanggal', lembur.tanggal],
-            // Bila admin mengoreksi jam aktual, total dan uang lembur dihitung dari jam itu.
+            // Bila admin mengoreksi jam aktual, total lembur dihitung dari jam itu.
             lembur.rentangAktual
               ? ['Jam dikerjakan', `${lembur.rentangAktual} (rencana ${lembur.rentang})`]
               : ['Rentang jam', lembur.rentang],
@@ -99,19 +92,6 @@ export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onT
             {lembur.dijawabPada ? ` pada ${lembur.dijawabPada}` : ''}.
           </p>
         )}
-
-        {!ditolak && !menunggu && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-teks-samar">
-            {lembur.dibayarPada ? (
-              <>
-                <Pil status="Selesai">Sudah dibayar</Pil>
-                <span className="num">{lembur.dibayarPada}</span>
-              </>
-            ) : (
-              <Pil status="Menunggu">Belum dibayar</Pil>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -125,7 +105,7 @@ export function LemburUser() {
   const [alasan, setAlasan] = useState('');
   const [galat, setGalat] = useState('');
 
-  // Penyaring periode untuk riwayat dan angka uang lembur; bawaannya bulan ini.
+  // Penyaring periode untuk riwayat dan ringkasan lembur; bawaannya bulan ini.
   const [periode, setPeriode] = useState<Periode>('Bulanan');
   const [tanggal, setTanggal] = useState(() => keIso(new Date()));
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci);
@@ -166,8 +146,6 @@ export function LemburUser() {
   const riwayatPeriode = dari ? tersaring.data.filter((l) => l.status !== 'Menunggu') : [];
   const diterima = riwayatPeriode.filter((l) => l.status === 'Diterima' || l.status === 'Selesai');
   const totalJam = jumlahJamLembur(diterima);
-  // Tiap penugasan membawa upahnya sendiri: tarif dikunci backend saat dikirim.
-  
 
   function bukaTolak(l: Lembur) {
     setDitolakkan(l);
@@ -226,7 +204,6 @@ export function LemburUser() {
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
         <StatCard gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? `Terdekat: ${[...menunggu].sort((a, b) => a.tanggalIso.localeCompare(b.tanggalIso))[0].tanggal}` : 'Semua penugasan sudah dijawab'} />
         <StatCard gaya="pekat" nama="Lembur diterima" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam · ${labelPeriode}`} />
-        {/* Uang lembur disembunyikan */}
       </div>
 
       <div className="mb-3.5 mt-6 flex items-center gap-3">
