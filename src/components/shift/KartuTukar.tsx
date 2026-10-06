@@ -6,8 +6,11 @@ import { WARNA_STATUS_TUKAR } from '@/lib/shift'
 import { cn } from '@/lib/util'
 import type { Jabatan, PihakTukar, TukarShift } from '@/types'
 
-/** Satu permintaan tukar shift: kedua pihak, alasan, status, dan slot tombol aksi. */
-export function KartuTukar({ tukar: t, aksi }: { tukar: TukarShift; aksi?: ReactNode }) {
+/**
+ * Satu permintaan tukar shift: kedua pihak, alasan, status, dan slot tombol aksi.
+ * `sempitXl`: kartu ditaruh di kolom sempit pada layar xl, jadi kedua pihak tetap ditumpuk.
+ */
+export function KartuTukar({ tukar: t, aksi, sempitXl }: { tukar: TukarShift; aksi?: ReactNode; sempitXl?: boolean }) {
   const bedaTanggal = t.pemohon.tanggal !== t.rekan.tanggal
   return (
     <div className="rounded-xl border border-garis bg-white">
@@ -26,9 +29,19 @@ export function KartuTukar({ tukar: t, aksi }: { tukar: TukarShift; aksi?: React
         </span>
       </div>
 
-      <div className="grid grid-cols-1 items-center gap-1.5 px-3 py-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-2 sm:px-4">
+      <div
+        className={cn(
+          'grid grid-cols-1 items-center gap-1.5 px-3 py-3 sm:grid-cols-[1fr_auto_1fr] sm:gap-2 sm:px-4',
+          sempitXl && 'xl:grid-cols-1 xl:gap-1.5',
+        )}
+      >
         <Pihak pihak={t.pemohon} jabatan={t.jabatan} label={t.peranSaya === 'pemohon' ? 'Anda (pengaju)' : 'Pengaju'} />
-        <span className="mx-auto grid h-7 w-7 rotate-90 place-items-center rounded-full bg-kertas text-teks-lembut sm:h-8 sm:w-8 sm:rotate-0">
+        <span
+          className={cn(
+            'mx-auto grid h-7 w-7 rotate-90 place-items-center rounded-full bg-kertas text-teks-lembut sm:h-8 sm:w-8 sm:rotate-0',
+            sempitXl && 'xl:h-7 xl:w-7 xl:rotate-90',
+          )}
+        >
           <Ikon.Tukar size={16} />
         </span>
         <Pihak pihak={t.rekan} jabatan={t.jabatan} label={t.peranSaya === 'rekan' ? 'Anda (rekan)' : 'Rekan'} />

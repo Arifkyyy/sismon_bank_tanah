@@ -38,7 +38,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-ink-deep/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] grid grid-cols-1 place-items-center overflow-y-auto bg-ink-deep/50 p-4 backdrop-blur-sm"
       onClick={onTutup}
     >
       <div
@@ -46,7 +46,7 @@ export function Modal({
         aria-modal="true"
         aria-label={judul}
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${lebar} overflow-hidden rounded-kartu border border-garis bg-white shadow-naik`}
+        className={`w-full min-w-0 ${lebar} overflow-hidden rounded-kartu border border-garis bg-white shadow-naik`}
       >
         <div className="flex items-start gap-3 border-b border-garis px-5 py-4">
           <div className="min-w-0 flex-1">

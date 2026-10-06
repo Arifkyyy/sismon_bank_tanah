@@ -46,7 +46,8 @@ export function JadwalSayaUser() {
   const lainnya = berjalan.filter((t) => !perluJawaban.includes(t))
 
   const konfirmasi = useKonfirmasi()
-  const [ajukan, setAjukan] = useState<JadwalSaya | null>(null)
+  /** pop-up tukar jadwal; `awal` = tanggal yang langsung terpilih */
+  const [ajukan, setAjukan] = useState<{ awal: string | null } | null>(null)
   const [tolak, setTolak] = useState<TukarShift | null>(null)
   const [sibuk, setSibuk] = useState<number | null>(null)
   const [pesan, setPesan] = useState('')
@@ -118,33 +119,71 @@ export function JadwalSayaUser() {
   function tombolAjukan(h: JadwalSaya) {
     if (h.tanggal < hariIni || !h.shift || h.diajukanTukar) return undefined
     return (
-      <Tombol varian="hantu" kecil onClick={() => setAjukan(h)}>
-        <Ikon.Tukar size={14} /> Ajukan tukar
+      <Tombol varian="hantu" kecil onClick={() => setAjukan({ awal: h.tanggal })}>
+        <Ikon.Tukar size={14} /> Tukar jadwal
       </Tombol>
     )
   }
 
+  const bisaTukar = tujuhHari.data.some((h) => tombolAjukan(h))
+
   return (
-    <div className="grid gap-4.5">
+    // Layar lebar: jadwal di kiri, permintaan tukar di kolom kanan. Di bawahnya satu kolom.
+    <div className="grid gap-4.5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] xl:items-start">
+      {perluJawaban.length > 0 && (
+        <button
+          type="button"
+          onClick={() => document.getElementById('permintaan-tukar')?.scrollIntoView({ behavior: 'smooth' })}
+          className="flex items-center gap-3 rounded-kartu border border-emas/40 bg-emas-lembut px-3.5 py-3 text-left transition hover:brightness-[0.98] sm:px-4 xl:col-span-2"
+        >
+          <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-white text-emas-teks">
+            <Ikon.Tukar size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-[13px] font-bold leading-snug text-ink sm:text-[13.5px]">
+              {perluJawaban.length === 1
+                ? `${perluJawaban[0].pemohon.nama} mengajak Anda tukar shift`
+                : `${perluJawaban.length} ajakan tukar shift menunggu jawaban Anda`}
+            </b>
+            <span className="block text-[12px] text-teks-lembut">Ketuk untuk melihat dan menjawab</span>
+          </span>
+          <Ikon.Chevron size={16} className="flex-none rotate-90 text-emas-teks" />
+        </button>
+      )}
+
       <Kartu>
         <KopKartu
           judul="Jadwal shift saya"
           sub={tampilan === '7 hari' ? 'Hari ini dan 6 hari ke depan' : bulan.label}
           aksi={
-            <Segmen
-              opsi={['7 hari', 'Kalender']}
-              nilai={tampilan}
-              onPilih={(v) => {
-                setTampilan(v as Tampilan)
-                setDipilih(null)
-              }}
-            />
+            <>
+              <Segmen
+                opsi={['7 hari', 'Kalender']}
+                nilai={tampilan}
+                onPilih={(v) => {
+                  setTampilan(v as Tampilan)
+                  setDipilih(null)
+                }}
+              />
+              <Tombol kecil onClick={() => setAjukan({ awal: null })}>
+                <Ikon.Tukar size={14} /> Tukar jadwal
+              </Tombol>
+            </>
           }
         />
         <StatusData memuat={sumber.memuat && !sumber.data.length} galat={sumber.galat} onUlang={sumber.muat} />
 
         {tampilan === '7 hari' && (
           <IsiKartu className="grid gap-2 max-sm:p-3">
+            {bisaTukar && (
+              <p className="m-0 mb-1 flex items-start gap-2 rounded-xl bg-kertas px-3 py-2 text-[12px] leading-snug text-teks-lembut">
+                <Ikon.Info size={14} className="mt-px flex-none text-hijau-tua" />
+                <span>
+                  Berhalangan masuk? Tekan <b className="font-semibold text-ink">Tukar jadwal</b>, pilih tanggal
+                  Anda, lalu pilih rekan dan tanggal jadwalnya.
+                </span>
+              </p>
+            )}
             {tujuhHari.data.map((h) => (
               <BarisHari key={h.tanggal} hari={h} hariIni={hariIni} aksi={tombolAjukan(h)} />
             ))}
@@ -184,28 +223,40 @@ export function JadwalSayaUser() {
                     aria-label={`${h?.hari ?? ''} ${h?.tanggalTeks ?? t}: ${h?.shift?.nama ?? 'belum dijadwalkan'}`}
                     onClick={() => setDipilih(pilih ? null : t)}
                     className={cn(
-                      'relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 transition sm:gap-1 sm:rounded-xl sm:py-2',
+                      'relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 transition',
+                      'sm:min-h-[64px] sm:gap-1 sm:rounded-xl sm:py-2 lg:min-h-[72px]',
                       pilih ? 'border-hijau ring-2 ring-hijau/30' : 'border-garis hover:border-hijau',
                       t === hariIni ? 'bg-hijau-lembut' : 'bg-white',
                     )}
                     style={info.akhirPekan && t !== hariIni ? { backgroundImage: ARSIR_AKHIR_PEKAN } : undefined}
                   >
-                    <span className={cn('num text-[11px] font-semibold', t === hariIni ? 'text-hijau-tua' : 'text-teks-lembut')}>
+                    <span
+                      className={cn(
+                        'num text-[11px] font-semibold sm:text-[12px]',
+                        t === hariIni ? 'text-hijau-tua' : 'text-teks-lembut',
+                      )}
+                    >
                       {info.tanggal}
                     </span>
                     {h?.shift ? (
-                      <KodeShift shift={h.shift} ukuran={22} className="rounded-md sm:!h-6 sm:!w-6 sm:!text-[10px]" />
+                      <KodeShift
+                        shift={h.shift}
+                        ukuran={22}
+                        className="rounded-md sm:!h-7 sm:!w-7 sm:!text-[11px]"
+                      />
                     ) : (
-                      <span className="grid h-[22px] w-[22px] place-items-center rounded-md border border-dashed border-garis-kuat text-[11px] text-teks-samar sm:h-6 sm:w-6">
+                      <span className="grid h-[22px] w-[22px] place-items-center rounded-md border border-dashed border-garis-kuat text-[11px] text-teks-samar sm:h-7 sm:w-7">
                         –
                       </span>
                     )}
                     {h?.tukar && (
-                      <span className="absolute right-1 top-1 text-ink">
+                      <span className="absolute right-0.5 top-0.5 text-ink sm:right-1.5 sm:top-1.5">
                         <Ikon.Tukar size={10} />
                       </span>
                     )}
-                    {h?.diajukanTukar && <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-emas" />}
+                    {h?.diajukanTukar && (
+                      <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full bg-emas sm:bottom-1.5 sm:right-1.5 sm:h-2 sm:w-2" />
+                    )}
                   </button>
                 )
               })}
@@ -221,12 +272,13 @@ export function JadwalSayaUser() {
       </Kartu>
 
       <Kartu>
+        <span id="permintaan-tukar" className="block scroll-mt-24" />
         <KopKartu
           judul="Permintaan tukar saya"
           sub="Yang Anda ajukan dan yang ditujukan kepada Anda"
         />
         <StatusData memuat={tukar.memuat && !tukar.data.length} galat={tukar.galat} onUlang={tukar.muat} />
-        <IsiKartu className="grid gap-3 max-sm:p-3">
+        <IsiKartu className="grid gap-3 max-sm:p-3 xl:p-4">
           {pesan && (
             <div className="flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12.5px] text-merah-teks">
               <Ikon.Awas size={15} className="mt-px flex-none" />
@@ -240,18 +292,18 @@ export function JadwalSayaUser() {
             <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-emas-teks">Perlu jawaban Anda</p>
           )}
           {[...perluJawaban, ...lainnya].map((t) => (
-            <KartuTukar key={t.id} tukar={t} aksi={aksiTukar(t)} />
+            <KartuTukar key={t.id} tukar={t} aksi={aksiTukar(t)} sempitXl />
           ))}
           {selesai.length > 0 && berjalan.length > 0 && (
             <p className="m-0 mt-1 text-[11px] font-bold uppercase tracking-wide text-teks-samar">Riwayat</p>
           )}
           {selesai.map((t) => (
-            <KartuTukar key={t.id} tukar={t} />
+            <KartuTukar key={t.id} tukar={t} sempitXl />
           ))}
         </IsiKartu>
       </Kartu>
 
-      {ajukan && <AjukanTukar hari={ajukan} onTutup={() => setAjukan(null)} onTerkirim={segarkan} />}
+      {ajukan && <AjukanTukar awal={ajukan.awal} onTutup={() => setAjukan(null)} onTerkirim={segarkan} />}
       {tolak && (
         <ModalAlasan
           judul="Tolak ajakan tukar shift?"
