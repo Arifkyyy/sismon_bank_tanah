@@ -156,6 +156,8 @@ class LogbookKeluar(Skema):
     foto: Literal["a", "b", "c"]
     foto_url: list[str] = []
     lembur: str
+    # alasan kejanggalan (lihat app/kejanggalan.py); hanya diisi untuk admin
+    tanda: list[str] = []
 
 
 class OrangKendala(Skema):
@@ -203,6 +205,8 @@ class KendalaKeluar(Skema):
     dibuka_lagi_pada: str | None = None
     # kapan terakhir ada perubahan (status/penangan)
     diperbarui_pada: str | None = None
+    # alasan kejanggalan (lihat app/kejanggalan.py); hanya diisi untuk admin
+    tanda: list[str] = []
 
 
 class DetailKendala(KendalaKeluar):

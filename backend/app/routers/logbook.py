@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app import format as f
-from app import tampil
+from app import kejanggalan, tampil
 from app.catatan import periksa_isi, periksa_petugas, saring, simpan_foto
 from app.database import ambil_db
-from app.deps import user_saat_ini
+from app.deps import PENGAWAS, user_saat_ini
 from app.foto_util import hapus_berkas
 from app.models import Logbook, User
 from app.schemas import CatatanMasuk, Jabatan, LogbookKeluar
@@ -32,7 +32,12 @@ def daftar(
     q = select(Logbook).options(selectinload(Logbook.petugas), selectinload(Logbook.foto))
     q = saring(q, Logbook, user, tanggal, dari, sampai, jabatan, petugas_id, cari)
     baris = list(db.scalars(q.order_by(Logbook.waktu.desc()).limit(batas)))
-    return tampil.daftar_logbook(db, baris)
+    hasil = tampil.daftar_logbook(db, baris)
+    if user.peran in PENGAWAS:
+        tanda = kejanggalan.untuk_logbook(db, baris)
+        for h in hasil:
+            h.tanda = tanda.get(h.id, [])
+    return hasil
 
 
 @router.post("", response_model=LogbookKeluar, status_code=201)

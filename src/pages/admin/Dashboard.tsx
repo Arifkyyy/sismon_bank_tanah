@@ -52,6 +52,12 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
     .filter((l) => l.tanggalIso >= awalBulan && l.tanggalIso <= hariIniIso)
   const jamLemburBulanIni = jumlahJamLembur(lemburBulanIni)
 
+  // Laporan bulan ini yang ditandai sistem (di luar jam shift, terlambat, beruntun).
+  const saringBulan = query({ dari: awalBulan, sampai: hariIniIso, batas: 1000 })
+  const logbookBulanIni = useApi<Logbook[]>(`/api/logbook${saringBulan}`, [])
+  const kendalaBulanIni = useApi<Kendala[]>(`/api/kendala${saringBulan}`, [])
+  const perluDicek = [...logbookBulanIni.data, ...kendalaBulanIni.data].filter((x) => (x.tanda?.length ?? 0) > 0).length
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
@@ -60,6 +66,26 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
         <StatCard ringkas gaya="pekat" nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
         <StatCard ringkas gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
+
+      {perluDicek > 0 && (
+        <Link
+          to={`${akar}/laporan-petugas?janggal=1`}
+          className="mt-4.5 flex items-center gap-3 rounded-kartu border border-emas/40 bg-emas-lembut px-4 py-3 no-underline transition hover:brightness-[0.98]"
+        >
+          <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-white text-emas-teks">
+            <Ikon.Awas size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-[13.5px] font-bold leading-snug text-ink">
+              {perluDicek} laporan bulan ini perlu dicek
+            </b>
+            <span className="block text-[12px] text-teks-lembut">
+              Ditandai sistem: di luar jam shift, dikirim terlambat, atau laporan beruntun
+            </span>
+          </span>
+          <Ikon.Chevron size={16} className="flex-none text-emas-teks" />
+        </Link>
+      )}
 
       
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 xl:grid-cols-[1.1fr_1fr]">

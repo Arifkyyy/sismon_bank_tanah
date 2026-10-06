@@ -85,6 +85,8 @@ export interface Logbook {
   fotoUrl?: string[]
   /** '—' bila tidak ada lembur */
   lembur: string
+  /** alasan kejanggalan dari sistem, mis. 'Di luar jam shift'; hanya terisi untuk admin */
+  tanda?: string[]
 }
 
 /** Pelapor/penangan kendala dalam bentuk ringkas. */
@@ -129,6 +131,8 @@ export interface Kendala {
   dibukaLagiPada?: string | null
   /** kapan terakhir ada perubahan (status/penangan) */
   diperbaruiPada?: string | null
+  /** alasan kejanggalan dari sistem, mis. 'Dikirim terlambat'; hanya terisi untuk admin */
+  tanda?: string[]
 }
 
 export type JenisRiwayatKendala = 'dilaporkan' | 'ditugaskan' | 'mulai' | 'selesai' | 'dibuka_lagi' | 'status'

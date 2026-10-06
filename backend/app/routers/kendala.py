@@ -14,7 +14,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import format as f
-from app import push, tampil
+from app import kejanggalan, push, tampil
 from app.audit import catat
 from app.catatan import periksa_isi, periksa_jumlah_foto, periksa_petugas, saring, simpan_foto
 from app.database import ambil_db
@@ -141,7 +141,13 @@ def daftar(
     elif milik == "ditangani":
         q = q.where(Kendala.penangan_id == user.id)
     urut = Kendala.diperbarui_pada.desc() if berubah_sejak else Kendala.waktu.desc()
-    return [tampil.kendala(k) for k in db.scalars(q.order_by(urut).limit(batas))]
+    baris = list(db.scalars(q.order_by(urut).limit(batas)))
+    hasil = [tampil.kendala(k) for k in baris]
+    if user.peran in PENGAWAS:
+        tanda = kejanggalan.untuk_kendala(db, baris)
+        for h in hasil:
+            h.tanda = tanda.get(h.id, [])
+    return hasil
 
 
 @router.get("/{kendala_id}", response_model=DetailKendala)

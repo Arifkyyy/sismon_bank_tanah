@@ -48,7 +48,9 @@ export function LaporanPetugas() {
   const [param, setParam] = useSearchParams()
   const tab = dariParam(param.get('tab'))
 
-  const [periode, setPeriode] = useState<Periode>('Harian')
+  // ?janggal=1 (dari kartu di Dashboard) langsung membuka laporan bertanda bulan ini.
+  const [hanyaJanggal, setHanyaJanggal] = useState(() => param.get('janggal') === '1')
+  const [periode, setPeriode] = useState<Periode>(() => (param.get('janggal') === '1' ? 'Bulanan' : 'Harian'))
   const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
@@ -102,21 +104,31 @@ export function LaporanPetugas() {
     terbuka.muat()
   }
 
-  const kendalaTerlihat = useMemo(
-    () => (status === 'Semua' ? kendala.data : kendala.data.filter((k) => k.status === status)),
-    [kendala.data, status],
+  const bertanda = (x: { tanda?: string[] }) => (x.tanda?.length ?? 0) > 0
+  const logbookTerlihat = useMemo(
+    () => (hanyaJanggal ? logbook.data.filter(bertanda) : logbook.data),
+    [logbook.data, hanyaJanggal],
   )
+  const kendalaTerlihat = useMemo(
+    () =>
+      kendala.data.filter((k) => (status === 'Semua' || k.status === status) && (!hanyaJanggal || bertanda(k))),
+    [kendala.data, status, hanyaJanggal],
+  )
+  // Jumlah di pilihan saringan: laporan bertanda pada tab dan periode yang sedang dilihat.
+  const jumlahJanggal =
+    (tab !== 'Kendala' ? logbook.data.filter(bertanda).length : 0) +
+    (tab !== 'Aktivitas' ? kendala.data.filter(bertanda).length : 0)
 
   const butir = useMemo<Butir[]>(() => {
     const hasil: Butir[] = []
     if (tab !== 'Kendala') {
-      for (const l of logbook.data) hasil.push({ jenis: 'aktivitas', tanggalIso: l.tanggalIso ?? '', jam: l.jam, data: l })
+      for (const l of logbookTerlihat) hasil.push({ jenis: 'aktivitas', tanggalIso: l.tanggalIso ?? '', jam: l.jam, data: l })
     }
     if (tab !== 'Aktivitas') {
       for (const k of kendalaTerlihat) hasil.push({ jenis: 'kendala', tanggalIso: k.tanggalIso ?? '', jam: k.jam, data: k })
     }
     return hasil.sort((a, b) => b.tanggalIso.localeCompare(a.tanggalIso) || b.jam.localeCompare(a.jam))
-  }, [logbook.data, kendalaTerlihat, tab])
+  }, [logbookTerlihat, kendalaTerlihat, tab])
 
   const jumlah = (s: Status) => kendala.data.filter((k) => k.status === s).length
 
@@ -156,10 +168,10 @@ export function LaporanPetugas() {
       unduhExcel({
         namaBerkas: `laporan-aktivitas-${akhiran}`,
         judul: 'Laporan Aktivitas Petugas',
-        keterangan: keterangan(logbook.data.length, 'catatan'),
+        keterangan: keterangan(logbookTerlihat.length, 'catatan'),
         namaLembar: 'Aktivitas',
         kepala: ['Nama', 'Jabatan', 'Tanggal', 'Hari', 'Jam', 'Keterangan', 'Lembur'],
-        baris: logbook.data.map((l) => [l.nama, JABATAN_PANJANG[l.jabatan], l.tanggal, l.hari, l.jam, l.keterangan, l.lembur]),
+        baris: logbookTerlihat.map((l) => [l.nama, JABATAN_PANJANG[l.jabatan], l.tanggal, l.hari, l.jam, l.keterangan, l.lembur]),
       })
     } else if (isi === 'Kendala') {
       unduhExcel({
@@ -178,7 +190,7 @@ export function LaporanPetugas() {
     } else {
       // Urutan sama dengan daftar di layar tab Semua.
       const semua = [
-        ...logbook.data.map((l) => ({ t: l.tanggalIso ?? '', j: l.jam, b: ['Aktivitas', l.nama, JABATAN_PANJANG[l.jabatan], l.tanggal, l.hari, l.jam, l.keterangan, l.lembur, '', '', '', ''] })),
+        ...logbookTerlihat.map((l) => ({ t: l.tanggalIso ?? '', j: l.jam, b: ['Aktivitas', l.nama, JABATAN_PANJANG[l.jabatan], l.tanggal, l.hari, l.jam, l.keterangan, l.lembur, '', '', '', ''] })),
         ...kendalaTerlihat.map((k) => ({ t: k.tanggalIso ?? '', j: k.jam, b: ['Kendala', k.nama, JABATAN_PANJANG[k.jabatan], k.tanggal, k.hari, k.jam, k.keterangan, '', ...kolomKendala(k)] })),
       ].sort((a, b) => b.t.localeCompare(a.t) || b.j.localeCompare(a.j))
       unduhExcel({
@@ -328,11 +340,20 @@ export function LaporanPetugas() {
                 ))}
               </PilihRapi>
             )}
+            <PilihRapi
+              aria-label="Saring laporan yang perlu dicek"
+              value={hanyaJanggal ? 'janggal' : 'semua'}
+              onChange={(e) => setHanyaJanggal(e.target.value === 'janggal')}
+              className="max-sm:col-span-2 max-sm:w-full"
+            >
+              <option value="semua">Semua laporan</option>
+              <option value="janggal">Hanya yang perlu dicek{jumlahJanggal > 0 ? ` (${jumlahJanggal})` : ''}</option>
+            </PilihRapi>
             <Tombol
               varian="hantu"
               kecil
               onClick={() => setUnduhBuka(true)}
-              disabled={logbook.data.length + kendalaTerlihat.length === 0}
+              disabled={logbookTerlihat.length + kendalaTerlihat.length === 0}
               className="max-sm:col-span-2 max-sm:w-full"
             >
               <Ikon.Unduh size={15} /> Unduh Excel
@@ -354,10 +375,18 @@ export function LaporanPetugas() {
               <Ikon.Buku size={19} />
             </span>
             <b className="block text-[13.5px] font-semibold text-ink">
-              {memuat ? 'Memuat catatan…' : 'Tidak ada catatan pada saringan ini'}
+              {memuat
+                ? 'Memuat catatan…'
+                : hanyaJanggal
+                  ? 'Tidak ada laporan yang perlu dicek'
+                  : 'Tidak ada catatan pada saringan ini'}
             </b>
             <span className="mt-0.5 block text-[12px] text-teks-lembut">
-              {dasar === null ? 'Pilih rentang tanggal dulu.' : 'Ganti periode, jabatan, nama, atau status.'}
+              {dasar === null
+                ? 'Pilih rentang tanggal dulu.'
+                : hanyaJanggal
+                  ? 'Semua laporan pada saringan ini terlihat wajar.'
+                  : 'Ganti periode, jabatan, nama, atau status.'}
             </span>
           </div>
         ) : (
@@ -421,6 +450,26 @@ export function LaporanPetugas() {
 
 /* ------------------------------------------------------------------ Baris */
 
+/**
+ * Alasan kejanggalan dari sistem (backend app/kejanggalan.py). Hanya penanda
+ * untuk dicek admin — bukan tuduhan, jadi bahasanya netral.
+ */
+function TandaJanggal({ tanda }: { tanda?: string[] }) {
+  if (!tanda?.length) return null
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Perlu dicek">
+      {tanda.map((t) => (
+        <span
+          key={t}
+          className="inline-flex items-center gap-1 rounded-full border border-emas/50 bg-emas-lembut px-2 py-0.5 text-[11.5px] font-semibold text-emas-teks"
+        >
+          <Ikon.Awas size={12} /> {t}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function Waktu({ tanggal, hari, jam }: { tanggal: string; hari: string; jam: string }) {
   return (
     <span className="num whitespace-nowrap text-[11.5px] text-teks-samar">
@@ -473,6 +522,7 @@ function BarisAktivitas({ l, onFoto }: { l: Logbook; onFoto: () => void }) {
           <TagAktivitas />
           <Waktu tanggal={l.tanggal} hari={l.hari} jam={l.jam} />
         </div>
+        <TandaJanggal tanda={l.tanda} />
         <div className="mt-2">
           <OrangBaris nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} keterangan={JABATAN_PANJANG[l.jabatan]} />
         </div>
@@ -509,6 +559,7 @@ function BarisKendala({
           <Pil status={k.status} />
           <Waktu tanggal={k.tanggal} hari={k.hari} jam={k.jam} />
         </div>
+        <TandaJanggal tanda={k.tanda} />
         {/* HP: bertumpuk dengan tepi kiri sejajar; laptop: berdampingan. */}
         <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 max-sm:flex-col max-sm:items-start max-sm:gap-y-2.5">
           <OrangBaris
