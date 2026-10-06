@@ -88,9 +88,13 @@ export function Rekapitulasi() {
             onPilih={(v) => setPeriode(v as Periode)}
           />
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             {periode === 'Bulanan' && (
-              <PilihRapi value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
+              <PilihRapi
+                value={bulan}
+                onChange={(e) => setBulan(e.target.value)}
+                className="w-full sm:w-auto sm:min-w-[180px]"
+              >
                 {BULAN_PILIHAN.map((b) => (
                   <option key={b.kunci} value={b.kunci}>
                     {b.label}
@@ -98,37 +102,47 @@ export function Rekapitulasi() {
                 ))}
               </PilihRapi>
             )}
-            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />}
+            {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-full sm:w-[260px]" />}
             {periode === 'All Time' && (
               <span className="rounded-[10px] border border-garis bg-[#FAFCFB] px-3 py-2.5 text-[13px] text-teks-lembut">
                 Seluruh data tanpa batas tanggal
               </span>
             )}
 
-            <PilihRapi
-              aria-label="Jabatan petugas"
-              value={jabatan}
-              onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
-              className="ml-auto"
-            >
-              <option value="Semua">Semua jabatan</option>
-              {DAFTAR_JABATAN.map((j) => (
-                <option key={j} value={j}>
-                  {JABATAN_PANJANG[j]}
-                </option>
-              ))}
-            </PilihRapi>
-            <Tombol varian="hantu" kecil onClick={unduh} disabled={terlihat.length === 0}>
-              <Ikon.Unduh size={15} /> Unduh rekap
-            </Tombol>
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <PilihRapi
+                aria-label="Jabatan petugas"
+                value={jabatan}
+                onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+                className="min-w-0 flex-1 sm:flex-none"
+              >
+                <option value="Semua">Semua jabatan</option>
+                {DAFTAR_JABATAN.map((j) => (
+                  <option key={j} value={j}>
+                    {JABATAN_PANJANG[j]}
+                  </option>
+                ))}
+              </PilihRapi>
+              <Tombol
+                varian="hantu"
+                kecil
+                onClick={unduh}
+                disabled={terlihat.length === 0}
+                className="flex-none self-stretch"
+              >
+                <Ikon.Unduh size={15} /> Unduh rekap
+              </Tombol>
+            </div>
           </div>
         </IsiKartu>
       </Kartu>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <StatCard nama="Total logbook" angka={totalLogbook.toLocaleString('id-ID')} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={`Uang lembur Rp ${totalUpah.toLocaleString('id-ID')}`} />
-        <StatCard nama="Kendala dilaporkan" angka={String(totalKendala)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`Dari ${terlihat.length} petugas`} />
+      <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-3">
+        <StatCard ringkas nama="Total logbook" angka={totalLogbook.toLocaleString('id-ID')} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
+        <StatCard ringkas nama="Total jam lembur" angka={String(totalJam)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket={`Uang lembur Rp ${totalUpah.toLocaleString('id-ID')}`} />
+        <div className="max-sm:col-span-2">
+          <StatCard ringkas nama="Kendala dilaporkan" angka={String(totalKendala)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`Dari ${terlihat.length} petugas`} />
+        </div>
       </div>
 
       <Kartu className="mt-4.5">

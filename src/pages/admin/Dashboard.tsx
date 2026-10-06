@@ -54,11 +54,11 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard gaya="pekat" nama="Jumlah petugas yang aktif" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
-        <StatCard gaya="pekat" nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
-        <StatCard gaya="pekat" nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
-        <StatCard gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
+      <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard ringkas gaya="pekat" nama="Jumlah petugas yang aktif" angka={String(bertugas)} satuan={`/ ${petugas.data.length}`} nada="ink" ikon={<Ikon.Orang size={17} />} ket={`${petugas.data.length - bertugas} petugas cuti atau nonaktif`} />
+        <StatCard ringkas gaya="pekat" nama="Logbook masuk hari ini" angka={String(logbookHariIni.data.length)} ikon={<Ikon.Buku size={17} />} ket="Catatan yang masuk hari ini" />
+        <StatCard ringkas gaya="pekat" nama="Kendala belum selesai" angka={String(belumSelesai.length)} nada="tanah" ikon={<Ikon.Awas size={17} />} ket={`${jumlahBaru} baru, ${jumlahDiproses} sedang diproses`} />
+        <StatCard ringkas gaya="pekat" nama="Jam lembur bulan ini" angka={String(jamLemburBulanIni)} satuan="jam" nada="emas" ikon={<Ikon.Jam size={17} />} ket="Lembur yang diterima petugas" />
       </div>
 
       
@@ -127,28 +127,70 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
             galat={kendalaTerbuka.galat}
             onUlang={kendalaTerbuka.muat}
           />
-          <Tabel kepala={['Pelapor', 'Kendala', 'Foto', 'Status']} maksTinggi={276}>
+          {/* Laptop/tablet: tabel; HP: daftar bertumpuk di bawah. */}
+          <div className="max-sm:hidden">
+            <Tabel kepala={['Pelapor', 'Kendala', 'Foto', 'Status']} maksTinggi={276}>
+              {belumSelesai.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
+                    {kendalaTerbuka.memuat
+                      ? 'Memuat laporan kendala…'
+                      : 'Tidak ada kendala yang perlu ditindak.'}
+                  </td>
+                </tr>
+              ) : (
+                belumSelesai.slice(0, 10).map((k) => (
+                  <Baris key={k.id}>
+                    <td>
+                      <SelOrang nama={k.nama} jabatan={k.jabatan} />
+                    </td>
+                    <td className="max-w-[240px] whitespace-normal text-[12.5px] text-teks-lembut">
+                      <span className="line-clamp-2 [overflow-wrap:anywhere]">{k.keterangan}</span>
+                      <span className="num mt-0.5 block text-[11px] text-teks-samar">
+                        {k.tanggal} · {k.jam}
+                      </span>
+                    </td>
+                    <td>
+                      <FotoKecil
+                        varian={k.foto}
+                        url={k.fotoUrl?.[0]}
+                        onClick={() =>
+                          k.fotoUrl?.length &&
+                          setPratinjau({ foto: k.fotoUrl, judul: `Foto kendala · ${k.nama}` })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Pil status={k.status} />
+                    </td>
+                  </Baris>
+                ))
+              )}
+            </Tabel>
+          </div>
+          <ul className="m-0 list-none divide-y divide-garis p-0 sm:hidden">
             {belumSelesai.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
-                  {kendalaTerbuka.memuat
-                    ? 'Memuat laporan kendala…'
-                    : 'Tidak ada kendala yang perlu ditindak.'}
-                </td>
-              </tr>
+              <li className="px-4 py-12 text-center text-[13px] text-teks-lembut">
+                {kendalaTerbuka.memuat ? 'Memuat laporan kendala…' : 'Tidak ada kendala yang perlu ditindak.'}
+              </li>
             ) : (
               belumSelesai.slice(0, 10).map((k) => (
-                <Baris key={k.id}>
-                  <td>
-                    <SelOrang nama={k.nama} jabatan={k.jabatan} />
-                  </td>
-                  <td className="max-w-[240px] whitespace-normal text-[12.5px] text-teks-lembut">
-                    {k.keterangan}
-                    <span className="num mt-0.5 block text-[11px] text-teks-samar">
-                      {k.tanggal} · {k.jam}
-                    </span>
-                  </td>
-                  <td>
+                <li key={k.id} className="px-4 py-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <SelOrang nama={k.nama} jabatan={k.jabatan} />
+                    </div>
+                    <Pil status={k.status} />
+                  </div>
+                  <div className="mt-2.5 flex items-start gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="m-0 line-clamp-2 text-[12.5px] leading-relaxed text-teks-lembut [overflow-wrap:anywhere]">
+                        {k.keterangan}
+                      </p>
+                      <span className="num mt-0.5 block text-[11px] text-teks-samar">
+                        {k.tanggal} · {k.jam}
+                      </span>
+                    </div>
                     <FotoKecil
                       varian={k.foto}
                       url={k.fotoUrl?.[0]}
@@ -157,14 +199,11 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
                         setPratinjau({ foto: k.fotoUrl, judul: `Foto kendala · ${k.nama}` })
                       }
                     />
-                  </td>
-                  <td>
-                    <Pil status={k.status} />
-                  </td>
-                </Baris>
+                  </div>
+                </li>
               ))
             )}
-          </Tabel>
+          </ul>
         </Kartu>
 
         <Kartu>
