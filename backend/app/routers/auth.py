@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app import tampil
+from app import batas_masuk, tampil
 from app.database import ambil_db
 from app.deps import user_saat_ini
 from app.foto_util import hapus_berkas, simpan_data_url
@@ -18,11 +18,20 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 @router.post("/masuk", response_model=HasilMasuk)
 def masuk(isi: MasukMasuk, db: Session = Depends(ambil_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == isi.email.lower()))
-    # Pesan sengaja disamakan supaya orang luar tidak bisa menebak email mana yang terdaftar.
-    if not user or not cocok_sandi(isi.sandi, user.password_hash):
+    if not user:
         raise HTTPException(401, "Email atau kata sandi salah.")
+    # Akun yang sedang dikunci tidak diperiksa sandinya sama sekali.
+    if user.status != "Nonaktif" and (menit := batas_masuk.menit_terkunci(db, user)):
+        raise HTTPException(
+            429, f"Terlalu banyak percobaan masuk. Coba lagi dalam {menit} menit, atau hubungi Super Admin."
+        )
+    if not cocok_sandi(isi.sandi, user.password_hash):
+        # Akun nonaktif tidak dihitung lagi; pesannya disamakan dengan email yang tidak terdaftar.
+        if user.status == "Nonaktif":
+            raise HTTPException(401, "Email atau kata sandi salah.")
+        raise HTTPException(401, batas_masuk.catat_gagal(db, user))
     if user.status == "Nonaktif":
-        raise HTTPException(403, "Akun Anda sudah dinonaktifkan. Hubungi admin.")
+        raise HTTPException(403, "Akun Anda dinonaktifkan. Silakan temui Super Admin untuk mengaktifkannya kembali.")
 
     user.terakhir_masuk = sekarang()
     db.commit()

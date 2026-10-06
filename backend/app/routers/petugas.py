@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import format as f
-from app import tampil
+from app import batas_masuk, tampil
 from app.audit import catat
 from app.database import ambil_db
 from app.deps import PENGAWAS, butuh_peran, user_saat_ini
@@ -77,6 +77,16 @@ def ubah(
     email = isi.email.lower()
     if email != u.email and db.scalar(select(User).where(func.lower(User.email) == email)):
         raise HTTPException(409, "Email ini sudah dipakai akun lain.")
+    if (
+        isi.status != "Nonaktif"
+        and pelaku.peran != "superadmin"
+        and batas_masuk.dinonaktifkan_sistem(db, u)
+    ):
+        raise HTTPException(
+            403,
+            "Akun ini dinonaktifkan sistem karena salah kata sandi 10 kali. "
+            "Hanya Super Admin yang bisa mengaktifkannya kembali.",
+        )
 
     lama = (u.nama, u.jabatan, u.email, u.telepon, u.nip, u.unit, u.status)
     u.nama = isi.nama.strip()
@@ -91,5 +101,8 @@ def ubah(
     beda = [f"{n}: {a} → {b}" for n, a, b in zip(label, lama, baru) if a != b]
     if beda:
         catat(db, pelaku, "ubah_petugas", f"{u.email} ({'; '.join(beda)})")
+    # Diaktifkan lagi (mis. setelah nonaktif karena salah sandi 10 kali): hitungan salah sandi dimulai dari nol.
+    if lama[-1] == "Nonaktif" and u.status != "Nonaktif":
+        batas_masuk.pulihkan(db, u, pelaku)
     db.commit()
     return tampil.petugas(u)

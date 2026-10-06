@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app import batas_masuk
 from app import format as f
 from app.audit import catat
 from app.database import ambil_db
@@ -74,6 +75,9 @@ def ubah_status(
     u = _ambil(db, akun_id, pelaku)
     u.status = isi.status
     catat(db, pelaku, "ubah_status_akun", f"{u.email} → {isi.status}")
+    # Diaktifkan lagi (mis. setelah nonaktif karena salah sandi 10 kali): hitungan salah sandi dimulai dari nol.
+    if isi.status != "Nonaktif":
+        batas_masuk.pulihkan(db, u, pelaku)
     db.commit()
 
 
@@ -83,6 +87,8 @@ def reset_sandi(akun_id: int, db: Session = Depends(ambil_db), pelaku: User = De
     sandi = sandi_sementara()
     u.password_hash = acak_sandi(sandi)
     catat(db, pelaku, "reset_sandi", u.email)
+    # Sandi baru: hitungan salah sandi dan kunci sementara ikut dihapus.
+    batas_masuk.pulihkan(db, u, pelaku)
     db.commit()
     return HasilAkunBaru(id=u.id, email=u.email, sandi_sementara=sandi)
 
