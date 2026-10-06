@@ -252,26 +252,41 @@ export function TabJadwal() {
     <div className="grid gap-4.5">
       <Kartu>
         {/* ------------------------------------------------------------ toolbar */}
-        <div className="flex flex-wrap items-center gap-2.5 border-b border-garis px-5 py-4">
-          <Segmen opsi={['Minggu', 'Bulan']} nilai={mode} onPilih={(v) => setMode(v as ModePeriode)} />
-          <div className="flex items-center gap-1.5">
-            <TombolIkon label="Periode sebelumnya" onClick={() => setAcuan((a) => geserPeriode(mode, a, -1))}>
-              <Ikon.Chevron size={15} className="rotate-180" />
-            </TombolIkon>
-            <b className="num min-w-[132px] text-center text-[13.5px] font-bold text-ink">{periode.label}</b>
-            <TombolIkon label="Periode berikutnya" onClick={() => setAcuan((a) => geserPeriode(mode, a, 1))}>
-              <Ikon.Chevron size={15} />
-            </TombolIkon>
+        {/* HP: tiga baris — segmen, navigasi periode, lalu jabatan + cari berdampingan. */}
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-garis px-5 py-4 max-sm:flex-col max-sm:items-stretch max-sm:gap-2 max-sm:px-3.5 max-sm:py-3">
+          <div className="max-sm:[&>div]:flex max-sm:[&>div]:w-full max-sm:[&_button]:flex-1">
+            <Segmen opsi={['Minggu', 'Bulan']} nilai={mode} onPilih={(v) => setMode(v as ModePeriode)} />
           </div>
-          <Tombol varian="hantu" kecil onClick={() => setAcuan(new Date())} disabled={periode.tanggal.includes(hariIni)}>
-            Hari ini
-          </Tombol>
+          {/* sm:contents — di layar besar pembungkus ini hilang, susunan tetap seperti semula. */}
+          <div className="flex items-center gap-2 sm:contents">
+            <div className="flex items-center gap-1.5 max-sm:min-w-0 max-sm:flex-1">
+              <TombolIkon label="Periode sebelumnya" onClick={() => setAcuan((a) => geserPeriode(mode, a, -1))}>
+                <Ikon.Chevron size={15} className="rotate-180" />
+              </TombolIkon>
+              <b className="num min-w-[132px] text-center text-[13.5px] font-bold text-ink max-sm:min-w-0 max-sm:flex-1">
+                {periode.label}
+              </b>
+              <TombolIkon label="Periode berikutnya" onClick={() => setAcuan((a) => geserPeriode(mode, a, 1))}>
+                <Ikon.Chevron size={15} />
+              </TombolIkon>
+            </div>
+            <Tombol
+              varian="hantu"
+              kecil
+              onClick={() => setAcuan(new Date())}
+              disabled={periode.tanggal.includes(hariIni)}
+              className="max-sm:flex-none"
+            >
+              Hari ini
+            </Tombol>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+          <div className="flex flex-wrap items-center gap-2 lg:ml-auto max-sm:grid max-sm:grid-cols-2">
             <PilihRapi
               aria-label="Jabatan"
               value={jabatan}
               onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+              className="max-sm:w-full max-sm:min-w-0"
             >
               <option value="Semua">Semua jabatan</option>
               {DAFTAR_JABATAN.map((j) => (
@@ -284,24 +299,46 @@ export function TabJadwal() {
               type="search"
               aria-label="Cari nama"
               placeholder="Cari nama…"
-              className="w-[160px]"
+              className="w-[160px] max-sm:w-full max-sm:min-w-0"
               value={cari}
               onChange={(e) => setCari(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-garis bg-[#FAFCFB] px-5 py-3">
-          <Tombol kecil onClick={() => setMassal(true)} disabled={!jadwal.data || !jenis.data.length}>
+        {/* HP: "Isi massal" selebar penuh, salin + export berdampingan sama lebar. */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-garis bg-[#FAFCFB] px-5 py-3 max-sm:grid max-sm:grid-cols-2 max-sm:px-3.5">
+          <Tombol
+            kecil
+            onClick={() => setMassal(true)}
+            disabled={!jadwal.data || !jenis.data.length}
+            className="max-sm:col-span-2 max-sm:w-full"
+          >
             <Ikon.Tambah size={14} /> Isi massal
           </Tombol>
-          <Tombol varian="hantu" kecil onClick={salin} disabled={sibuk || !jadwal.data}>
-            <Ikon.Putar size={14} /> Salin {mode === 'Minggu' ? 'minggu' : 'bulan'} sebelumnya
+          <Tombol
+            varian="hantu"
+            kecil
+            onClick={salin}
+            disabled={sibuk || !jadwal.data}
+            className="max-sm:w-full max-sm:min-w-0"
+          >
+            <Ikon.Putar size={14} />
+            <span className="max-sm:hidden">Salin {mode === 'Minggu' ? 'minggu' : 'bulan'} sebelumnya</span>
+            <span className="sm:hidden">Salin {mode === 'Minggu' ? 'minggu' : 'bulan'} lalu</span>
           </Tombol>
-          <Tombol varian="hantu" kecil onClick={unduh} disabled={!jadwal.data || !terlihat.length}>
+          <Tombol
+            varian="hantu"
+            kecil
+            onClick={unduh}
+            disabled={!jadwal.data || !terlihat.length}
+            className="max-sm:w-full max-sm:min-w-0"
+          >
             <Ikon.Unduh size={14} /> Export Excel
           </Tombol>
-          {jadwal.memuat && jadwal.data && <span className="text-[12px] text-teks-samar">Memuat…</span>}
+          {jadwal.memuat && jadwal.data && (
+            <span className="text-[12px] text-teks-samar max-sm:col-span-2">Memuat…</span>
+          )}
         </div>
 
         {pesan && (
@@ -458,7 +495,15 @@ export function TabJadwal() {
         {/* ------------------------------------------------------ daftar (HP) */}
         {jadwal.data && terlihat.length > 0 && (
           <div className="md:hidden">
-            <div className="scrollbar-lembut flex gap-1.5 overflow-x-auto border-b border-garis px-4 py-3">
+            {/* Minggu: 7 hari muat tanpa digeser (grid). Bulan: tetap bisa digeser ke samping. */}
+            <div
+              className={cn(
+                'border-b border-garis py-3',
+                mode === 'Minggu'
+                  ? 'grid grid-cols-7 gap-1 px-3.5'
+                  : 'scrollbar-lembut flex gap-1.5 overflow-x-auto px-4',
+              )}
+            >
               {periode.tanggal.map((t) => {
                 const h = infoHari(t)
                 const pilih = t === hariHp
@@ -469,7 +514,8 @@ export function TabJadwal() {
                     aria-pressed={pilih}
                     onClick={() => setTanggalHp(t)}
                     className={cn(
-                      'flex min-w-[46px] flex-none flex-col items-center rounded-xl border px-2 py-1.5 transition',
+                      'flex flex-col items-center rounded-xl border py-1.5 transition',
+                      mode === 'Minggu' ? 'min-w-0 gap-0.5 px-0' : 'min-w-[46px] flex-none px-2',
                       pilih ? 'border-hijau bg-hijau text-white' : 'border-garis bg-white text-ink',
                       !pilih && t === hariIni && 'border-hijau text-hijau-tua',
                     )}
