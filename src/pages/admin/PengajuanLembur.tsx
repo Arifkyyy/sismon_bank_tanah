@@ -4,12 +4,10 @@ import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import {
   AreaTeks, Baris, GridForm, Input, InputRapi, IsiKartu, KakiForm, Kartu, Kolom,
-  KopKartu, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, Tombol,
+  KopKartu, Pil, Pilihan, PilihRapi, Segmen, SelOrang, Tabel, Tombol, TombolIkon,
 } from '@/components/ui'
-import { cetakRekapLembur, ModalJamAktual, SelUangLembur } from '@/components/LemburSelesai'
+import { bisaKoreksiJam, cetakRekapLembur, ModalJamAktual } from '@/components/LemburSelesai'
 import { StatusData } from '@/components/StatusData'
-import { TombolTarifLembur } from '@/components/TarifLembur'
-import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { useLembur } from '@/context/LemburContext'
 import { api, pesanGalat, query } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
@@ -55,7 +53,6 @@ export function PengajuanLembur() {
   const [dikoreksi, setDikoreksi] = useState<Lembur | null>(null)
   const [galatTabel, setGalatTabel] = useState<string | null>(null)
   const [sibukId, setSibukId] = useState<string | null>(null)
-  const konfirmasi = useKonfirmasi()
 
   /**
    * Nama petugas hanya boleh berasal dari jabatan yang dipilih — Security tidak
@@ -155,12 +152,8 @@ export function PengajuanLembur() {
     () => (dari ? [...tersaring.data].sort((a, b) => b.tanggalIso.localeCompare(a.tanggalIso)) : []),
     [dari, tersaring.data],
   )
-  const totalUpah = terlihat.reduce(
-    (n, l) => n + (l.status === 'Diterima' || l.status === 'Selesai' ? (l.upah ?? 0) : 0),
-    0,
-  )
 
-  
+
   async function aksiBaris(l: Lembur, jalan: () => Promise<unknown>): Promise<string | null> {
     setGalatTabel(null)
     setSibukId(l.id)
@@ -178,26 +171,6 @@ export function PengajuanLembur() {
     }
   }
 
-  async function bayar(l: Lembur) {
-    const ya = await konfirmasi({
-      judul: 'Tandai lembur sudah dibayar?',
-      pesan: `${l.nama} · ${l.tanggal} · ${l.total} · Rp ${(l.upah ?? 0).toLocaleString('id-ID')}. Jam lembur tidak bisa dikoreksi lagi sampai tanda bayar dibatalkan.`,
-      tombol: 'Tandai dibayar',
-    })
-    if (ya) await aksiBaris(l, () => api(`/api/lembur/${l.id}/bayar`, 'POST'))
-  }
-
-  async function batalBayar(l: Lembur) {
-    const ya = await konfirmasi({
-      judul: 'Batalkan tanda bayar?',
-      pesan: `Lembur ${l.nama} tanggal ${l.tanggal} akan kembali tercatat belum dibayar.`,
-      tombol: 'Batalkan tanda bayar',
-      nada: 'bahaya',
-    })
-    if (ya) await aksiBaris(l, () => api(`/api/lembur/${l.id}/bayar`, 'DELETE'))
-  }
-
- 
   let labelPeriode: string
   switch (periode) {
     case 'Harian': {
@@ -214,6 +187,19 @@ export function PengajuanLembur() {
         : 'Rentang tanggal belum dipilih'
   }
 
+  // Dipakai tombol Unduh PDF di kepala kartu (laptop) dan di baris khusus HP.
+  function unduhPdf() {
+    cetakRekapLembur(
+      terlihat,
+      [
+        `Periode: ${labelPeriode}`,
+        `Jabatan: ${jabatanSaring === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatanSaring]}`,
+      ],
+      true,
+    )
+  }
+  const bisaUnduh = !(tersaring.memuat || terlihat.length === 0)
+
   return (
     <>
       <div className="grid grid-cols-1 gap-4.5 xl:grid-cols-[1.3fr_1fr]">
@@ -221,12 +207,7 @@ export function PengajuanLembur() {
           <KopKartu
             judul="Buat penugasan lembur"
             sub="Disimpan ke Cek Laporan dulu — petugas belum menerima apa pun"
-            aksi={
-              <>
-                {editId && <Pil status="Diproses">Mengedit draf</Pil>}
-                <TombolTarifLembur />
-              </>
-            }
+            aksi={editId && <Pil status="Diproses">Mengedit draf</Pil>}
           />
           <IsiKartu>
             <GridForm>
@@ -274,17 +255,6 @@ export function PengajuanLembur() {
                 />
               </Kolom>
 
-              <Kolom
-                label="Total lama lembur"
-                bantu={
-                  terlaluLama
-                    ? `Melebihi batas ${MAKS_JAM_LEMBUR} jam. Periksa jam mulai dan jam selesai.`
-                    : 'Terisi otomatis dari rentang jam.'
-                }
-              >
-                <Input readOnly value={lamaLembur(form.mulai, form.selesai)} />
-              </Kolom>
-
               <Kolom label="Jam mulai" wajib>
                 <Input
                   type="time"
@@ -299,6 +269,17 @@ export function PengajuanLembur() {
                   value={form.selesai}
                   onChange={(e) => setForm((f) => ({ ...f, selesai: e.target.value }))}
                 />
+              </Kolom>
+
+              <Kolom
+                label="Total lama lembur"
+                bantu={
+                  terlaluLama
+                    ? `Melebihi batas ${MAKS_JAM_LEMBUR} jam. Periksa jam mulai dan jam selesai.`
+                    : 'Terisi otomatis dari rentang jam.'
+                }
+              >
+                <Input readOnly value={lamaLembur(form.mulai, form.selesai)} />
               </Kolom>
 
               <Kolom
@@ -322,13 +303,16 @@ export function PengajuanLembur() {
             </div>
           )}
           <KakiForm>
-            <Tombol varian="hantu" onClick={batalEdit}>
-              {editId ? 'Batal' : 'Kosongkan'}
-            </Tombol>
-            <Tombol onClick={simpanDraf}>
-              <Ikon.Tambah size={15} />
-              {editId ? 'Simpan perubahan' : 'Simpan ke Cek Laporan'}
-            </Tombol>
+            {/* HP: tombol bertumpuk selebar penuh (simpan di atas) supaya tidak meluber keluar kartu. */}
+            <div className="flex gap-2.5 max-sm:w-full max-sm:flex-col-reverse max-sm:[&>*]:w-full">
+              <Tombol varian="hantu" onClick={batalEdit}>
+                {editId ? 'Batal' : 'Kosongkan'}
+              </Tombol>
+              <Tombol onClick={simpanDraf}>
+                <Ikon.Tambah size={15} />
+                {editId ? 'Simpan perubahan' : 'Simpan ke Cek Laporan'}
+              </Tombol>
+            </div>
           </KakiForm>
         </Kartu>
 
@@ -352,35 +336,31 @@ export function PengajuanLembur() {
           judul="Penugasan yang sudah dikirim"
           sub={`${labelPeriode}${jabatanSaring === 'Semua' ? '' : ` · ${JABATAN_PANJANG[jabatanSaring]}`} · jawaban petugas muncul di kolom status`}
           aksi={
-            <>
+            // HP: badge + tombol pindah ke baris tersendiri di bawah judul (lihat di bawah).
+            <div className="flex items-center gap-2 max-sm:hidden">
               <Pil status="Menunggu">{menunggu.length} belum dijawab</Pil>
-              <Tombol
-                varian="hantu"
-                kecil
-                disabled={tersaring.memuat || terlihat.length === 0}
-                onClick={() =>
-                  cetakRekapLembur(
-                    terlihat,
-                    [
-                      `Periode: ${labelPeriode}`,
-                      `Jabatan: ${jabatanSaring === 'Semua' ? 'Semua jabatan' : JABATAN_PANJANG[jabatanSaring]}`,
-                    ],
-                    true,
-                  )
-                }
-              >
+              <Tombol varian="hantu" kecil disabled={!bisaUnduh} onClick={unduhPdf}>
                 <Ikon.Unduh size={15} /> Unduh PDF
               </Tombol>
-            </>
+            </div>
           }
         />
+        <div className="flex items-center justify-between gap-2 border-b border-garis px-4 py-3 sm:hidden">
+          <Pil status="Menunggu">{menunggu.length} belum dijawab</Pil>
+          <Tombol varian="hantu" kecil disabled={!bisaUnduh} onClick={unduhPdf}>
+            <Ikon.Unduh size={15} /> Unduh PDF
+          </Tombol>
+        </div>
 
-        <IsiKartu className="flex flex-wrap items-center gap-2 border-b border-garis py-4">
-          <Segmen
-            opsi={['Harian', 'Bulanan', 'Custom']}
-            nilai={periode}
-            onPilih={(v) => setPeriode(v as Periode)}
-          />
+        <IsiKartu className="flex flex-col gap-2 border-b border-garis py-4 max-sm:px-4 sm:flex-row sm:flex-wrap sm:items-center">
+          {/* HP: segmen selebar penuh dengan pilihan sama lebar. */}
+          <div className="max-sm:[&>div]:flex max-sm:[&>div]:w-full max-sm:[&_button]:flex-1">
+            <Segmen
+              opsi={['Harian', 'Bulanan', 'Custom']}
+              nilai={periode}
+              onPilih={(v) => setPeriode(v as Periode)}
+            />
+          </div>
 
           {periode === 'Harian' && (
             <InputRapi
@@ -388,6 +368,7 @@ export function PengajuanLembur() {
               aria-label="Tanggal penugasan"
               value={tanggal}
               onChange={(e) => setTanggal(e.target.value)}
+              className="w-full sm:w-auto"
             />
           )}
           {periode === 'Bulanan' && (
@@ -395,7 +376,7 @@ export function PengajuanLembur() {
               aria-label="Bulan penugasan"
               value={bulan}
               onChange={(e) => setBulan(e.target.value)}
-              className="min-w-[180px]"
+              className="w-full sm:w-auto sm:min-w-[180px]"
             >
               {BULAN_PILIHAN.map((b) => (
                 <option key={b.kunci} value={b.kunci}>
@@ -405,26 +386,28 @@ export function PengajuanLembur() {
             </PilihRapi>
           )}
           {periode === 'Custom' && (
-            <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />
+            <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-full sm:w-[260px]" />
           )}
 
-          <PilihRapi
-            aria-label="Jabatan petugas"
-            value={jabatanSaring}
-            onChange={(e) => setJabatanSaring(e.target.value as Jabatan | 'Semua')}
-            className="ml-auto"
-          >
-            <option value="Semua">Semua jabatan</option>
-            {DAFTAR_JABATAN.map((j) => (
-              <option key={j} value={j}>
-                {JABATAN_PANJANG[j]}
-              </option>
-            ))}
-          </PilihRapi>
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <PilihRapi
+              aria-label="Jabatan petugas"
+              value={jabatanSaring}
+              onChange={(e) => setJabatanSaring(e.target.value as Jabatan | 'Semua')}
+              className="min-w-0 flex-1 sm:flex-none"
+            >
+              <option value="Semua">Semua jabatan</option>
+              {DAFTAR_JABATAN.map((j) => (
+                <option key={j} value={j}>
+                  {JABATAN_PANJANG[j]}
+                </option>
+              ))}
+            </PilihRapi>
 
-          <span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">
-            {terlihat.length} penugasan · Rp {totalUpah.toLocaleString('id-ID')}
-          </span>
+            <span className="num flex-none whitespace-nowrap text-[12.5px] text-teks-lembut">
+              {terlihat.length} penugasan
+            </span>
+          </div>
         </IsiKartu>
 
         {galatTabel && (
@@ -441,7 +424,9 @@ export function PengajuanLembur() {
             void tersaring.muat()
           }}
         />
-        <Tabel kepala={['Petugas', 'Tanggal', 'Rentang jam', 'Total', 'Keterangan', 'Status', 'Uang lembur']} maksTinggi={560}>
+        {/* Laptop/tablet: tabel; HP: daftar kartu di bawahnya. */}
+        <div className="max-sm:hidden">
+        <Tabel kepala={['Petugas', 'Tanggal', 'Rentang jam', 'Total', 'Keterangan', 'Status', 'Aksi']} maksTinggi={560}>
           {terlihat.length === 0 ? (
             <tr>
               <td colSpan={7} className="px-5 py-12 text-center">
@@ -489,18 +474,78 @@ export function PengajuanLembur() {
                   )}
                 </td>
                 <td>
-                  <SelUangLembur
-                    lembur={l}
-                    sibuk={sibukId === l.id}
-                    onKoreksi={setDikoreksi}
-                    onBayar={bayar}
-                    onBatalBayar={batalBayar}
-                  />
+                  {bisaKoreksiJam(l) ? (
+                    <TombolIkon label="Koreksi jam aktual" onClick={() => setDikoreksi(l)} disabled={sibukId === l.id}>
+                      <Ikon.Pena size={14} />
+                    </TombolIkon>
+                  ) : (
+                    <span className="text-teks-samar">–</span>
+                  )}
                 </td>
               </Baris>
             ))
           )}
         </Tabel>
+        </div>
+
+        <ul className="m-0 list-none divide-y divide-garis p-0 sm:hidden">
+          {terlihat.length === 0 ? (
+            <li className="px-4 py-10 text-center">
+              <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
+                <Ikon.Kalender size={19} />
+              </span>
+              <b className="block text-[13.5px] font-semibold text-ink">Tidak ada penugasan pada periode ini</b>
+              <span className="mt-0.5 block text-[12px] text-teks-lembut">
+                {daftar.length > 0
+                  ? `Ganti periode atau jabatan di atas — ada ${daftar.length} penugasan tercatat seluruhnya.`
+                  : 'Belum ada penugasan yang dikirim ke petugas.'}
+              </span>
+            </li>
+          ) : (
+            terlihat.map((l) => (
+              <li key={l.id} className="px-4 py-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <SelOrang nama={l.nama} jabatan={l.jabatan} foto={l.fotoProfil} />
+                  </div>
+                  <div className="flex flex-none flex-col items-end">
+                    <Pil status={l.status} />
+                    {l.dijawabPada && (
+                      <span className="num mt-1 whitespace-nowrap text-[11px] text-teks-samar">{l.dijawabPada}</span>
+                    )}
+                  </div>
+                </div>
+                <p className="num m-0 mt-2.5 text-[12px] text-teks-lembut">
+                  {l.tanggal} · {l.rentangAktual ?? l.rentang} · {l.total}
+                  {l.rentangAktual && (
+                    <span className="mt-0.5 block text-[11px] text-teks-samar">Rencana {l.rentang}</span>
+                  )}
+                </p>
+                <p className="m-0 mt-1.5 line-clamp-2 text-[12.5px] leading-relaxed text-teks-lembut [overflow-wrap:anywhere]">
+                  {l.keterangan}
+                </p>
+                {l.status === 'Ditolak' && l.alasan && (
+                  <span className="mt-1.5 block rounded-lg border border-tanah/30 bg-tanah-lembut px-2.5 py-1.5 text-[11.5px] leading-relaxed text-tanah-teks [overflow-wrap:anywhere]">
+                    <b className="font-semibold">Alasan penolakan:</b> {l.alasan}
+                  </span>
+                )}
+                {bisaKoreksiJam(l) && (
+                  <div className="mt-3 border-t border-garis pt-3">
+                    <Tombol
+                      varian="hantu"
+                      kecil
+                      className="w-full"
+                      onClick={() => setDikoreksi(l)}
+                      disabled={sibukId === l.id}
+                    >
+                      <Ikon.Pena size={14} /> Koreksi jam aktual
+                    </Tombol>
+                  </div>
+                )}
+              </li>
+            ))
+          )}
+        </ul>
       </Kartu>
 
       {dikoreksi && (
