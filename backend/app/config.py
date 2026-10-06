@@ -19,6 +19,14 @@ class Pengaturan(BaseSettings):
     maks_foto: int = 5
     maks_ukuran_foto_mb: int = 5
 
+    # Cloudflare R2. Kosong = foto disimpan di folder_foto lokal.
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket: str = ""
+    # Lama signed URL foto berlaku; disamakan dengan jwt_menit.
+    r2_url_menit: int = 720
+
     # Lama lembur paling panjang dalam satu penugasan (jam).
     # Sama dengan MAKS_JAM_LEMBUR di frontend (src/components/AntreanLembur.tsx).
     maks_jam_lembur: int = 12
@@ -31,6 +39,10 @@ class Pengaturan(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
     vapid_subject: str = "mailto:admin@example.com"
+
+    @property
+    def pakai_r2(self) -> bool:
+        return all((self.r2_account_id, self.r2_access_key_id, self.r2_secret_access_key, self.r2_bucket))
 
     @property
     def daftar_origin(self) -> list[str]:
