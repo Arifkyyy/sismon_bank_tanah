@@ -64,8 +64,14 @@ export function TabTukar() {
           </Tombol>
         }
       />
-      <div className="scrollbar-lembut overflow-x-auto border-b border-garis px-5 py-3">
-        <Segmen opsi={SARINGAN} nilai={status} onPilih={(v) => setStatus(v as StatusTukar | 'Semua')} />
+      <div className="border-b border-garis px-3 py-3 sm:px-5">
+        <Segmen
+          opsi={SARINGAN}
+          nilai={status}
+          onPilih={(v) => setStatus(v as StatusTukar | 'Semua')}
+          lebar
+          lipat
+        />
       </div>
       <StatusData memuat={daftar.memuat && !daftar.data.length} galat={daftar.galat} onUlang={daftar.muat} />
       <IsiKartu className="grid gap-3">

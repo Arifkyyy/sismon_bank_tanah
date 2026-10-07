@@ -387,12 +387,13 @@ export function Segmen({
   return (
     <div
       className={cn(
-        'inline-flex rounded-xl bg-[#EBF1ED] p-1',
-        lebar && 'w-full',
-        lipat && 'max-sm:grid max-sm:grid-cols-2 max-sm:gap-1',
+        'rounded-xl bg-[#EBF1ED] p-1',
+        lebar ? 'w-full' : 'inline-flex',
+        lipat && 'flex w-full max-sm:grid max-sm:grid-cols-3 max-sm:gap-1',
+        opsi.length === 3 && lebar && 'gap-1',
       )}
     >
-      {opsi.map((o) => (
+      {opsi.map((o, i) => (
         <button
           key={o}
           type="button"
@@ -400,8 +401,12 @@ export function Segmen({
           disabled={terkunci}
           onClick={() => onPilih?.(o)}
           className={cn(
-            'whitespace-nowrap rounded-[9px] px-4 py-[7px] text-[12.5px] font-semibold transition disabled:cursor-not-allowed',
+            'rounded-[9px] px-4 py-[7px] text-center text-[12.5px] font-semibold transition disabled:cursor-not-allowed',
             lebar && 'flex-1',
+            !lebar && 'whitespace-nowrap',
+            lipat && 'flex-1',
+            opsi.length === 3 && lebar && i === 1 && 'mx-0.5',
+            opsi.length === 3 && lebar && i === 2 && 'ml-0.5',
             o === nilai
               ? 'bg-white text-ink shadow-sm'
               : cn('text-teks-lembut', !terkunci && 'hover:text-ink'),

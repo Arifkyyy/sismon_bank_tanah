@@ -43,8 +43,8 @@ export function JadwalShift() {
 
   return (
     <div className="grid gap-4.5">
-      <div className="scrollbar-lembut -mx-1 overflow-x-auto px-1">
-        <Segmen opsi={kunci.map(label)} nilai={label(tab)} onPilih={pilih} />
+      <div className="-mx-1 px-1">
+        <Segmen opsi={kunci.map(label)} nilai={label(tab)} onPilih={pilih} lebar lipat />
       </div>
 
       {tab === 'jadwal' && <TabJadwal />}
