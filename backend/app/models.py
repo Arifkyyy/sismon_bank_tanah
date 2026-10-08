@@ -382,8 +382,9 @@ class TukarShift(Base):
 
     Alur: Menunggu Rekan → Menunggu Admin → Disetujui / Ditolak, atau
     Dibatalkan (oleh pemohon, atau otomatis saat admin mengubah jadwal terkait).
-    Saat disetujui, isi kotak kedua petugas ditukar pada tanggal_pemohon dan
-    tanggal_rekan (satu tanggal bila sama). shift_*_id adalah salinan saat
+    Saat disetujui, hanya dua kotak yang berubah: kotak pemohon di
+    tanggal_pemohon diisi shift_rekan, dan kotak rekan di tanggal_rekan diisi
+    shift_pemohon. Kotak lain tidak disentuh. shift_*_id adalah salinan saat
     diajukan, supaya riwayatnya tetap utuh walau jadwalnya berubah.
     """
 
@@ -433,8 +434,7 @@ class TukarShift(Base):
     @property
     def sel(self) -> set[tuple[int, date]]:
         """Semua kotak (petugas, tanggal) yang berubah bila permintaan ini disetujui."""
-        tanggal = {self.tanggal_pemohon, self.tanggal_rekan}
-        return {(u, t) for u in (self.pemohon_id, self.rekan_id) for t in tanggal}
+        return {(self.pemohon_id, self.tanggal_pemohon), (self.rekan_id, self.tanggal_rekan)}
 
 
 class JadwalShift(Base):

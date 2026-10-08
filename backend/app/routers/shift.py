@@ -668,12 +668,8 @@ def ajukan_tukar(
     if milik_rekan is None:
         raise HTTPException(422, f"{r.nama} belum punya jadwal pada {f.tanggal_teks(isi.tanggal_rekan)}.")
 
-    def shift_di(u: int, d: date) -> int | None:
-        j = ada.get((u, d))
-        return j.shift_id if j else None
-
-    if all(shift_di(user.id, d) == shift_di(r.id, d) for d in tanggal):
-        raise HTTPException(422, "Jadwal Anda dan rekan sama, tidak ada yang perlu ditukar.")
+    if milik_saya.shift_id == milik_rekan.shift_id:
+        raise HTTPException(422, "Shift Anda dan rekan sama, tidak ada yang perlu ditukar.")
 
     t = TukarShift(
         pemohon_id=user.id,
@@ -787,13 +783,9 @@ def putuskan_tukar(
         db.commit()
         raise HTTPException(409, "Jadwal kedua petugas sudah berubah sejak diajukan, jadi permintaan ini dibatalkan.")
 
-    for d in tanggal:
-        jp, jr = ada.get((t.pemohon_id, d)), ada.get((t.rekan_id, d))
-        sp, sr = (jp.shift_id if jp else None), (jr.shift_id if jr else None)
-        if sp == sr:
-            continue
-        _tulis_kotak(db, jp, t.pemohon_id, d, sr, admin, dari_tukar=t.id)
-        _tulis_kotak(db, jr, t.rekan_id, d, sp, admin, dari_tukar=t.id)
+    # Hanya dua kotak yang ditukar: kotak pemohon di tanggalnya dan kotak rekan di tanggalnya.
+    _tulis_kotak(db, sekarang_pemohon, t.pemohon_id, t.tanggal_pemohon, t.shift_rekan_id, admin, dari_tukar=t.id)
+    _tulis_kotak(db, sekarang_rekan, t.rekan_id, t.tanggal_rekan, t.shift_pemohon_id, admin, dari_tukar=t.id)
     t.status = "Disetujui"
     t.pemutus = admin
     t.diputus_pada = kini

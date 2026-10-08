@@ -199,8 +199,9 @@ mengambil tanggal yang sama di bulan sebelumnya (tanggal yang tidak ada dilewati
 Shift sumber yang nonaktif atau tidak cocok jabatan dilewati (`dilewati`).
 
 Tukar shift: status `Menunggu Rekan` → `Menunggu Admin` → `Disetujui` / `Ditolak`,
-atau `Dibatalkan`. Saat disetujui, kotak kedua petugas ditukar pada tanggal
-pemohon **dan** tanggal rekan (satu tanggal bila sama), lalu kotaknya diberi tanda
+atau `Dibatalkan`. Saat disetujui, hanya dua kotak yang berubah: kotak pemohon di
+tanggal pemohon diisi shift rekan, dan kotak rekan di tanggal rekan diisi shift
+pemohon (shift keduanya harus berbeda). Kotak lain tidak disentuh. Kedua kotak itu diberi tanda
 `tukar: true` (⇄). Tanggal yang sudah lewat tidak bisa diajukan atau disetujui.
 Kotak yang ikut permintaan berjalan bertanda `diajukanTukar: true` dan tidak bisa
 diajukan lagi; bila admin mengubah kotak itu, permintaannya otomatis dibatalkan

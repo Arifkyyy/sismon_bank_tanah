@@ -52,10 +52,9 @@ function alasanTakBisa(shift: Shift | null | undefined, diajukan: boolean, shift
  * Pop-up tukar jadwal: pilih tanggal jadwal saya → pilih rekan → pilih tanggal
  * jadwal rekan (bawaannya tanggal yang sama) → alasan → kirim.
  *
- * Tanggal saya 7 ⇄ tanggal rekan 8 artinya rekan masuk menggantikan jadwal saya
- * di tanggal 7 dan saya masuk menggantikan jadwalnya di tanggal 8. Backend
- * menukar isi kotak kami berdua di kedua tanggal itu, jadi tidak ada yang
- * dobel jadwal.
+ * Tanggal saya 7 ⇄ tanggal rekan 8 artinya hanya dua kotak yang berubah: kotak
+ * saya di tanggal 7 diisi shift rekan tanggal 8, dan kotak rekan di tanggal 8
+ * diisi shift saya tanggal 7. Jadwal di tanggal lain tidak disentuh.
  */
 export function AjukanTukar({
   awal,
@@ -90,9 +89,9 @@ export function AjukanTukar({
   const rekanPada = (t: string) => jadwalRekan.data.find((h) => h.tanggal === t)?.shift
   const shiftSaya = tanggalSaya ? sayaPada(tanggalSaya) : null
 
-  /** Kenapa hari rekan itu tidak bisa diambil; shift yang sama hanya dilarang di tanggal yang sama. */
+  /** Kenapa hari rekan itu tidak bisa diambil; shift yang sama dengan shift saya tidak ada gunanya ditukar. */
   function takBisaRekan(h: HariRekan) {
-    return alasanTakBisa(h.shift, h.diajukanTukar, h.tanggal === tanggalSaya ? shiftSaya : null)
+    return alasanTakBisa(h.shift, h.diajukanTukar, shiftSaya)
   }
 
   // Bawaan tanggal rekan = tanggal saya, asal hari itu bisa diambil.
@@ -421,10 +420,10 @@ function Ringkasan({
   saya: (t: string) => Shift | null | undefined
   rekan: (t: string) => Shift | null | undefined
 }) {
-  const tanggal = [...new Set([tanggalSaya, tanggalRekan])].sort()
+  // Hanya dua kotak yang berubah: kotak saya di tanggal saya dan kotak rekan di tanggalnya.
   const baris = [
-    { nama: 'Anda', dari: saya, ke: rekan },
-    { nama: namaRekan, dari: rekan, ke: saya },
+    { nama: 'Anda', tanggal: tanggalSaya, lama: saya(tanggalSaya), baru: rekan(tanggalRekan) },
+    { nama: namaRekan, tanggal: tanggalRekan, lama: rekan(tanggalRekan), baru: saya(tanggalSaya) },
   ]
   return (
     <div className="grid grid-cols-1 gap-3 rounded-2xl border border-dashed border-hijau/40 bg-[#F7FBF8] p-3 sm:p-4">
@@ -438,20 +437,12 @@ function Ringkasan({
 
       <div className="grid grid-cols-1 gap-1.5 border-t border-hijau/20 pt-2.5">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-hijau-tua">Setelah disetujui</span>
-        <div
-          className="grid items-center gap-x-3 gap-y-1.5 text-[12.5px]"
-          style={{ gridTemplateColumns: `minmax(0,auto) repeat(${tanggal.length}, max-content)` }}
-        >
-          <span />
-          {tanggal.map((t) => (
-            <span key={t} className="text-[11px] font-semibold text-teks-lembut">
-              {tanggalPendek(t)}
-            </span>
-          ))}
+        <div className="grid grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
           {baris.map((b) => (
-            <Baris key={b.nama} nama={b.nama} tanggal={tanggal} dari={b.dari} ke={b.ke} />
+            <Baris key={b.nama} {...b} />
           ))}
         </div>
+        <p className="m-0 text-[11px] leading-snug text-teks-samar">Jadwal di tanggal lain tidak berubah.</p>
       </div>
     </div>
   )
@@ -472,35 +463,25 @@ function Pihak({ nama, tanggal, shift }: { nama: string; tanggal: string; shift?
 function Baris({
   nama,
   tanggal,
-  dari,
-  ke,
+  lama,
+  baru,
 }: {
   nama: string
-  tanggal: string[]
-  dari: (t: string) => Shift | null | undefined
-  ke: (t: string) => Shift | null | undefined
+  tanggal: string
+  lama?: Shift | null
+  baru?: Shift | null
 }) {
   return (
     <>
       <span className="truncate font-semibold text-ink">{nama}</span>
-      {tanggal.map((t) => {
-        const lama = dari(t)
-        const baru = ke(t)
-        const berubah = (lama?.id ?? null) !== (baru?.id ?? null)
-        return (
-          <span key={t} className="flex items-center gap-1" title={baru?.nama ?? 'Tidak ada jadwal'}>
-            <span className={cn(berubah && 'opacity-40')}>
-              <Kode shift={lama} ukuran={22} />
-            </span>
-            {berubah && (
-              <>
-                <Ikon.Chevron size={12} className="flex-none text-teks-samar" />
-                <Kode shift={baru} ukuran={22} />
-              </>
-            )}
-          </span>
-        )
-      })}
+      <span className="text-[11px] font-semibold text-teks-lembut">{tanggalPendek(tanggal)}</span>
+      <span className="flex items-center gap-1" title={baru?.nama ?? 'Tidak ada jadwal'}>
+        <span className="opacity-40">
+          <Kode shift={lama} ukuran={22} />
+        </span>
+        <Ikon.Chevron size={12} className="flex-none text-teks-samar" />
+        <Kode shift={baru} ukuran={22} />
+      </span>
     </>
   )
 }
