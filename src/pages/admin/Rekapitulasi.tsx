@@ -3,7 +3,7 @@ import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import { StatCard } from '@/components/StatCard'
 import {
-  Baris, IsiKartu, Kartu, KopKartu, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
+  Baris, InputRapi, IsiKartu, Kartu, KopKartu, PilihRapi, SelOrang, Segmen, Tabel, TagJabatan, Tombol,
 } from '@/components/ui'
 import { StatusData } from '@/components/StatusData'
 import { Ikon } from '@/lib/ikon'
@@ -11,13 +11,13 @@ import { query } from '@/lib/api'
 import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
-import { daftarBulan, formatRentang } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Jabatan, RekapPetugas } from '@/types'
 
 const BULAN_PILIHAN = daftarBulan()
 
-type Periode = 'Bulanan' | 'Custom' | 'All Time'
+type Periode = 'Harian' | 'Bulanan' | 'Custom' | 'All Time'
 
 /** Mengambil angka jam dari teks seperti '12 jam'. */
 function jamDari(teks: string): number {
@@ -26,14 +26,15 @@ function jamDari(teks: string): number {
 
 export function Rekapitulasi() {
   const [periode, setPeriode] = useState<Periode>('Bulanan')
+  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
 
   // Periode dan jabatan dikirim ke backend; tidak ada penyaringan di browser.
   const jendela = useMemo(
-    () => jendelaPeriode(periode, '', bulan, rentang),
-    [periode, bulan, rentang],
+    () => jendelaPeriode(periode, tanggal, bulan, rentang),
+    [periode, tanggal, bulan, rentang],
   )
   const alamat = jendela
     ? `/api/statistik/rekap${query({ ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan })}`
@@ -46,14 +47,22 @@ export function Rekapitulasi() {
   const totalJam = terlihat.reduce((n, r) => n + jamDari(r.lembur), 0)
 
   // Dipakai sebagai keterangan periode di kartu dan kartu statistik.
-  const labelPeriode =
-    periode === 'Bulanan'
-      ? (BULAN_PILIHAN.find((b) => b.kunci === bulan)?.label ?? bulan)
-      : periode === 'Custom'
-        ? rentang
-          ? formatRentang(rentang.mulai, rentang.sampai)
-          : 'Rentang tanggal belum dipilih'
-        : 'Seluruh periode'
+  let labelPeriode: string
+  switch (periode) {
+    case 'Harian': {
+      const t = formatTanggal(tanggal)
+      labelPeriode = `${t.hari}, ${t.tanggal}`
+      break
+    }
+    case 'Bulanan':
+      labelPeriode = BULAN_PILIHAN.find((b) => b.kunci === bulan)?.label ?? bulan
+      break
+    case 'Custom':
+      labelPeriode = rentang ? formatRentang(rentang.mulai, rentang.sampai) : 'Rentang tanggal belum dipilih'
+      break
+    default:
+      labelPeriode = 'Seluruh periode'
+  }
 
   function unduh() {
     unduhExcel({
@@ -80,12 +89,21 @@ export function Rekapitulasi() {
         <IsiKartu className="p-4">
           <Segmen
             lebar
-            opsi={['Bulanan', 'Custom', 'All Time']}
+            opsi={['Harian', 'Bulanan', 'Custom', 'All Time']}
             nilai={periode}
             onPilih={(v) => setPeriode(v as Periode)}
           />
 
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            {periode === 'Harian' && (
+              <InputRapi
+                type="date"
+                aria-label="Tanggal rekap"
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                className="w-full sm:w-auto"
+              />
+            )}
             {periode === 'Bulanan' && (
               <PilihRapi
                 value={bulan}
