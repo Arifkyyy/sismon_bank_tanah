@@ -23,7 +23,7 @@ def masuk(isi: MasukMasuk, db: Session = Depends(ambil_db)):
     # Akun yang sedang dikunci tidak diperiksa sandinya sama sekali.
     if user.status != "Nonaktif" and (menit := batas_masuk.menit_terkunci(db, user)):
         raise HTTPException(
-            429, f"Terlalu banyak percobaan masuk. Coba lagi dalam {menit} menit, atau hubungi Super Admin."
+            429, f"Terlalu banyak percobaan masuk. Coba lagi dalam {menit} menit, atau hubungi Tim IT."
         )
     if not cocok_sandi(isi.sandi, user.password_hash):
         # Akun nonaktif tidak dihitung lagi; pesannya disamakan dengan email yang tidak terdaftar.
@@ -31,7 +31,7 @@ def masuk(isi: MasukMasuk, db: Session = Depends(ambil_db)):
             raise HTTPException(401, "Email atau kata sandi salah.")
         raise HTTPException(401, batas_masuk.catat_gagal(db, user))
     if user.status == "Nonaktif":
-        raise HTTPException(403, "Akun Anda dinonaktifkan. Silakan temui Super Admin untuk mengaktifkannya kembali.")
+        raise HTTPException(403, "Akun Anda dinonaktifkan. Silakan temui Tim IT untuk mengaktifkannya kembali.")
 
     user.terakhir_masuk = sekarang()
     db.commit()

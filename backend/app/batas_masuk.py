@@ -1,18 +1,3 @@
-"""
-Batas percobaan masuk (login).
-
-- 5 kali kata sandi salah berturut-turut  → akun dikunci 5 menit.
-- 10 kali kata sandi salah berturut-turut → akun dinonaktifkan. Hanya bisa
-  diaktifkan lagi oleh Super Admin (Kelola akun / Data user), sebaiknya sekalian
-  atur ulang kata sandinya.
-- Super admin TIDAK pernah dinonaktifkan otomatis, karena tidak ada akun lain
-  yang bisa mengaktifkannya kembali. Ia cukup dikunci 5 menit tiap 5 kali salah.
-
-Tidak ada tabel atau kolom baru: setiap kegagalan dicatat sebagai baris
-log_audit 'gagal_masuk' milik akun itu. Yang dihitung hanya kegagalan sesudah
-masuk berhasil terakhir (users.terakhir_masuk) atau sesudah akun dipulihkan
-admin ('pulihkan_masuk').
-"""
 from datetime import datetime, timedelta
 from math import ceil
 
@@ -22,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.format import sekarang
 from app.models import LogAudit, User
 
-BATAS_KUNCI = 5
+BATAS_KUNCI = 6
 BATAS_NONAKTIF = 10
-LAMA_KUNCI = timedelta(minutes=5)
+LAMA_KUNCI = timedelta(minutes=3)
 
 GAGAL = "gagal_masuk"
 PULIH = "pulihkan_masuk"
