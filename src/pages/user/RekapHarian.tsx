@@ -255,11 +255,11 @@ export function RekapHarian() {
         </IsiKartu>
       </Kartu>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard gaya="pekat" nama="Catatan" angka={String(jumlahCatatan)} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard gaya="pekat" nama="Kendala dilaporkan" angka={String(jumlahKendala)} ikon={<Ikon.Awas size={17} />} ket={labelPeriode} />
-        <StatCard gaya="pekat" nama="Jam kerja tercatat" angka={String(jamKerja)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Dari catatan pertama sampai terakhir" />
-        <StatCard gaya="pekat" nama="Jam lembur" angka={String(jamLembur)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Lembur yang Anda terima" />
+      <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 xl:grid-cols-4">
+        <StatCard ringkas gaya="pekat" nama="Catatan" angka={String(jumlahCatatan)} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
+        <StatCard ringkas gaya="pekat" nama="Kendala dilaporkan" angka={String(jumlahKendala)} ikon={<Ikon.Awas size={17} />} ket={labelPeriode} />
+        <StatCard ringkas gaya="pekat" nama="Jam kerja tercatat" angka={String(jamKerja)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Dari catatan pertama sampai terakhir" />
+        <StatCard ringkas gaya="pekat" nama="Jam lembur" angka={String(jamLembur)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Lembur yang Anda terima" />
       </div>
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 ">

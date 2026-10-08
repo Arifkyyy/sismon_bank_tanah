@@ -201,7 +201,7 @@ export function LemburUser() {
         </Tombol>
       </div>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
         <StatCard gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? `Terdekat: ${[...menunggu].sort((a, b) => a.tanggalIso.localeCompare(b.tanggalIso))[0].tanggal}` : 'Semua penugasan sudah dijawab'} />
         <StatCard gaya="pekat" nama="Lembur diterima" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam · ${labelPeriode}`} />
       </div>
