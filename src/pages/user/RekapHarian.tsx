@@ -69,13 +69,14 @@ export function RekapHarian() {
     [periode, tanggal, bulan, rentang],
   )
   const params = jendela ? query({ dari: jendela.dari, sampai: jendela.sampai }) : null
+  // Saringan hanya memilah baris tabel; keduanya tetap diambil agar kartu ringkasan utuh.
   const pakaiAktivitas = saringan !== 'Kendala saja'
   const pakaiKendala = saringan !== 'Aktivitas saja'
 
-  const catatan = useApi<Logbook[]>(params !== null && pakaiAktivitas ? `/api/logbook${params}` : null, [])
+  const catatan = useApi<Logbook[]>(params !== null ? `/api/logbook${params}` : null, [])
   // Hanya kendala yang dilaporkan sendiri, bukan yang ditugaskan dari petugas lain.
   const laporan = useApi<Kendala[]>(
-    jendela && pakaiKendala
+    jendela
       ? `/api/kendala${query({ dari: jendela.dari, sampai: jendela.sampai, milik: 'dilaporkan' })}`
       : null,
     [],
@@ -110,12 +111,12 @@ export function RekapHarian() {
       foto: k.foto,
       fotoUrl: k.fotoUrl,
     }))
-    return [...dariLogbook, ...dariKendala].sort(
+    return [...(pakaiAktivitas ? dariLogbook : []), ...(pakaiKendala ? dariKendala : [])].sort(
       (a, b) => a.tanggalIso.localeCompare(b.tanggalIso) || keMenit(a.jam) - keMenit(b.jam),
     )
-  }, [catatan.data, laporan.data])
+  }, [catatan.data, laporan.data, pakaiAktivitas, pakaiKendala])
 
-  // Semua angka kartu berasal dari data yang sama dengan tabel di bawahnya.
+  // Angka kartu dihitung dari data periode yang sama dengan tabel, tanpa saringan jenis.
   const jumlahCatatan = catatan.data.length
   const jumlahKendala = laporan.data.length
 
@@ -264,7 +265,7 @@ export function RekapHarian() {
 
       <div className="mt-4.5 grid grid-cols-1 gap-4.5 ">
         <Kartu>
-          <KopKartu judul="Rincian catatan" sub={`Aktivitas dan kendala digabung berurutan · ${labelPeriode}`} />
+          <KopKartu judul="Rincian catatan" sub={`${saringan === 'Aktivitas dan kendala' ? 'Aktivitas dan kendala digabung berurutan' : saringan} · ${labelPeriode}`} />
           <StatusData memuat={memuat} galat={galat} onUlang={muatUlang} />
           <Tabel kepala={['Jam', 'Jenis', 'Foto', 'Keterangan', 'Status']}>
             {rincian.length === 0 ? (
