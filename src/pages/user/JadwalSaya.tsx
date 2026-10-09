@@ -156,8 +156,11 @@ export function JadwalSayaUser() {
           judul="Jadwal shift saya"
           sub={tampilan === '7 hari' ? 'Hari ini dan 6 hari ke depan' : bulan.label}
           aksi={
-            <>
+            // HP: tab melebar mengisi baris, tombol Tukar jadwal di kanannya.
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <div className="min-w-0 flex-1 sm:flex-none">
               <Segmen
+                lebar
                 opsi={['7 hari', 'Kalender']}
                 nilai={tampilan}
                 onPilih={(v) => {
@@ -165,10 +168,11 @@ export function JadwalSayaUser() {
                   setDipilih(null)
                 }}
               />
-              <Tombol kecil onClick={() => setAjukan({ awal: null })}>
+              </div>
+              <Tombol kecil className="flex-none self-stretch" onClick={() => setAjukan({ awal: null })}>
                 <Ikon.Tukar size={14} /> Tukar jadwal
               </Tombol>
-            </>
+            </div>
           }
         />
         <StatusData memuat={sumber.memuat && !sumber.data.length} galat={sumber.galat} onUlang={sumber.muat} />

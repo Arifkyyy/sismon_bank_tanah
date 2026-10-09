@@ -13,7 +13,7 @@ const SARINGAN: (StatusTukar | 'Semua')[] = [
   'Menunggu Admin', 'Menunggu Rekan', 'Disetujui', 'Ditolak', 'Dibatalkan', 'Semua',
 ]
 
-/** Tab "Permintaan Tukar": admin menyetujui atau menolak (wajib alasan) permintaan yang sudah disetujui rekan. */
+/** Tab "Tukar Shift": admin menyetujui atau menolak (wajib alasan) permintaan yang sudah disetujui rekan. */
 export function TabTukar() {
   const konfirmasi = useKonfirmasi()
   const [status, setStatus] = useState<StatusTukar | 'Semua'>('Menunggu Admin')

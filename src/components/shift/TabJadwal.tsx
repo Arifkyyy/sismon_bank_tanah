@@ -249,7 +249,9 @@ export function TabJadwal() {
   }
 
   return (
-    <div className="grid gap-4.5">
+    // grid-cols-1 = minmax(0,1fr): tabel jadwal yang lebar menggulir di dalam kartunya,
+    // bukan melebarkan seluruh halaman melewati layar.
+    <div className="grid grid-cols-1 gap-4.5">
       <Kartu>
         {/* ------------------------------------------------------------ toolbar */}
         {/* HP: tiga baris — segmen, navigasi periode, lalu jabatan + cari berdampingan. */}
@@ -368,7 +370,7 @@ export function TabJadwal() {
         {/* ------------------------------------------------- tabel (layar lebar) */}
         {jadwal.data && terlihat.length > 0 && (
           <div className="scrollbar-lembut hidden max-h-[640px] overflow-auto overscroll-contain md:block">
-            <table className="border-separate border-spacing-0 text-[12.5px]">
+            <table className="w-full border-separate border-spacing-0 text-[12.5px]">
               <thead>
                 <tr>
                   <th className="sticky left-0 top-0 z-[4] min-w-[220px] border-b border-r border-garis bg-[#FAFCFB] px-4 py-2.5 text-left text-[11.5px] font-semibold text-teks-samar">

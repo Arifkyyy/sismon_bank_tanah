@@ -57,12 +57,14 @@ export function KopKartu({
   aksi?: ReactNode
 }) {
   return (
+    // Judul minimal 160px lalu ikut melebar; tombol kecil (mis. "Lihat semua") tetap sebaris di kanan.
+    // Aksi yang lebar turun ke baris sendiri dan memenuhi baris itu.
     <div className="flex flex-wrap items-center gap-3 border-b border-garis px-5 py-4">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-[1_1_160px]">
         <h3 className="m-0 text-[15px] font-bold tracking-[-0.015em] text-ink">{judul}</h3>
         {sub && <p className="m-0 mt-0.5 text-xs text-teks-lembut">{sub}</p>}
       </div>
-      {aksi && <div className="ml-auto flex flex-wrap items-center gap-2">{aksi}</div>}
+      {aksi && <div className="ml-auto flex flex-[1_1_auto] flex-wrap items-center justify-end gap-2">{aksi}</div>}
     </div>
   )
 }
@@ -378,22 +380,28 @@ export function Segmen({
   opsi: string[]
   nilai: string
   onPilih?: (v: string) => void
+  /** memenuhi lebar wadah; tiap pilihan sama lebar */
   lebar?: boolean
   /** hanya menampilkan pilihan; tidak bisa diganti */
   terkunci?: boolean
-  /** di layar HP pilihan ditata 2 kolom supaya label panjang tidak meluber; sebaris mulai layar sm */
+  /** di layar HP pilihan ditata dalam grid (lihat kolomHp) supaya tidak meluber; sebaris mulai layar sm */
   lipat?: boolean
 }) {
+  const rata = lebar || lipat
+  // Kolom di HP: 2–3 pilihan sebaris; 4 pilihan sebaris bila labelnya pendek
+  // (Harian/Bulanan/Custom/All Time), 2×2 bila panjang (nama jabatan); lebih dari 4 → 2–3 kolom.
+  const panjang = opsi.some((o) => o.length > 10)
+  const kolomHp = opsi.length <= 3 ? opsi.length : opsi.length === 4 ? (panjang ? 2 : 4) : panjang ? 2 : 3
+  const padat = rata && opsi.length >= 4 && !panjang
   return (
     <div
       className={cn(
         'rounded-xl bg-[#EBF1ED] p-1',
-        lebar ? 'w-full' : 'inline-flex',
-        lipat && 'flex w-full max-sm:grid max-sm:grid-cols-3 max-sm:gap-1',
-        opsi.length === 3 && lebar && 'gap-1',
+        rata ? 'flex w-full gap-1' : 'inline-flex',
+        lipat && `max-sm:grid ${KOLOM_SEGMEN[kolomHp]}`,
       )}
     >
-      {opsi.map((o, i) => (
+      {opsi.map((o) => (
         <button
           key={o}
           type="button"
@@ -402,11 +410,9 @@ export function Segmen({
           onClick={() => onPilih?.(o)}
           className={cn(
             'rounded-[9px] px-4 py-[7px] text-center text-[12.5px] font-semibold transition disabled:cursor-not-allowed',
-            lebar && 'flex-1',
-            !lebar && 'whitespace-nowrap',
-            lipat && 'flex-1',
-            opsi.length === 3 && lebar && i === 1 && 'mx-0.5',
-            opsi.length === 3 && lebar && i === 2 && 'ml-0.5',
+            rata ? 'min-w-0 flex-1' : 'whitespace-nowrap',
+            rata && 'max-sm:px-1.5',
+            padat && 'max-sm:text-[12px]',
             o === nilai
               ? 'bg-white text-ink shadow-sm'
               : cn('text-teks-lembut', !terkunci && 'hover:text-ink'),
@@ -417,6 +423,14 @@ export function Segmen({
       ))}
     </div>
   )
+}
+
+/** Kelas kolom tertulis lengkap supaya terbaca Tailwind. */
+const KOLOM_SEGMEN: Record<number, string> = {
+  1: 'max-sm:grid-cols-1',
+  2: 'max-sm:grid-cols-2',
+  3: 'max-sm:grid-cols-3',
+  4: 'max-sm:grid-cols-4',
 }
 
 /**

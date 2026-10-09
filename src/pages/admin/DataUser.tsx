@@ -121,90 +121,132 @@ export function DataUser({ peran }: { peran: Peran }) {
     }
   }
 
+  /** Saringan jabatan & status (+ Tambah petugas untuk super admin); `kelas` untuk tampilan HP. */
+  function saringan(kelas?: string) {
+    return (
+      <>
+        <PilihRapi
+          aria-label="Saring jabatan"
+          value={jabatan}
+          onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
+          className={kelas}
+        >
+          <option value="Semua">Semua jabatan</option>
+          {DAFTAR_JABATAN.map((j) => (
+            <option key={j}>{j}</option>
+          ))}
+        </PilihRapi>
+        <PilihRapi
+          aria-label="Saring status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as Status | 'Semua')}
+          className={kelas}
+        >
+          <option value="Semua">Semua status</option>
+          {STATUS_AKUN.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </PilihRapi>
+        {superAdmin && (
+          <Link to={`${AKAR[peran]}/kelola-akun`} className={kelas ? 'col-span-2' : undefined}>
+            <Tombol kecil className={kelas ? 'w-full' : undefined}>
+              <Ikon.Tambah size={15} /> Tambah petugas
+            </Tombol>
+          </Link>
+        )}
+      </>
+    )
+  }
+
+  /** Tombol aksi satu petugas; dipakai tabel (laptop) dan kartu (HP). */
+  function aksiPetugas(p: Petugas) {
+    return (
+      <AksiBaris>
+        <TombolIkon label="Lihat detail" onClick={() => setDilihat(p)}>
+          <Ikon.Mata size={15} />
+        </TombolIkon>
+        <TombolIkon label="Ubah data" onClick={() => bukaUbah(p)}>
+          <Ikon.Pena size={15} />
+        </TombolIkon>
+        {superAdmin && (
+          <TombolIkon label="Hapus akun" bahaya onClick={() => bukaHapus(p)}>
+            <Ikon.Sampah size={15} />
+          </TombolIkon>
+        )}
+      </AksiBaris>
+    )
+  }
+
   return (
     <Kartu>
       <KopKartu
         judul="Daftar petugas"
         sub={`${terlihat.length} akun terdaftar`}
-        aksi={
-          <>
-            <PilihRapi
-              value={jabatan}
-              onChange={(e) => setJabatan(e.target.value as Jabatan | 'Semua')}
-            >
-              <option value="Semua">Semua jabatan</option>
-              {DAFTAR_JABATAN.map((j) => (
-                <option key={j}>{j}</option>
-              ))}
-            </PilihRapi>
-            <PilihRapi
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Status | 'Semua')}
-            >
-              <option value="Semua">Semua status</option>
-              {STATUS_AKUN.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </PilihRapi>
-            {superAdmin && (
-              <Link to={`${AKAR[peran]}/kelola-akun`}>
-                <Tombol kecil>
-                  <Ikon.Tambah size={15} /> Tambah petugas
-                </Tombol>
-              </Link>
-            )}
-          </>
-        }
+        aksi={<div className="flex flex-wrap items-center gap-2 max-sm:hidden">{saringan()}</div>}
       />
+      {/* HP: saringan di baris sendiri, sama lebar; Tambah petugas selebar penuh. */}
+      <div className="grid grid-cols-2 gap-2 border-b border-garis px-4 py-3 sm:hidden">{saringan('w-full min-w-0')}</div>
       <StatusData memuat={memuat} galat={galat} onUlang={muat} />
-      <Tabel kepala={['Nama', 'Jabatan', 'Email', 'Nomor telepon', 'Status', 'Aksi']} maksTinggi={560}>
+      <div className="max-sm:hidden">
+        <Tabel kepala={['Nama', 'Jabatan', 'Email', 'Nomor telepon', 'Status', 'Aksi']} maksTinggi={560}>
+          {terlihat.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="px-5 py-12 text-center">
+                <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
+                  <Ikon.Orang size={19} />
+                </span>
+                <b className="block text-[13.5px] font-semibold text-ink">
+                  {memuat ? 'Memuat daftar petugas…' : 'Tidak ada petugas pada saringan ini'}
+                </b>
+                <span className="mt-0.5 block text-[12px] text-teks-lembut">
+                  Ganti jabatan atau status di atas.
+                </span>
+              </td>
+            </tr>
+          ) : (
+            terlihat.map((p) => (
+              <Baris key={p.id}>
+                <td>
+                  <SelOrang nama={p.nama} jabatan={p.jabatan} foto={p.fotoProfil} />
+                </td>
+                <td>
+                  <TagJabatan jabatan={p.jabatan} />
+                </td>
+                <td className="text-teks-lembut">{p.email}</td>
+                <td className="num whitespace-nowrap text-teks-lembut">{p.telepon}</td>
+                <td>
+                  <Pil status={p.status} />
+                </td>
+                <td>
+                  {aksiPetugas(p)}
+                </td>
+              </Baris>
+            ))
+          )}
+        </Tabel>
+      </div>
+      {/* HP: daftar kartu, bukan tabel 6 kolom yang harus digulir ke samping. */}
+      <ul className="m-0 list-none divide-y divide-garis p-0 sm:hidden">
         {terlihat.length === 0 ? (
-          <tr>
-            <td colSpan={6} className="px-5 py-12 text-center">
-              <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">
-                <Ikon.Orang size={19} />
-              </span>
-              <b className="block text-[13.5px] font-semibold text-ink">
-                {memuat ? 'Memuat daftar petugas…' : 'Tidak ada petugas pada saringan ini'}
-              </b>
-              <span className="mt-0.5 block text-[12px] text-teks-lembut">
-                Ganti jabatan atau status di atas.
-              </span>
-            </td>
-          </tr>
+          <li className="px-4 py-10 text-center text-[13px] text-teks-lembut">
+            {memuat ? 'Memuat daftar petugas…' : 'Tidak ada petugas pada saringan ini.'}
+          </li>
         ) : (
           terlihat.map((p) => (
-            <Baris key={p.id}>
-              <td>
-                <SelOrang nama={p.nama} jabatan={p.jabatan} foto={p.fotoProfil} />
-              </td>
-              <td>
-                <TagJabatan jabatan={p.jabatan} />
-              </td>
-              <td className="text-teks-lembut">{p.email}</td>
-              <td className="num whitespace-nowrap text-teks-lembut">{p.telepon}</td>
-              <td>
-                <Pil status={p.status} />
-              </td>
-              <td>
-                <AksiBaris>
-                  <TombolIkon label="Lihat detail" onClick={() => setDilihat(p)}>
-                    <Ikon.Mata size={15} />
-                  </TombolIkon>
-                  <TombolIkon label="Ubah data" onClick={() => bukaUbah(p)}>
-                    <Ikon.Pena size={15} />
-                  </TombolIkon>
-                  {superAdmin && (
-                    <TombolIkon label="Hapus akun" bahaya onClick={() => bukaHapus(p)}>
-                      <Ikon.Sampah size={15} />
-                    </TombolIkon>
-                  )}
-                </AksiBaris>
-              </td>
-            </Baris>
+            <li key={p.id} className="min-w-0 px-4 py-3.5 [overflow-wrap:anywhere]">
+              <SelOrang nama={p.nama} jabatan={p.jabatan} keterangan={p.email} foto={p.fotoProfil} />
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <TagJabatan jabatan={p.jabatan} />
+                  <Pil status={p.status} />
+                  {p.telepon && <span className="num text-[11.5px] text-teks-samar">{p.telepon}</span>}
+                </div>
+                <div className="flex-none">{aksiPetugas(p)}</div>
+              </div>
+            </li>
           ))
         )}
-      </Tabel>
+      </ul>
 
       {dilihat && (
         <Modal

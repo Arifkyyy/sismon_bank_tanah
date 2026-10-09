@@ -129,9 +129,10 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
           )}
         </Kartu>
 
-        <Kartu>
+        <Kartu className="flex flex-col">
           <KopKartu judul="Sebaran petugas" sub="Berdasarkan jabatan" />
-          <IsiKartu>
+          {/* Kartu ikut setinggi kartu di sebelahnya; donat diletakkan di tengah ruang yang tersisa. */}
+          <IsiKartu className="flex flex-1 flex-col justify-center">
             <Donat />
           </IsiKartu>
         </Kartu>

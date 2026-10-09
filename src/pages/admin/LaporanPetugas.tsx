@@ -219,7 +219,7 @@ export function LaporanPetugas() {
   return (
     <>
       <div className="mb-4.5 flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-xl bg-[#EBF1ED] p-1">
+        <div className="flex w-full gap-1 rounded-xl bg-[#EBF1ED] p-1 sm:inline-flex sm:w-auto sm:gap-0">
           {TAB.map((t) => (
             <button
               key={t}
@@ -227,7 +227,7 @@ export function LaporanPetugas() {
               aria-pressed={t === tab}
               onClick={() => pilihTab(t)}
               className={cn(
-                'inline-flex items-center gap-2 whitespace-nowrap rounded-[9px] px-4 py-[7px] text-[12.5px] font-semibold transition',
+                'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[9px] px-4 py-[7px] text-[12.5px] font-semibold transition max-sm:min-w-0 max-sm:flex-1 max-sm:px-2',
                 t === tab ? 'bg-white text-ink shadow-sm' : 'text-teks-lembut hover:text-ink',
               )}
             >

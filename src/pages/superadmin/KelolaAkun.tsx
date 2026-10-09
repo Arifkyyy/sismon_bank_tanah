@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Modal } from '@/components/Modal'
 import { StatusData } from '@/components/StatusData'
 import {
@@ -122,8 +123,37 @@ export function KelolaAkun() {
     setKetikan('')
   }
 
+  /** Tombol aksi satu akun; dipakai tabel (laptop) dan kartu (HP). */
+  function aksiAkun(id: number, nama: string, status: Status) {
+    return (
+      <AksiBaris>
+        <TombolIkon
+          label={status === 'Nonaktif' ? 'Aktifkan akun' : 'Nonaktifkan akun'}
+          onClick={() => ubahStatus(id, status === 'Nonaktif' ? 'Aktif' : 'Nonaktif')}
+          disabled={sibuk}
+        >
+          <Ikon.Pena size={15} />
+        </TombolIkon>
+        <TombolIkon label="Atur ulang sandi" onClick={() => resetSandi(id, nama)} disabled={sibuk}>
+          <Ikon.Kunci size={15} />
+        </TombolIkon>
+        <TombolIkon
+          label="Hapus akun"
+          bahaya
+          onClick={() => {
+            setAkanDihapus({ id, nama })
+            setKetikan('')
+          }}
+          disabled={sibuk}
+        >
+          <Ikon.Sampah size={15} />
+        </TombolIkon>
+      </AksiBaris>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4.5 xl:grid-cols-[1fr_1.62fr]">
+    <div className="grid grid-cols-1 gap-4.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.62fr)]">
       <Kartu className="self-start">
         <KopKartu judul="Tambah akun baru" sub="Kata sandi sementara ditampilkan setelah akun dibuat" />
         <IsiKartu>
@@ -208,58 +238,49 @@ export function KelolaAkun() {
             aksi={<Pil status="Diproses">Hanya super admin</Pil>}
           />
           <StatusData memuat={admin.memuat} galat={admin.galat} onUlang={admin.muat} />
-          <Tabel kepala={['Nama', 'Email', 'Terakhir masuk', 'Status', 'Aksi']}>
-            {admin.data.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
-                  {admin.memuat ? 'Memuat daftar admin…' : 'Belum ada akun admin.'}
-                </td>
-              </tr>
-            ) : (
-              admin.data.map((a) => (
-                <Baris key={a.id}>
-                  <td>
-                    {/* jabatan="OB" hanya untuk warna hijau avatar; admin tidak berjabatan */}
-                    <SelOrang nama={a.nama} jabatan="OB" keterangan="Admin" foto={a.fotoProfil} />
-                  </td>
-                  <td className="text-teks-lembut">{a.email}</td>
-                  <td className="num whitespace-nowrap text-teks-lembut">{a.masuk}</td>
-                  <td>
-                    <Pil status={a.status} />
-                  </td>
-                  <td>
-                    <AksiBaris>
-                      <TombolIkon
-                        label={a.status === 'Nonaktif' ? 'Aktifkan akun' : 'Nonaktifkan akun'}
-                        onClick={() => ubahStatus(a.id, a.status === 'Nonaktif' ? 'Aktif' : 'Nonaktif')}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Pena size={15} />
-                      </TombolIkon>
-                      <TombolIkon
-                        label="Atur ulang sandi"
-                        onClick={() => resetSandi(a.id, a.nama)}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Kunci size={15} />
-                      </TombolIkon>
-                      <TombolIkon
-                        label="Hapus akun"
-                        bahaya
-                        onClick={() => {
-                          setAkanDihapus({ id: a.id, nama: a.nama })
-                          setKetikan('')
-                        }}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Sampah size={15} />
-                      </TombolIkon>
-                    </AksiBaris>
-                  </td>
-                </Baris>
-              ))
-            )}
-          </Tabel>
+          {admin.data.length === 0 ? (
+            <p className="m-0 px-5 py-12 text-center text-[13px] text-teks-lembut">
+              {admin.memuat ? 'Memuat daftar admin…' : 'Belum ada akun admin.'}
+            </p>
+          ) : (
+            <>
+              {/* Laptop/tablet: email digabung di bawah nama supaya tabel tidak perlu digulir ke samping. */}
+              <div className="max-sm:hidden">
+                <Tabel kepala={['Nama', 'Terakhir masuk', 'Status', 'Aksi']}>
+                  {admin.data.map((a) => (
+                    <Baris key={a.id}>
+                      <td>
+                        {/* jabatan="OB" hanya untuk warna hijau avatar; admin tidak berjabatan */}
+                        <SelOrang nama={a.nama} jabatan="OB" keterangan={a.email} foto={a.fotoProfil} />
+                      </td>
+                      <td className="num whitespace-nowrap text-teks-lembut">{a.masuk}</td>
+                      <td>
+                        <Pil status={a.status} />
+                      </td>
+                      <td>{aksiAkun(a.id, a.nama, a.status)}</td>
+                    </Baris>
+                  ))}
+                </Tabel>
+              </div>
+              {/* HP: daftar kartu, bukan tabel. */}
+              <ul className="m-0 list-none divide-y divide-garis p-0 sm:hidden">
+                {admin.data.map((a) => (
+                  <li key={a.id} className="px-4 py-3.5">
+                    <KartuAkunHp
+                      atas={<SelOrang nama={a.nama} jabatan="OB" keterangan={a.email} foto={a.fotoProfil} />}
+                      tengah={
+                        <>
+                          <Pil status={a.status} />
+                          <span className="num text-[11.5px] text-teks-samar">Masuk: {a.masuk}</span>
+                        </>
+                      }
+                      aksi={aksiAkun(a.id, a.nama, a.status)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Kartu>
 
         <Kartu>
@@ -279,61 +300,48 @@ export function KelolaAkun() {
             }
           />
           <StatusData memuat={petugas.memuat} galat={petugas.galat} onUlang={petugas.muat} />
-          <Tabel kepala={['Nama', 'Jabatan', 'Email', 'Status', 'Aksi']}>
-            {petugas.data.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-[13px] text-teks-lembut">
-                  {petugas.memuat ? 'Memuat daftar petugas…' : 'Tidak ada petugas pada saringan ini.'}
-                </td>
-              </tr>
-            ) : (
-              petugas.data.map((p) => (
-                <Baris key={p.id}>
-                  <td>
-                    <SelOrang nama={p.nama} jabatan={p.jabatan} foto={p.fotoProfil} />
-                  </td>
-                  <td>
-                    <TagJabatan jabatan={p.jabatan} />
-                  </td>
-                  <td className="text-teks-lembut">{p.email}</td>
-                  <td>
-                    <Pil status={p.status} />
-                  </td>
-                  <td>
-                    <AksiBaris>
-                      <TombolIkon
-                        label={p.status === 'Nonaktif' ? 'Aktifkan akun' : 'Nonaktifkan akun'}
-                        onClick={() => ubahStatus(p.id, p.status === 'Nonaktif' ? 'Aktif' : 'Nonaktif')}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Pena size={15} />
-                      </TombolIkon>
-                      <TombolIkon
-                        label="Atur ulang sandi"
-                        onClick={() => resetSandi(p.id, p.nama)}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Kunci size={15} />
-                      </TombolIkon>
-                      <TombolIkon
-                        label="Hapus akun"
-                        bahaya
-                        onClick={() => {
-                          setAkanDihapus({ id: p.id, nama: p.nama })
-                          setKetikan('')
-                        }}
-                        disabled={sibuk}
-                      >
-                        <Ikon.Sampah size={15} />
-                      </TombolIkon>
-                    </AksiBaris>
-                  </td>
-                </Baris>
-              ))
-            )}
-          </Tabel>
-          
-          
+          {petugas.data.length === 0 ? (
+            <p className="m-0 px-5 py-12 text-center text-[13px] text-teks-lembut">
+              {petugas.memuat ? 'Memuat daftar petugas…' : 'Tidak ada petugas pada saringan ini.'}
+            </p>
+          ) : (
+            <>
+              <div className="max-sm:hidden">
+                <Tabel kepala={['Nama', 'Jabatan', 'Status', 'Aksi']}>
+                  {petugas.data.map((p) => (
+                    <Baris key={p.id}>
+                      <td>
+                        <SelOrang nama={p.nama} jabatan={p.jabatan} keterangan={p.email} foto={p.fotoProfil} />
+                      </td>
+                      <td>
+                        <TagJabatan jabatan={p.jabatan} />
+                      </td>
+                      <td>
+                        <Pil status={p.status} />
+                      </td>
+                      <td>{aksiAkun(p.id, p.nama, p.status)}</td>
+                    </Baris>
+                  ))}
+                </Tabel>
+              </div>
+              <ul className="m-0 list-none divide-y divide-garis p-0 sm:hidden">
+                {petugas.data.map((p) => (
+                  <li key={p.id} className="px-4 py-3.5">
+                    <KartuAkunHp
+                      atas={<SelOrang nama={p.nama} jabatan={p.jabatan} keterangan={p.email} foto={p.fotoProfil} />}
+                      tengah={
+                        <>
+                          <TagJabatan jabatan={p.jabatan} />
+                          <Pil status={p.status} />
+                        </>
+                      }
+                      aksi={aksiAkun(p.id, p.nama, p.status)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Kartu>
 
         <Kartu className="border-[#F0CFCB]">
@@ -405,6 +413,19 @@ export function KelolaAkun() {
           )}
         </Modal>
       )}
+    </div>
+  )
+}
+
+/** Satu akun di layar HP: orang di atas, status di tengah, tombol aksi di kanan bawah. */
+function KartuAkunHp({ atas, tengah, aksi }: { atas: ReactNode; tengah: ReactNode; aksi: ReactNode }) {
+  return (
+    <div className="min-w-0 [overflow-wrap:anywhere]">
+      {atas}
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">{tengah}</div>
+        <div className="flex-none">{aksi}</div>
+      </div>
     </div>
   )
 }

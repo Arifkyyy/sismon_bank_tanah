@@ -11,7 +11,7 @@ import type { TukarShift } from '@/types'
 const TAB = {
   jadwal: 'Jadwal',
   jenis: 'Jenis Shift',
-  tukar: 'Permintaan Tukar',
+  tukar: 'Tukar Shift',
 } as const
 type Tab = keyof typeof TAB
 
@@ -23,7 +23,7 @@ export function JadwalShift() {
   const [param, setParam] = useSearchParams()
   const tab: Tab = (param.get('tab') as Tab) in TAB ? (param.get('tab') as Tab) : 'jadwal'
 
-  // Angka di label tab Permintaan Tukar; ikut diperbarui saat ada keputusan.
+  // Angka di label tab Tukar Shift; ikut diperbarui saat ada keputusan.
   const menunggu = useApi<TukarShift[]>(`/api/shift/tukar${query({ status: 'Menunggu Admin' })}`, [])
   const muatMenunggu = menunggu.muat
   useEffect(() => {
@@ -42,7 +42,9 @@ export function JadwalShift() {
   }
 
   return (
-    <div className="grid gap-4.5">
+    // grid-cols-1 = minmax(0,1fr): tabel jadwal yang lebar menggulir di dalam kartunya,
+    // bukan melebarkan seluruh halaman melewati layar.
+    <div className="grid grid-cols-1 gap-4.5">
       <div className="-mx-1 px-1">
         <Segmen opsi={kunci.map(label)} nilai={label(tab)} onPilih={pilih} lebar lipat />
       </div>

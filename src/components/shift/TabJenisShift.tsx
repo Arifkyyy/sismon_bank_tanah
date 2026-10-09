@@ -79,7 +79,9 @@ export function TabJenisShift() {
   }
 
   return (
-    <div className="grid gap-4.5">
+    // grid-cols-1 = minmax(0,1fr): tabel jadwal yang lebar menggulir di dalam kartunya,
+    // bukan melebarkan seluruh halaman melewati layar.
+    <div className="grid grid-cols-1 gap-4.5">
       <StatusData memuat={jenis.memuat && !jenis.data.length} galat={jenis.galat} onUlang={jenis.muat} />
       {galat && (
         <div className="flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3.5 py-2.5 text-[12.5px] text-merah-teks">
@@ -112,8 +114,11 @@ export function TabJenisShift() {
                 judul={JABATAN_PANJANG[j]}
                 sub={aktif ? `${aktif} shift aktif` : 'Belum ada shift aktif'}
                 aksi={
-                  <Tombol kecil onClick={() => setForm({ awal: null, jabatan: j })}>
-                    <Ikon.Tambah size={14} /> Tambah shift
+                  // HP: label diringkas supaya tombol muat sebaris dengan nama jabatan.
+                  <Tombol kecil onClick={() => setForm({ awal: null, jabatan: j })} aria-label="Tambah shift">
+                    <Ikon.Tambah size={14} />
+                    <span className="max-sm:hidden">Tambah shift</span>
+                    <span className="sm:hidden">Tambah</span>
                   </Tombol>
                 }
               />
