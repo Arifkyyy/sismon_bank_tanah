@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { InfoTerpotong } from '@/components/InfoTerpotong'
+import { BATAS_DAFTAR, angkaDaftar, terpotong } from '@/lib/batas'
 import { PratinjauFoto } from '@/components/Foto'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
@@ -15,7 +17,7 @@ import { cetakPdf } from '@/lib/cetak'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
-import { daftarBulan, formatRentang, formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, hariIniWib, jumlahJamLembur } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { Kendala, Logbook, Status } from '@/types'
 
@@ -58,7 +60,7 @@ export function RekapHarian() {
   const { akun } = useAuth()
   const [pratinjau, setPratinjau] = useState<{ foto: string[]; judul: string } | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
+  const [tanggal, setTanggal] = useState(() => hariIniWib())
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [saringan, setSaringan] = useState<Saringan>('Aktivitas dan kendala')
@@ -68,7 +70,7 @@ export function RekapHarian() {
     () => jendelaPeriode(periode, tanggal, bulan, rentang),
     [periode, tanggal, bulan, rentang],
   )
-  const params = jendela ? query({ dari: jendela.dari, sampai: jendela.sampai }) : null
+  const params = jendela ? query({ dari: jendela.dari, sampai: jendela.sampai, batas: BATAS_DAFTAR }) : null
   // Saringan hanya memilah baris tabel; keduanya tetap diambil agar kartu ringkasan utuh.
   const pakaiAktivitas = saringan !== 'Kendala saja'
   const pakaiKendala = saringan !== 'Aktivitas saja'
@@ -77,7 +79,7 @@ export function RekapHarian() {
   // Hanya kendala yang dilaporkan sendiri, bukan yang ditugaskan dari petugas lain.
   const laporan = useApi<Kendala[]>(
     jendela
-      ? `/api/kendala${query({ dari: jendela.dari, sampai: jendela.sampai, milik: 'dilaporkan' })}`
+      ? `/api/kendala${query({ dari: jendela.dari, sampai: jendela.sampai, milik: 'dilaporkan', batas: BATAS_DAFTAR })}`
       : null,
     [],
   )
@@ -119,6 +121,8 @@ export function RekapHarian() {
   // Angka kartu dihitung dari data periode yang sama dengan tabel, tanpa saringan jenis.
   const jumlahCatatan = catatan.data.length
   const jumlahKendala = laporan.data.length
+  const potongCatatan = terpotong(jumlahCatatan)
+  const potongKendala = terpotong(jumlahKendala)
 
   /**
    * Jam kerja tercatat = jarak antara catatan pertama dan terakhir pada hari
@@ -174,8 +178,8 @@ export function RekapHarian() {
         `Periode: ${labelPeriode} · ${saringan}`,
       ],
       ringkasan: [
-        ['Catatan', String(jumlahCatatan)],
-        ['Kendala dilaporkan', String(jumlahKendala)],
+        ['Catatan', angkaDaftar(jumlahCatatan, potongCatatan)],
+        ['Kendala dilaporkan', angkaDaftar(jumlahKendala, potongKendala)],
         ['Jam kerja tercatat', `${jamKerja} jam`],
         ['Jam lembur', `${jamLembur} jam`],
       ],
@@ -257,8 +261,8 @@ export function RekapHarian() {
       </Kartu>
 
       <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5 xl:grid-cols-4">
-        <StatCard ringkas gaya="pekat" nama="Catatan" angka={String(jumlahCatatan)} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
-        <StatCard ringkas gaya="pekat" nama="Kendala dilaporkan" angka={String(jumlahKendala)} ikon={<Ikon.Awas size={17} />} ket={labelPeriode} />
+        <StatCard ringkas gaya="pekat" nama="Catatan" angka={angkaDaftar(jumlahCatatan, potongCatatan)} ikon={<Ikon.Buku size={17} />} ket={labelPeriode} />
+        <StatCard ringkas gaya="pekat" nama="Kendala dilaporkan" angka={angkaDaftar(jumlahKendala, potongKendala)} ikon={<Ikon.Awas size={17} />} ket={labelPeriode} />
         <StatCard ringkas gaya="pekat" nama="Jam kerja tercatat" angka={String(jamKerja)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Dari catatan pertama sampai terakhir" />
         <StatCard ringkas gaya="pekat" nama="Jam lembur" angka={String(jamLembur)} satuan="jam" ikon={<Ikon.Jam size={17} />} ket="Lembur yang Anda terima" />
       </div>
@@ -267,6 +271,7 @@ export function RekapHarian() {
         <Kartu>
           <KopKartu judul="Rincian catatan" sub={`${saringan === 'Aktivitas dan kendala' ? 'Aktivitas dan kendala digabung berurutan' : saringan} · ${labelPeriode}`} />
           <StatusData memuat={memuat} galat={galat} onUlang={muatUlang} />
+          {(potongCatatan || potongKendala) && <InfoTerpotong className="mx-5 mt-3 max-sm:mx-3" />}
           <Tabel kepala={['Jam', 'Jenis', 'Foto', 'Keterangan', 'Status']}>
             {rincian.length === 0 ? (
               <tr>

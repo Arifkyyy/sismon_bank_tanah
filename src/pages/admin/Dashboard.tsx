@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BATAS_DAFTAR, angkaDaftar, terpotong } from '@/lib/batas'
 import { Link } from 'react-router-dom'
 import { Donat } from '@/components/Bagan'
 import { PratinjauFoto } from '@/components/Foto'
@@ -11,7 +12,7 @@ import { useLembur } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { jumlahJamLembur, keIso } from '@/lib/tanggal'
+import { hariIniWib, jumlahJamLembur } from '@/lib/tanggal'
 import { JABATAN_PANJANG } from '@/lib/util'
 import type { Kendala, Logbook, Peran, Petugas } from '@/types'
 
@@ -21,7 +22,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   const akar = AKAR[peran]
   const superAdmin = peran === 'superadmin'
 
-  const hariIniIso = keIso(new Date())
+  const hariIniIso = hariIniWib()
   const awalBulan = `${hariIniIso.slice(0, 7)}-01`
 
   const petugas = useApi<Petugas[]>('/api/petugas', [])
@@ -53,7 +54,7 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
   const jamLemburBulanIni = jumlahJamLembur(lemburBulanIni)
 
   // Laporan bulan ini yang ditandai sistem (di luar jam shift, terlambat, beruntun).
-  const saringBulan = query({ dari: awalBulan, sampai: hariIniIso, batas: 1000 })
+  const saringBulan = query({ dari: awalBulan, sampai: hariIniIso, batas: BATAS_DAFTAR })
   const logbookBulanIni = useApi<Logbook[]>(`/api/logbook${saringBulan}`, [])
   const kendalaBulanIni = useApi<Kendala[]>(`/api/kendala${saringBulan}`, [])
   const perluDicek = [...logbookBulanIni.data, ...kendalaBulanIni.data].filter((x) => (x.tanda?.length ?? 0) > 0).length
@@ -77,7 +78,8 @@ export function DashboardAdmin({ peran }: { peran: Peran }) {
           </span>
           <span className="min-w-0 flex-1">
             <b className="block text-[13.5px] font-bold leading-snug text-ink">
-              {perluDicek} laporan bulan ini perlu dicek
+              {angkaDaftar(perluDicek, terpotong(logbookBulanIni.data.length) || terpotong(kendalaBulanIni.data.length))}{' '}
+              laporan bulan ini perlu dicek
             </b>
             <span className="block text-[12px] text-teks-lembut">
               Ditandai sistem: di luar jam shift, dikirim terlambat, atau laporan beruntun

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { InfoTerpotong } from '@/components/InfoTerpotong'
+import { BATAS_DAFTAR, angkaDaftar, terpotong } from '@/lib/batas'
 import { useSearchParams } from 'react-router-dom'
 import { PratinjauFoto } from '@/components/Foto'
 import { ModalBukaLagi, ModalDetailKendala, ModalTugaskan } from '@/components/KendalaAdmin'
@@ -18,7 +20,7 @@ import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import type { Periode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
-import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, hariIniWib } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, cn } from '@/lib/util'
 import type { Jabatan, Kendala, Logbook, Petugas, Status } from '@/types'
 
@@ -51,7 +53,7 @@ export function LaporanPetugas() {
   // ?janggal=1 (dari kartu di Dashboard) langsung membuka laporan bertanda bulan ini.
   const [hanyaJanggal, setHanyaJanggal] = useState(() => param.get('janggal') === '1')
   const [periode, setPeriode] = useState<Periode>(() => (param.get('janggal') === '1' ? 'Bulanan' : 'Harian'))
-  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
+  const [tanggal, setTanggal] = useState(() => hariIniWib())
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')
@@ -87,7 +89,7 @@ export function LaporanPetugas() {
     [periode, tanggal, bulan, rentang],
   )
   const dasar = jendela
-    ? { ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan, petugas_id: petugas?.id, cari, batas: 1000 }
+    ? { ...jendela, jabatan: jabatan === 'Semua' ? '' : jabatan, petugas_id: petugas?.id, cari, batas: BATAS_DAFTAR }
     : null
 
   const logbook = useApi<Logbook[]>(dasar ? `/api/logbook${query(dasar)}` : null, [])
@@ -131,6 +133,10 @@ export function LaporanPetugas() {
   }, [logbookTerlihat, kendalaTerlihat, tab])
 
   const jumlah = (s: Status) => kendala.data.filter((k) => k.status === s).length
+  // Daftar mencapai batas = data lama mungkin tidak ikut; angka kartu jadi angka minimal.
+  const potongLogbook = tab !== 'Kendala' && terpotong(logbook.data.length)
+  const potongKendala = tab !== 'Aktivitas' && terpotong(kendala.data.length)
+  const angkaStatus = (s: Status) => angkaDaftar(jumlah(s), potongKendala)
 
   const saringan = [jabatan === 'Semua' ? '' : JABATAN_PANJANG[jabatan], petugas?.nama ?? '', cari && `“${cari}”`]
     .filter(Boolean)
@@ -241,10 +247,10 @@ export function LaporanPetugas() {
 
       {tab === 'Kendala' && (
         <div className="mb-4.5 grid grid-cols-2 gap-4.5 max-sm:gap-2.5 sm:grid-cols-3">
-          <StatCard ringkas nama="Laporan baru" angka={String(jumlah('Baru'))} nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum mulai ditangani" />
-          <StatCard ringkas nama="Sedang diproses" angka={String(jumlah('Diproses'))} nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sedang ditangani petugas" />
+          <StatCard ringkas nama="Laporan baru" angka={angkaStatus('Baru')} nada="tanah" ikon={<Ikon.Awas size={17} />} ket="Belum mulai ditangani" />
+          <StatCard ringkas nama="Sedang diproses" angka={angkaStatus('Diproses')} nada="emas" ikon={<Ikon.Jam size={17} />} ket="Sedang ditangani petugas" />
           <div className="max-sm:col-span-2">
-            <StatCard ringkas nama="Selesai" angka={String(jumlah('Selesai'))} ikon={<Ikon.Centang size={17} />} ket="Pada periode yang dipilih" />
+            <StatCard ringkas nama="Selesai" angka={angkaStatus('Selesai')} ikon={<Ikon.Centang size={17} />} ket="Pada periode yang dipilih" />
           </div>
         </div>
       )}
@@ -369,6 +375,7 @@ export function LaporanPetugas() {
           aksi={<span className="num whitespace-nowrap text-[12.5px] text-teks-lembut">{butir.length} catatan</span>}
         />
         <StatusData memuat={memuat} galat={galat} onUlang={muatUlang} />
+        {(potongLogbook || potongKendala) && <InfoTerpotong className="mx-5 mt-3" />}
         {butir.length === 0 ? (
           <div className="px-5 py-12 text-center">
             <span className="mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-full bg-[#F3F7F4] text-teks-samar">

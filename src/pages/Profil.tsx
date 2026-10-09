@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { BATAS_DAFTAR, angkaDaftar, terpotong } from '@/lib/batas'
 import { Modal } from '@/components/Modal'
 import { NotifikasiPerangkat } from '@/components/NotifikasiPerangkat'
 import {
@@ -8,7 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { jumlahJamLembur, keIso } from '@/lib/tanggal'
+import { hariIniWib, jumlahJamLembur } from '@/lib/tanggal'
 import type { Akun, Kendala, Lembur, Logbook } from '@/types'
 
 /** Sisi terpanjang foto profil setelah diperkecil, dalam piksel. */
@@ -171,15 +172,18 @@ export function Profil() {
   const [pesan, setPesan] = useState<{ nada: 'baik' | 'buruk'; teks: string } | null>(null)
   const [menyimpan, setMenyimpan] = useState(false)
 
-  const hariIniIso = keIso(new Date())
+  const hariIniIso = hariIniWib()
   const awalBulan = `${hariIniIso.slice(0, 7)}-01`
   const jendela = query({ dari: awalBulan, sampai: hariIniIso })
 
   // Untuk admin, backend mengembalikan seluruh petugas; untuk petugas, miliknya.
-  const { data: logbook } = useApi<Logbook[]>(`/api/logbook${jendela}`, [])
+  const { data: logbook } = useApi<Logbook[]>(
+    `/api/logbook${query({ dari: awalBulan, sampai: hariIniIso, batas: BATAS_DAFTAR })}`,
+    [],
+  )
   // Petugas: hanya yang ia laporkan, bukan yang ditugaskan kepadanya.
   const { data: kendala } = useApi<Kendala[]>(
-    `/api/kendala${query({ dari: awalBulan, sampai: hariIniIso, milik: petugas ? 'dilaporkan' : '' })}`,
+    `/api/kendala${query({ dari: awalBulan, sampai: hariIniIso, milik: petugas ? 'dilaporkan' : '', batas: BATAS_DAFTAR })}`,
     [],
   )
   const { data: lemburBulanIni } = useApi<Lembur[]>(`/api/lembur${jendela}`, [])
@@ -325,10 +329,12 @@ export function Profil() {
             {/* HP: lebih padat — padding kartu dan jarak antarbaris BarisData diperkecil. */}
             <IsiKartu className="max-sm:px-4 max-sm:py-1.5 max-sm:[&>div]:py-2.5">
               <BarisData label={petugas ? 'Catatan aktivitas' : 'Logbook ditinjau'}>
-                <span className="num">{logbook.length.toLocaleString('id-ID')}</span>
+                <span className="num">{angkaDaftar(logbook.length, terpotong(logbook.length))}</span>
               </BarisData>
               <BarisData label={petugas ? 'Kendala dilaporkan' : 'Kendala ditangani'}>
-                <span className="num">{petugas ? kendala.length : kendalaSelesai}</span>
+                <span className="num">
+                  {angkaDaftar(petugas ? kendala.length : kendalaSelesai, terpotong(kendala.length))}
+                </span>
               </BarisData>
               <BarisData label={petugas ? 'Jam lembur' : 'Penugasan lembur dibuat'}>
                 <span className="num">{petugas ? `${jamLembur} jam` : lemburBulanIni.length}</span>
