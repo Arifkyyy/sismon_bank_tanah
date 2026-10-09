@@ -10,14 +10,14 @@ import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { keIso } from '@/lib/tanggal'
+import { hariIniWib } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Logbook, Petugas } from '@/types'
 
 /** Formulir kosong; tanggalnya hari ini karena catatan diisi di hari yang sama. */
 function formKosong() {
   return {
-    tanggal: keIso(new Date()),
+    tanggal: hariIniWib(),
     jam: '',
     keterangan: '',
     foto: [] as string[],

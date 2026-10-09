@@ -58,9 +58,9 @@ export const BULAN = [
  */
 export function daftarBulan(jumlah = 12): { kunci: string; label: string }[] {
   return Array.from({ length: jumlah }, (_, i) => {
-    const t = new Date()
-    t.setDate(1)
-    t.setMonth(t.getMonth() - i)
+    // Bulan berjalan dihitung dari WIB, bukan dari jam perangkat.
+    const [y, m] = hariIniWib().split('-').map(Number)
+    const t = new Date(y, m - 1 - i, 1)
     return {
       kunci: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`,
       label: `${BULAN[t.getMonth()]} ${t.getFullYear()}`,
@@ -144,6 +144,20 @@ export function sekarangWib(): { tanggal: string; jam: string } {
       .map((p) => [p.type, p.value]),
   )
   return { tanggal: `${bagian.year}-${bagian.month}-${bagian.day}`, jam: `${bagian.hour}:${bagian.minute}` }
+}
+
+/**
+ * Tanggal hari ini dalam WIB ('2026-10-09'), apa pun zona waktu perangkatnya.
+ * Dipakai untuk semua "hari ini" supaya sama dengan server (yang memakai WIB).
+ */
+export function hariIniWib(): string {
+  return sekarangWib().tanggal
+}
+
+/** '2026-10-09' digeser n hari → '2026-10-08' untuk n = -1. */
+export function geserHari(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return keIso(new Date(y, m - 1, d + n))
 }
 
 /** Date → '14.03.21' (detik ikut, karena dipakai sebagai cap waktu foto). */

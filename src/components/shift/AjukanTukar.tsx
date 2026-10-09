@@ -6,7 +6,7 @@ import { AreaTeks, Avatar, Tombol } from '@/components/ui'
 import { api, pesanGalat, query } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
 import { infoHari } from '@/lib/shift'
-import { dariIso, formatTanggal, keIso } from '@/lib/tanggal'
+import { dariIso, formatTanggal, hariIniWib, keIso } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
 import type { HariRekan, JadwalSaya, RekanShift, Shift } from '@/types'
@@ -74,7 +74,7 @@ export function AjukanTukar({
   const [mengirim, setMengirim] = useState(false)
 
   const rentang = useMemo(() => {
-    const hariIni = keIso(new Date())
+    const hariIni = hariIniWib()
     return { dari: hariIni, sampai: geser(hariIni, JANGKAUAN - 1) }
   }, [])
 

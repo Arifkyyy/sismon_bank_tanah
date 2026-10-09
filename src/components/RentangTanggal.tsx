@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Tombol } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
-import { awalBulan, BULAN, dariIso, formatRentang, HARI_MINI, jumlahHari, keIso } from '@/lib/tanggal'
+import { awalBulan, BULAN, dariIso, formatRentang, HARI_MINI, hariIniWib, jumlahHari, keIso } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 
 export interface Rentang {
@@ -29,7 +29,7 @@ function Bulan({
 }) {
   const kosong = awalBulan(tahun, bulan)
   const total = jumlahHari(tahun, bulan)
-  const hariIni = keIso(new Date())
+  const hariIni = hariIniWib()
 
   // Selama ujung kedua belum dipilih, rentang mengikuti kursor tetikus.
   const ujung = sampai ?? (mulai && bayangan && bayangan > mulai ? bayangan : null)

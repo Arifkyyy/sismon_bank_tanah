@@ -13,7 +13,7 @@ import {
   ARSIR_AKHIR_PEKAN, geserPeriode, infoHari, labelJam, periodeDari, unduhJadwal,
 } from '@/lib/shift'
 import type { ModePeriode } from '@/lib/shift'
-import { formatTanggal, keIso } from '@/lib/tanggal'
+import { formatTanggal, hariIniWib } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn, DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { HasilMassal, Jabatan, JadwalPeriode, KotakJadwal, PetugasJadwal, Shift } from '@/types'
@@ -57,7 +57,7 @@ export function TabJadwal() {
     null,
   )
   const jenis = useApi<Shift[]>('/api/shift/jenis?semua=true', [])
-  const hariIni = keIso(new Date())
+  const hariIni = hariIniWib()
 
   const petaShift = useMemo(() => new Map(jenis.data.map((s) => [s.id, s])), [jenis.data])
   const petaKotak = useMemo(

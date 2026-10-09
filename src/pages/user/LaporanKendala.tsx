@@ -11,14 +11,14 @@ import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { formatTanggal, keIso } from '@/lib/tanggal'
+import { formatTanggal, hariIniWib } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Kendala, Petugas } from '@/types'
 
 /** Formulir kosong; tanggalnya hari ini karena kendala dilaporkan saat terjadi. */
 function formKosong() {
   return {
-    tanggal: keIso(new Date()),
+    tanggal: hariIniWib(),
     jam: '',
     keterangan: '',
     foto: [] as string[],

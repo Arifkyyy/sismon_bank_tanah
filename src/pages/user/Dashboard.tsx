@@ -11,7 +11,7 @@ import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal'
+import { formatTanggal, hariIniWib, jumlahJamLembur } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { Kendala, Logbook } from '@/types'
 
@@ -21,7 +21,7 @@ export function DashboardUser() {
   const { akun } = useAuth()
   const { menunggu, riwayat } = useLemburSaya()
 
-  const hariIniIso = keIso(new Date())
+  const hariIniIso = hariIniWib()
   const awalBulan = `${hariIniIso.slice(0, 7)}-01`
   const HARI_INI = (() => {
     const t = formatTanggal(hariIniIso)

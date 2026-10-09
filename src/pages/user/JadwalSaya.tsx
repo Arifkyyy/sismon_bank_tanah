@@ -10,7 +10,7 @@ import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { api, pesanGalat, query } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
 import { ARSIR_AKHIR_PEKAN, geserPeriode, infoHari, labelJam, periodeDari } from '@/lib/shift'
-import { dariIso, keIso } from '@/lib/tanggal'
+import { dariIso, hariIniWib } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { cn } from '@/lib/util'
 import type { JadwalSaya, TukarShift } from '@/types'
@@ -26,7 +26,7 @@ export function JadwalSayaUser() {
   const [tampilan, setTampilan] = useState<Tampilan>('7 hari')
   const [acuan, setAcuan] = useState(() => new Date())
   const [dipilih, setDipilih] = useState<string | null>(null)
-  const hariIni = keIso(new Date())
+  const hariIni = hariIniWib()
 
   const bulan = useMemo(() => periodeDari('Bulan', acuan), [acuan])
   const tujuhHari = useApi<JadwalSaya[]>('/api/shift/saya', [])

@@ -11,7 +11,7 @@ import { query } from '@/lib/api'
 import { unduhExcel } from '@/lib/excel'
 import { jendelaPeriode } from '@/lib/periode'
 import { useApi } from '@/lib/useApi'
-import { daftarBulan, formatRentang, formatTanggal, keIso } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, hariIniWib } from '@/lib/tanggal'
 import { DAFTAR_JABATAN, JABATAN_PANJANG } from '@/lib/util'
 import type { Jabatan, RekapPetugas } from '@/types'
 
@@ -26,7 +26,7 @@ function jamDari(teks: string): number {
 
 export function Rekapitulasi() {
   const [periode, setPeriode] = useState<Periode>('Bulanan')
-  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
+  const [tanggal, setTanggal] = useState(() => hariIniWib())
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatan, setJabatan] = useState<Jabatan | 'Semua'>('Semua')

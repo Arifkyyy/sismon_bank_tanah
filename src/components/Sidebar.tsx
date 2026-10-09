@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useLemburSaya } from '@/context/LemburContext'
 import { Ikon } from '@/lib/ikon'
 import { query } from '@/lib/api'
-import { keIso } from '@/lib/tanggal'
+import { hariIniWib } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import type { NamaIkon } from '@/lib/ikon'
 import { cn } from '@/lib/util'
@@ -29,7 +29,7 @@ export function Sidebar({ peran, terbuka, onTutup, ciut, onCiut }: Props) {
   // Angka notifikasi admin: logbook hari ini yang belum dilihat dan kendala yang belum ditinjau.
   const pengawas = peran !== 'user'
   const logHariIni = useApi<Logbook[]>(
-    pengawas ? `/api/logbook${query({ tanggal: keIso(new Date()), batas: 1000 })}` : null,
+    pengawas ? `/api/logbook${query({ tanggal: hariIniWib(), batas: 1000 })}` : null,
     [],
   )
   const kendalaBaru = useApi<Kendala[]>(pengawas ? '/api/kendala?status=Baru&batas=1000' : null, [])
