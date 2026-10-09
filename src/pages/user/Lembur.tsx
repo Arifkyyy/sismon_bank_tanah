@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLemburSaya } from '@/context/LemburContext';
 import { query } from '@/lib/api';
 import { Ikon } from '@/lib/ikon';
-import { daftarBulan, formatRentang, formatTanggal, jumlahJamLembur, keIso } from '@/lib/tanggal';
+import { daftarBulan, formatRentang, formatTanggal, geserHari, hariIniWib, jumlahJamLembur, keIso } from '@/lib/tanggal';
 import { useApi } from '@/lib/useApi';
 import { cn } from '@/lib/util';
 import type { Lembur } from '@/types';
@@ -24,7 +24,7 @@ export function KartuLembur({ lembur, onTerima, onTolak }: { lembur: Lembur; onT
   const ditolak = lembur.status === 'Ditolak';
   const bisaDijawab = menunggu && Boolean(onTerima && onTolak);
   // Sama dengan backend: penugasan yang tanggalnya lewat hanya bisa ditolak.
-  const lewat = lembur.tanggalIso < keIso(new Date());
+  const lewat = lembur.tanggalIso < hariIniWib();
   // Akun pembuat bisa sudah dihapus; backend lalu mengirim null.
   const pembuat = lembur.dibuatOleh ?? 'Admin';
 
@@ -107,7 +107,7 @@ export function LemburUser() {
 
   // Penyaring periode untuk riwayat dan ringkasan lembur; bawaannya bulan ini.
   const [periode, setPeriode] = useState<Periode>('Bulanan');
-  const [tanggal, setTanggal] = useState(() => keIso(new Date()));
+  const [tanggal, setTanggal] = useState(() => hariIniWib());
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci);
   const [rentang, setRentang] = useState<Rentang | null>(null);
 
@@ -155,8 +155,8 @@ export function LemburUser() {
 
   function kirimPenolakan() {
     // Admin memakai alasan ini untuk mencari pengganti, jadi tidak boleh kosong.
-    if (alasan.trim().length < 10) {
-      setGalat('Tulis alasan minimal 10 karakter agar admin paham situasinya.');
+    if (!alasan.trim()) {
+      setGalat('Tulis alasannya dulu agar admin paham situasinya.');
       return;
     }
     if (ditolakkan) tolak(ditolakkan.id, alasan.trim());
@@ -165,21 +165,30 @@ export function LemburUser() {
 
   return (
     <>
-      <div className="mb-4.5 flex flex-wrap items-center gap-2">
-        <Segmen opsi={['Harian', 'Bulanan', 'Custom']} nilai={periode} onPilih={(v) => setPeriode(v as Periode)} />
+      {/* HP: periode selebar layar, lalu pilihan tanggal, lalu Unduh PDF; laptop: sebaris. */}
+      <div className="mb-4.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div>
+          <Segmen lebar lipat opsi={['Harian', 'Bulanan', 'Custom']} nilai={periode} onPilih={(v) => setPeriode(v as Periode)} />
+        </div>
         {periode === 'Harian' && (
-          <>
-            <InputRapi type="date" aria-label="Tanggal lembur" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
-            <Tombol varian="hantu" kecil onClick={() => setTanggal(keIso(new Date(Date.now() - 86_400_000)))}>
+          <div className="flex items-center gap-2">
+            <InputRapi
+              type="date"
+              aria-label="Tanggal lembur"
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              className="min-w-0 flex-1 sm:flex-none"
+            />
+            <Tombol varian="hantu" kecil className="flex-none self-stretch" onClick={() => setTanggal(geserHari(hariIniWib(), -1))}>
               Kemarin
             </Tombol>
-            <Tombol varian="hantu" kecil onClick={() => setTanggal(keIso(new Date()))}>
+            <Tombol varian="hantu" kecil className="flex-none self-stretch" onClick={() => setTanggal(hariIniWib())}>
               Hari ini
             </Tombol>
-          </>
+          </div>
         )}
         {periode === 'Bulanan' && (
-          <PilihRapi aria-label="Bulan lembur" value={bulan} onChange={(e) => setBulan(e.target.value)} className="min-w-[180px]">
+          <PilihRapi aria-label="Bulan lembur" value={bulan} onChange={(e) => setBulan(e.target.value)} className="w-full sm:w-auto sm:min-w-[180px]">
             {BULAN_PILIHAN.map((b) => (
               <option key={b.kunci} value={b.kunci}>
                 {b.label}
@@ -187,11 +196,11 @@ export function LemburUser() {
             ))}
           </PilihRapi>
         )}
-        {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-[260px]" />}
+        {periode === 'Custom' && <RentangTanggal nilai={rentang} onPilih={setRentang} className="w-full sm:w-[260px]" />}
         <Tombol
           varian="hantu"
           kecil
-          className="ml-auto"
+          className="max-sm:w-full sm:ml-auto"
           disabled={tersaring.memuat || riwayatPeriode.length === 0}
           onClick={() =>
             cetakRekapLembur(riwayatPeriode, [`${akun?.nama ?? ''} · ${akun?.peran ?? ''}`, `Periode: ${labelPeriode}`], false)
@@ -201,9 +210,9 @@ export function LemburUser() {
         </Tombol>
       </div>
 
-      <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2">
-        <StatCard gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? `Terdekat: ${[...menunggu].sort((a, b) => a.tanggalIso.localeCompare(b.tanggalIso))[0].tanggal}` : 'Semua penugasan sudah dijawab'} />
-        <StatCard gaya="pekat" nama="Lembur diterima" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam · ${labelPeriode}`} />
+      <div className="grid grid-cols-2 gap-4.5 max-sm:gap-2.5">
+        <StatCard ringkas gaya="pekat" nama="Menunggu jawaban Anda" angka={String(menunggu.length)} ikon={<Ikon.Jam size={17} />} ket={menunggu.length ? `Terdekat: ${[...menunggu].sort((a, b) => a.tanggalIso.localeCompare(b.tanggalIso))[0].tanggal}` : 'Semua penugasan sudah dijawab'} />
+        <StatCard ringkas gaya="pekat" nama="Lembur diterima" angka={String(diterima.length)} ikon={<Ikon.Centang size={17} />} ket={`Total ${totalJam} jam · ${labelPeriode}`} />
       </div>
 
       <div className="mb-3.5 mt-6 flex items-center gap-3">

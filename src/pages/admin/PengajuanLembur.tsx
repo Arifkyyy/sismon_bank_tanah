@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { KartuAntreanLembur, kekuranganDraf, MAKS_JAM_LEMBUR } from '@/components/AntreanLembur'
+import { jamSama, KartuAntreanLembur, kekuranganDraf, MAKS_JAM_LEMBUR } from '@/components/AntreanLembur'
 import type { Rentang } from '@/components/RentangTanggal'
 import { RentangTanggal } from '@/components/RentangTanggal'
 import {
@@ -11,7 +11,7 @@ import { StatusData } from '@/components/StatusData'
 import { useLembur } from '@/context/LemburContext'
 import { api, pesanGalat, query } from '@/lib/api'
 import { Ikon } from '@/lib/ikon'
-import { daftarBulan, formatRentang, formatTanggal, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
+import { daftarBulan, formatRentang, formatTanggal, hariIniWib, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
 import { useApi } from '@/lib/useApi'
 import { DAFTAR_JABATAN, JABATAN_PANJANG, jabatanDariLabel } from '@/lib/util'
 import type { DrafLembur, Jabatan, Lembur, Status } from '@/types'
@@ -21,7 +21,7 @@ function formKosong() {
   return {
     jabatan: 'Security' as Jabatan,
     nama: '',
-    tanggal: keIso(new Date()),
+    tanggal: hariIniWib(),
     mulai: '18:00',
     selesai: '22:00',
     keterangan: '',
@@ -46,7 +46,7 @@ export function PengajuanLembur() {
   const [form, setForm] = useState(formKosong)
   const [editId, setEditId] = useState<string | null>(null)
   const [periode, setPeriode] = useState<Periode>('Harian')
-  const [tanggal, setTanggal] = useState(() => keIso(new Date()))
+  const [tanggal, setTanggal] = useState(() => hariIniWib())
   const [bulan, setBulan] = useState(BULAN_PILIHAN[0].kunci)
   const [rentang, setRentang] = useState<Rentang | null>(null)
   const [jabatanSaring, setJabatanSaring] = useState<Jabatan | 'Semua'>('Semua')
@@ -66,7 +66,8 @@ export function PengajuanLembur() {
     return terpilih && !cocok.includes(terpilih) ? [...cocok, terpilih] : cocok
   }, [petugas, form.jabatan, form.nama])
 
-  const terlaluLama = menitLembur(form.mulai, form.selesai) > MAKS_JAM_LEMBUR * 60
+  const jamKembar = jamSama(form.mulai, form.selesai)
+  const terlaluLama = !jamKembar && menitLembur(form.mulai, form.selesai) > MAKS_JAM_LEMBUR * 60
 
   /** Ganti jabatan selalu mengosongkan nama: daftar namanya sudah berbeda. */
   function gantiJabatan(label: string) {
@@ -249,7 +250,7 @@ export function PengajuanLembur() {
               <Kolom label="Tanggal lembur" wajib>
                 <Input
                   type="date"
-                  min={keIso(new Date())}
+                  min={hariIniWib()}
                   value={form.tanggal}
                   onChange={(e) => setForm((f) => ({ ...f, tanggal: e.target.value }))}
                 />
@@ -274,7 +275,9 @@ export function PengajuanLembur() {
               <Kolom
                 label="Total lama lembur"
                 bantu={
-                  terlaluLama
+                  jamKembar
+                    ? 'Jam selesai tidak boleh sama dengan jam mulai.'
+                    : terlaluLama
                     ? `Melebihi batas ${MAKS_JAM_LEMBUR} jam. Periksa jam mulai dan jam selesai.`
                     : 'Terisi otomatis dari rentang jam.'
                 }

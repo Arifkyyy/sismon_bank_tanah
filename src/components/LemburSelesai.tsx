@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MAKS_JAM_LEMBUR } from '@/components/AntreanLembur'
+import { jamSama, MAKS_JAM_LEMBUR } from '@/components/AntreanLembur'
 import { Modal } from '@/components/Modal'
 import { GridForm, Input, Kolom, Tombol } from '@/components/ui'
 import { cetakPdf } from '@/lib/cetak'
@@ -68,7 +68,8 @@ export function ModalJamAktual({
   const [sibuk, setSibuk] = useState(false)
 
   const menit = menitLembur(mulai, selesai)
-  const terlaluLama = menit > MAKS_JAM_LEMBUR * 60
+  const jamKembar = jamSama(mulai, selesai)
+  const terlaluLama = !jamKembar && menit > MAKS_JAM_LEMBUR * 60
 
   async function simpan(m: string | null, s: string | null) {
     setSibuk(true)
@@ -93,7 +94,7 @@ export function ModalJamAktual({
           <Tombol varian="hantu" onClick={onTutup}>
             Batal
           </Tombol>
-          <Tombol disabled={sibuk || terlaluLama || Number.isNaN(menit)} onClick={() => simpan(mulai, selesai)}>
+          <Tombol disabled={sibuk || jamKembar || terlaluLama || Number.isNaN(menit)} onClick={() => simpan(mulai, selesai)}>
             <Ikon.Centang size={15} /> Simpan
           </Tombol>
         </>
@@ -113,10 +114,16 @@ export function ModalJamAktual({
       <p className="num m-0 mt-3 text-[12.5px] text-teks-lembut">
         Total {lamaLembur(mulai, selesai)}
       </p>
-      {(terlaluLama || galat) && (
+      {(jamKembar || terlaluLama || galat) && (
         <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-merah/30 bg-merah-lembut px-3 py-2 text-[11.5px] leading-relaxed text-merah-teks">
           <Ikon.Awas size={14} className="mt-px flex-none" />
-          <span>{terlaluLama ? `Lembur paling lama ${MAKS_JAM_LEMBUR} jam.` : galat}</span>
+          <span>
+            {jamKembar
+              ? 'Jam selesai tidak boleh sama dengan jam mulai.'
+              : terlaluLama
+                ? `Lembur paling lama ${MAKS_JAM_LEMBUR} jam.`
+                : galat}
+          </span>
         </div>
       )}
     </Modal>

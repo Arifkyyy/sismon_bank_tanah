@@ -1,11 +1,14 @@
 import { Avatar, IsiKartu, Kartu, KopKartu, Pil, TagJabatan, Tombol, TombolIkon } from '@/components/ui'
 import { Ikon } from '@/lib/ikon'
-import { formatJam, formatTanggal, keIso, lamaLembur, menitLembur } from '@/lib/tanggal'
+import { formatJam, formatTanggal, hariIniWib, lamaLembur, menitLembur } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { DrafLembur, Petugas } from '@/types'
 
 /** Lama lembur paling panjang (jam) — sama dengan MAKS_JAM_LEMBUR di backend. */
 export const MAKS_JAM_LEMBUR = 12
+
+/** Jam mulai = jam selesai terbaca 24 jam, padahal lembur paling lama 12 jam — ditolak dengan pesan sendiri. */
+export const jamSama = (mulai: string, selesai: string) => !!mulai && mulai === selesai
 
 /** Bagian yang masih kosong pada sebuah draf — menahan tombol Kirim. */
 export function kekuranganDraf(d: DrafLembur): string[] {
@@ -13,8 +16,9 @@ export function kekuranganDraf(d: DrafLembur): string[] {
   if (!d.nama) kurang.push('nama petugas')
   if (!d.tanggal) kurang.push('tanggal')
   // Sama dengan backend: petugas tidak bisa menerima penugasan yang tanggalnya lewat.
-  else if (d.tanggal < keIso(new Date())) kurang.push('tanggal (sudah lewat)')
+  else if (d.tanggal < hariIniWib()) kurang.push('tanggal (sudah lewat)')
   if (!d.mulai || !d.selesai) kurang.push('rentang jam')
+  else if (jamSama(d.mulai, d.selesai)) kurang.push('rentang jam (jam selesai sama dengan jam mulai)')
   else if (menitLembur(d.mulai, d.selesai) > MAKS_JAM_LEMBUR * 60)
     kurang.push(`rentang jam (maks. ${MAKS_JAM_LEMBUR} jam)`)
   if (d.keterangan.trim().length < 1) kurang.push('keterangan tugas')

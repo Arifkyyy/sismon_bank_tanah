@@ -5,15 +5,17 @@ Nama field ditulis snake_case di Python, tapi otomatis jadi camelCase di JSON
 (tanggal_iso → tanggalIso) supaya cocok dengan src/types/index.ts di frontend.
 """
 from datetime import date, time
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 from pydantic.alias_generators import to_camel
 
 Jabatan = Literal["Security", "OB", "CS", "Messenger"]
 Peran = Literal["superadmin", "admin", "user"]
 StatusAkun = Literal["Aktif", "Cuti", "Nonaktif"]
 StatusKendala = Literal["Baru", "Diproses", "Selesai"]
+# Spasi di awal/akhir dibuang dulu, baru panjangnya diperiksa ("   " tidak lolos).
+NamaOrang = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
 
 
 class Skema(BaseModel):
@@ -91,7 +93,7 @@ class DetailPetugas(Skema):
 
 class UbahPetugas(Skema):
     """Isi popup Ubah data di halaman Data user."""
-    nama: str = Field(min_length=3, max_length=120)
+    nama: NamaOrang
     jabatan: Jabatan
     email: EmailStr
     telepon: str = Field(default="", max_length=30)
@@ -111,7 +113,7 @@ class AkunAdminKeluar(Skema):
 
 class AkunBaru(Skema):
     jenis: Literal["admin", "user"]
-    nama: str = Field(min_length=3, max_length=120)
+    nama: NamaOrang
     jabatan: Jabatan | None = None
     nip: str = Field(default="", max_length=40)
     email: EmailStr
@@ -308,7 +310,8 @@ class DrafMasuk(Skema):
 
 
 class TolakLembur(Skema):
-    alasan: str = Field(min_length=5)
+    # Wajib diisi, tanpa batas jumlah huruf (sama dengan keterangan sejak commit 5c93d1c).
+    alasan: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 # ---------------------------------------------------------------- Statistik
@@ -362,6 +365,10 @@ class StatistikFoto(Skema):
 
 class HapusFoto(Skema):
     ids: list[int] = Field(min_length=1)
+
+
+class UnduhFoto(Skema):
+    ids: list[int] = Field(min_length=1, max_length=1000)
 
 
 class HapusFotoSebelum(Skema):

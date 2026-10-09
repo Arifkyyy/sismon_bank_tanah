@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { InfoTerpotong } from '@/components/InfoTerpotong'
+import { BATAS_DAFTAR, terpotong } from '@/lib/batas'
 import { StatCard } from '@/components/StatCard'
 import {
   GridForm, Input, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Peringatan,
@@ -7,9 +9,9 @@ import {
 import { StatusData } from '@/components/StatusData'
 import { useKonfirmasi } from '@/context/KonfirmasiContext'
 import { Ikon } from '@/lib/ikon'
-import { api, pesanGalat, query } from '@/lib/api'
+import { API_URL, ambilToken, api, pesanGalat, query } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
-import { keIso } from '@/lib/tanggal'
+import { hariIniWib, keIso } from '@/lib/tanggal'
 import { cn, DAFTAR_JABATAN, WARNA_FOTO } from '@/lib/util'
 import type { FotoArsip, Jabatan, StatistikFoto } from '@/types'
 
@@ -42,6 +44,7 @@ export function HapusDataFoto() {
     `/api/foto${query({
       sumber: sumber === 'Semua' ? '' : sumber,
       jabatan: jabatan === 'Semua' ? '' : jabatan,
+      batas: BATAS_DAFTAR,
     })}`,
     [],
   )
@@ -75,6 +78,38 @@ export function HapusDataFoto() {
     } catch (e) {
       setGalatAksi(pesanGalat(e))
       return false
+    } finally {
+      setSibuk(false)
+    }
+  }
+
+  /** Foto terpilih diunduh sebagai satu berkas ZIP yang disusun backend. */
+  async function unduhTerpilih() {
+    const ids = [...dipilih]
+    if (ids.length === 0) return
+    setSibuk(true)
+    setGalatAksi(null)
+    try {
+      const token = ambilToken()
+      const jawab = await fetch(`${API_URL}/api/foto/unduh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ids }),
+      })
+      if (!jawab.ok) {
+        const data = await jawab.json().catch(() => null)
+        throw new Error(typeof data?.detail === 'string' ? data.detail : `Gagal mengunduh foto (${jawab.status}).`)
+      }
+      const tautan = URL.createObjectURL(await jawab.blob())
+      const a = document.createElement('a')
+      a.href = tautan
+      a.download = `arsip-foto-${hariIniWib()}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(tautan)
+    } catch (e) {
+      setGalatAksi(e instanceof TypeError ? 'Tidak bisa terhubung ke server. Pastikan backend sudah berjalan.' : pesanGalat(e))
     } finally {
       setSibuk(false)
     }
@@ -156,6 +191,7 @@ export function HapusDataFoto() {
           {saringan('w-full min-w-0')}
         </div>
         <StatusData memuat={arsip.memuat} galat={arsip.galat} onUlang={arsip.muat} />
+        {terpotong(arsip.data.length) && <InfoTerpotong apa="foto" className="mx-5 mt-3 max-sm:mx-4" />}
         <IsiKartu className="max-sm:px-4">
           <div className="mb-4.5 flex flex-wrap items-center gap-3 rounded-xl border border-garis bg-[#F7FAF8] px-3.5 py-3 max-sm:gap-2.5">
             <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-ink">
@@ -174,7 +210,7 @@ export function HapusDataFoto() {
             </span>
             {/* HP: tombol di baris sendiri, berdampingan sama lebar. */}
             <div className="ml-auto flex flex-wrap gap-2.5 max-sm:ml-0 max-sm:w-full max-sm:flex-nowrap max-sm:[&>*]:min-w-0 max-sm:[&>*]:flex-1">
-              <Tombol varian="hantu" kecil>
+              <Tombol varian="hantu" kecil onClick={unduhTerpilih} disabled={dipilih.size === 0 || sibuk}>
                 <Ikon.Unduh size={15} />
                 <span className="max-sm:hidden">Unduh yang dipilih</span>
                 <span className="sm:hidden">Unduh</span>

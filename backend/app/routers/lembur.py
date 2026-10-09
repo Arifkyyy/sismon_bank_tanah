@@ -36,6 +36,9 @@ def _ambil(db: Session, lembur_id: str) -> Lembur:
 
 def _periksa_lama(mulai: time, selesai: time) -> None:
     """Jam selesai sebelum jam mulai dianggap lewat tengah malam, jadi dibatasi."""
+    # Jam sama akan terbaca 24 jam; pesan "paling lama 12 jam" membingungkan, jadi disebut langsung.
+    if mulai == selesai:
+        raise HTTPException(422, "Jam selesai tidak boleh sama dengan jam mulai.")
     if f.menit_lembur(mulai, selesai) > pengaturan.maks_jam_lembur * 60:
         raise HTTPException(
             422, f"Lembur paling lama {pengaturan.maks_jam_lembur} jam. Periksa jam mulai dan jam selesai."

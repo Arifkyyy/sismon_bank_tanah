@@ -67,19 +67,25 @@ export function KelolaAkun() {
   }
 
   async function buatAkun() {
+    // Spasi di awal/akhir dibuang supaya nama berisi spasi saja tidak lolos.
+    const nama = form.nama.trim().replace(/\s+/g, ' ')
+    if (nama.length < 3) {
+      setGalatAksi('Nama lengkap minimal 3 huruf.')
+      return
+    }
     let hasil: HasilSandi | null = null
     const berhasil = await jalankan(async () => {
       hasil = await api<HasilSandi>('/api/akun', 'POST', {
         jenis: buatPetugas ? 'user' : 'admin',
-        nama: form.nama,
+        nama,
         jabatan: buatPetugas ? form.jabatan : null,
-        nip: form.nip,
-        email: form.email,
-        unit: form.unit,
+        nip: form.nip.trim(),
+        email: form.email.trim(),
+        unit: form.unit.trim(),
       })
     })
     if (!berhasil || !hasil) return
-    setSandiBaru({ nama: form.nama, hasil })
+    setSandiBaru({ nama, hasil })
     setForm(formKosong())
   }
 
