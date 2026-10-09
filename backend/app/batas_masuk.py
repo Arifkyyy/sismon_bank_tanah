@@ -49,7 +49,7 @@ def catat_gagal(db: Session, u: User) -> str:
         db.commit()
         return (
             f"Kata sandi salah {n} kali. Demi keamanan, akun Anda dinonaktifkan. "
-            "Silakan temui Super Admin untuk mengaktifkannya kembali."
+            "Silakan temui Tim IT untuk mengaktifkannya kembali."
         )
     db.commit()
 

@@ -85,7 +85,7 @@ def ubah(
         raise HTTPException(
             403,
             "Akun ini dinonaktifkan sistem karena salah kata sandi 10 kali. "
-            "Hanya Super Admin yang bisa mengaktifkannya kembali.",
+            "Hanya Tim IT (akun Super Admin) yang bisa mengaktifkannya kembali.",
         )
 
     lama = (u.nama, u.jabatan, u.email, u.telepon, u.nip, u.unit, u.status)

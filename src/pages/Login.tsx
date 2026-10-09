@@ -177,7 +177,7 @@ export function Login() {
       {lupa && (
         <Modal
           judul="Lupa kata sandi"
-          sub="Kata sandi diatur ulang oleh Super Admin"
+          sub="Kata sandi diatur ulang oleh Tim IT"
           onTutup={() => setLupa(false)}
           aksi={
             <Tombol kecil onClick={() => setLupa(false)}>
@@ -187,13 +187,12 @@ export function Login() {
         >
           {/* Belum ada server email, jadi atur ulang sandi lewat Kelola akun milik super admin. */}
           <ol className="m-0 list-decimal space-y-2 pl-5 text-[13px] leading-relaxed text-teks">
-            <li>Hubungi Super Admin dan sebutkan email kantor Anda.</li>
-            <li>Super Admin mengatur ulang kata sandi Anda dan memberikan kata sandi sementara.</li>
+            <li>Hubungi Tim IT dan sebutkan email kantor Anda.</li>
+            <li>Tim IT mengatur ulang kata sandi Anda dan memberikan kata sandi sementara.</li>
             <li>Masuk dengan kata sandi sementara itu, lalu segera ganti lewat menu Profil.</li>
           </ol>
           <Catatan>
-            Demi keamanan, jangan kirim kata sandi lewat grup chat. Super Admin yang lupa kata sandinya
-            sendiri dapat menghubungi pengelola sistem.
+            Demi keamanan, jangan kirim kata sandi lewat grup chat.
           </Catatan>
         </Modal>
       )}
