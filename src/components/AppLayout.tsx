@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AKAR, JUDUL } from '@/config/menu'
+import { CariMenu } from '@/components/CariMenu'
 import { Notifikasi } from '@/components/Notifikasi'
 import { Sidebar } from '@/components/Sidebar'
 import { useAuth } from '@/context/AuthContext'
@@ -117,18 +118,8 @@ export function AppLayout({ peran }: Props) {
             <Ikon.Menu size={20} />
           </button>
 
-          {/* Kolom pencarian utama — pil abu tanpa garis tepi */}
-          <div className="relative flex min-w-0 flex-1 items-center sm:max-w-[430px]">
-            <span className="pointer-events-none absolute left-4 text-teks-samar">
-              <Ikon.Cari size={17} />
-            </span>
-            <input
-              type="search"
-              placeholder="Cari aset, lokasi, atau dokumen..."
-              aria-label="Pencarian"
-              className="h-11 w-full rounded-full border border-transparent bg-[#EEF2EF] pl-11 pr-4 text-[13.5px] text-teks placeholder:text-teks-samar focus:border-hijau/40 focus:bg-white focus:outline-none focus:ring-[3px] focus:ring-hijau/15"
-            />
-          </div>
+          {/* Kolom pencarian utama — pil abu tanpa garis tepi; mencari menu */}
+          <CariMenu peran={peran} />
 
           <div className="ml-auto flex flex-none items-center gap-1 lg:gap-3">
             <Notifikasi peran={peran} />

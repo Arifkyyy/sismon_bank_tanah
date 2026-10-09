@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { KartuDataPending, type Draf } from '@/components/Draf'
 import { FotoBukti, MAKS_FOTO } from '@/components/FotoBukti'
 import { AreaTeks, IsiKartu, KakiForm, Kartu, Kolom, KopKartu, Pil, Saklar, Tombol } from '@/components/ui'
@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Ikon } from '@/lib/ikon'
 import { api, pesanGalat } from '@/lib/api'
 import { useApi } from '@/lib/useApi'
+import { bacaDraf, hapusDraf as buangDrafPerangkat, simpanDraf as simpanDrafPerangkat } from '@/lib/simpanDraf'
 import { sekarangWib } from '@/lib/tanggal'
 import { cn } from '@/lib/util'
 import type { Petugas } from '@/types'
@@ -30,6 +31,34 @@ export function CatatKegiatan({ onTerkirim }: { onTerkirim?: (kendala: boolean) 
   const [editId, setEditId] = useState<string | null>(null)
   const [galatKirim, setGalatKirim] = useState<string | null>(null)
   const [terkirim, setTerkirim] = useState<string | null>(null)
+
+  // Draf dan isian form disimpan di perangkat, supaya tidak hilang saat halaman
+  // dimuat ulang atau tab ditutup HP. Kuncinya per akun.
+  const kunciDraf = akun ? `catatan:${akun.id}` : null
+  const [drafDimuat, setDrafDimuat] = useState(false)
+
+  useEffect(() => {
+    if (!kunciDraf) return
+    let batal = false
+    void bacaDraf<{ form: ReturnType<typeof formKosong>; pending: Draf[] }>(kunciDraf).then((isi) => {
+      if (batal) return
+      if (isi) {
+        // Digabung, bukan ditimpa, kalau petugas sudah sempat menyimpan draf baru sebelum ini selesai dimuat.
+        setPending((list) => [...(isi.pending ?? []).filter((d) => !list.some((x) => x.id === d.id)), ...list])
+        setForm((f) => (f.keterangan || f.foto.length ? f : (isi.form ?? f)))
+      }
+      setDrafDimuat(true)
+    })
+    return () => {
+      batal = true
+    }
+  }, [kunciDraf])
+
+  useEffect(() => {
+    if (!kunciDraf || !drafDimuat) return
+    const kosong = pending.length === 0 && !form.keterangan && form.foto.length === 0 && !form.kendala
+    void (kosong ? buangDrafPerangkat(kunciDraf) : simpanDrafPerangkat(kunciDraf, { form, pending }))
+  }, [kunciDraf, drafDimuat, form, pending])
 
   // Backend hanya mengembalikan data akun yang sedang masuk.
   const { data: petugas } = useApi<Petugas[]>('/api/petugas', [])
